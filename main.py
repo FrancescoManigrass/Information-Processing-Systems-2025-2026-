@@ -11,74 +11,67 @@ extra_packages = [
 
 SHARED_MODELS_URLS = {
     # =========================
-    # CHECKPOINTS (facili / base)
+    # CHECKPOINTS
     # =========================
     "checkpoints": [
-        # SD1.5 base (ottimo per template base text2img/img2img)
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
-
-        # SD2 inpainting (template inpaint classici)
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
 
-        # SDXL base / refiner / turbo
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
 
-        # FLUX FP8 "easy checkpoint" (molto utili per template/esperimenti FLUX senza setup completo)
-        {"url": "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
+        # >10GB circa (FP8 FLUX)
+        # {"url": "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
     ],
 
     # =========================
-    # DIFFUSION MODELS (Qwen / Wan / Hunyuan / FLUX advanced)
+    # DIFFUSION MODELS
     # =========================
     "diffusion_models": [
-        # Qwen Image / Edit (template Qwen nativi)
-        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors", "filename": "qwen_image_fp8_e4m3fn.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors", "filename": "qwen_image_distill_full_fp8_e4m3fn.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_fp8_e4m3fn.safetensors", "filename": "qwen_image_edit_fp8_e4m3fn.safetensors"},
+        # >10GB circa (Qwen Image fp8)
+        # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors", "filename": "qwen_image_fp8_e4m3fn.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors", "filename": "qwen_image_distill_full_fp8_e4m3fn.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_fp8_e4m3fn.safetensors", "filename": "qwen_image_edit_fp8_e4m3fn.safetensors"},
 
-        # Wan 2.1 (video native templates)
+        # Wan 2.1
         {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors", "filename": "wan2.1_t2v_1.3B_fp16.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_480p_14B_fp16.safetensors", "filename": "wan2.1_i2v_480p_14B_fp16.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_720p_14B_fp16.safetensors", "filename": "wan2.1_i2v_720p_14B_fp16.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_vace_14B_fp16.safetensors", "filename": "wan2.1_vace_14B_fp16.safetensors"},
+
+        # >10GB circa (14B fp16)
+        # {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_480p_14B_fp16.safetensors", "filename": "wan2.1_i2v_480p_14B_fp16.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_720p_14B_fp16.safetensors", "filename": "wan2.1_i2v_720p_14B_fp16.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_vace_14B_fp16.safetensors", "filename": "wan2.1_vace_14B_fp16.safetensors"},
+
         {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_fun_camera_v1.1_1.3B_bf16.safetensors", "filename": "wan2.1_fun_camera_v1.1_1.3B_bf16.safetensors"},
 
-        # Hunyuan Video (video native templates)
-        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors", "filename": "hunyuan_video_t2v_720p_bf16.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_image_to_video_720p_bf16.safetensors", "filename": "hunyuan_video_image_to_video_720p_bf16.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors", "filename": "hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors"},
+        # Hunyuan Video (molto pesanti)
+        # >10GB circa
+        # {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors", "filename": "hunyuan_video_t2v_720p_bf16.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_image_to_video_720p_bf16.safetensors", "filename": "hunyuan_video_image_to_video_720p_bf16.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors", "filename": "hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors"},
 
-        # FLUX advanced (gated / opzionali)
-        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
-        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev/resolve/main/flux1-fill-dev.safetensors", "filename": "flux1-fill-dev.safetensors"},
-        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/resolve/main/flux1-kontext-dev.safetensors", "filename": "flux1-kontext-dev.safetensors"},
-        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Canny-dev/resolve/main/flux1-canny-dev.safetensors", "filename": "flux1-canny-dev.safetensors"},
-        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Depth-dev/resolve/main/flux1-depth-dev.safetensors", "filename": "flux1-depth-dev.safetensors"},
+        # FLUX full (gated/opzionali, pesanti)
+        # >10GB circa
+        # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
+        # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev/resolve/main/flux1-fill-dev.safetensors", "filename": "flux1-fill-dev.safetensors"},
+        # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/resolve/main/flux1-kontext-dev.safetensors", "filename": "flux1-kontext-dev.safetensors"},
+        # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Canny-dev/resolve/main/flux1-canny-dev.safetensors", "filename": "flux1-canny-dev.safetensors"},
+        # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Depth-dev/resolve/main/flux1-depth-dev.safetensors", "filename": "flux1-depth-dev.safetensors"},
     ],
 
     # =========================
     # TEXT ENCODERS
     # =========================
     "text_encoders": [
-        # FLUX shared text encoders
         {"url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors", "filename": "clip_l.safetensors"},
         {"url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn_scaled.safetensors", "filename": "t5xxl_fp8_e4m3fn_scaled.safetensors"},
-        # opzionale qualità / RAM alta:
-        # {"url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors", "filename": "t5xxl_fp16.safetensors"},
 
-        # Qwen shared encoder
         {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "filename": "qwen_2.5_vl_7b_fp8_scaled.safetensors"},
 
-        # Wan 2.1 shared encoder (scegline uno; fp8 è più leggero)
         {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors?download=true", "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors"},
-        # opzionale fp16:
-        # {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors?download=true", "filename": "umt5_xxl_fp16.safetensors"},
 
-        # Hunyuan shared text encoders
-        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/clip_l.safetensors?download=true", "filename": "clip_l_hunyuan.safetensors"},  # rinomina se vuoi evitare collisione con clip_l FLUX
+        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/clip_l.safetensors?download=true", "filename": "clip_l_hunyuan.safetensors"},
         {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors?download=true", "filename": "llava_llama3_fp8_scaled.safetensors"},
     ],
 
@@ -86,16 +79,9 @@ SHARED_MODELS_URLS = {
     # VAE
     # =========================
     "vae": [
-        # FLUX VAE (ae.safetensors)
         {"url": "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/vae/ae.safetensors", "filename": "ae.safetensors"},
-
-        # Qwen shared VAE
         {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
-
-        # Wan shared VAE
         {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors?download=true", "filename": "wan_2.1_vae.safetensors"},
-
-        # Hunyuan shared VAE
         {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors?download=true", "filename": "hunyuan_video_vae_bf16.safetensors"},
     ],
 
@@ -103,13 +89,8 @@ SHARED_MODELS_URLS = {
     # CLIP VISION
     # =========================
     "clip_vision": [
-        # Wan I2V
         {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
-
-        # Hunyuan I2V
         {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
-
-        # FLUX Redux
         {"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
     ],
 
@@ -117,11 +98,9 @@ SHARED_MODELS_URLS = {
     # LORAS
     # =========================
     "loras": [
-        # Qwen accelerazioni (opzionali ma utilissime)
         {"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-8steps-V1.0.safetensors"},
         {"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-4steps-V1.0.safetensors"},
 
-        # FLUX Control LoRA (opzionali)
         {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Canny-dev-lora/resolve/main/flux1-canny-dev-lora.safetensors", "filename": "flux1-canny-dev-lora.safetensors"},
         {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Depth-dev-lora/resolve/main/flux1-depth-dev-lora.safetensors", "filename": "flux1-depth-dev-lora.safetensors"},
     ],
@@ -130,48 +109,38 @@ SHARED_MODELS_URLS = {
     # STYLE MODELS
     # =========================
     "style_models": [
-        # FLUX Redux (opzionale)
         {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev/resolve/main/flux1-redux-dev.safetensors", "filename": "flux1-redux-dev.safetensors"},
     ],
 
     # =========================
-    # CONTROLNET (opzionale, per template FLUX/Qwen control)
+    # CONTROLNET
     # =========================
     "controlnet": [
-        # Qwen union LoRA/control structures (se usi i template control Qwen)
         {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
-        # Nota: alcuni template Qwen usano anche patch models in models/model_patches (non supportati dal tuo dict attuale)
     ],
 
-    # cartelle lasciate vuote
     "clip": [],
     "embeddings": [],
     "upscale_models": [],
     "gligen": [],
     "hypernetworks": [],
     "vae_approx": [],
+
     "unet": [
-        # FLUX schnell full (opzionale/gated; alcune guide/examples lo mettono in unet)
-        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors", "filename": "flux1-schnell.safetensors"},
+        # >10GB circa (FLUX full)
+        # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors", "filename": "flux1-schnell.safetensors"},
     ],
 }
 
-
 def auto_install_requirements():
-    """
-    Installa automaticamente i requirements prima degli import principali.
-    Disattivabile con:
-      COMFYUI_AUTO_INSTALL_REQUIREMENTS=0
-    Opzionale per custom nodes:
-      COMFYUI_AUTO_INSTALL_CUSTOM_NODE_REQUIREMENTS=1 (default)
-    """
     if __name__ != "__main__":
         return
 
     if os.environ.get("COMFYUI_AUTO_INSTALL_REQUIREMENTS", "1") != "1":
         return
 
-    # Pacchetti extra hardcoded
+    installed_any = False
+
     for pkg in extra_packages:
         print(f"[BOOTSTRAP] Installing extra package: {pkg}")
         subprocess.check_call([
@@ -179,6 +148,7 @@ def auto_install_requirements():
             "--disable-pip-version-check",
             pkg
         ])
+        installed_any = True
 
     base_dir = os.path.dirname(os.path.realpath(__file__))
     req_files = []
@@ -203,17 +173,32 @@ def auto_install_requirements():
         seen.add(req)
 
         print(f"[BOOTSTRAP] Installing requirements from: {req}")
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install",
+            "--disable-pip-version-check",
+            "-r", req
+        ])
+        installed_any = True
+
+    # Refresh import system
+    if installed_any:
+        import importlib, site
         try:
-            subprocess.check_call([
-                sys.executable, "-m", "pip", "install",
-                "--disable-pip-version-check",
-                "-r", req
-            ])
-        except subprocess.CalledProcessError as e:
-            print(f"[BOOTSTRAP] Errore installando {req}: {e}")
+            user_site = site.getusersitepackages()
+            if user_site and user_site not in sys.path:
+                site.addsitedir(user_site)
+        except Exception:
+            pass
+        importlib.invalidate_caches()
+
+        # Se ancora non vede yaml, riavvia una volta sola
+        try:
+            import yaml  # noqa
+        except ModuleNotFoundError:
+            if os.environ.get("_COMFYUI_BOOTSTRAP_REEXEC", "0") != "1":
+                os.environ["_COMFYUI_BOOTSTRAP_REEXEC"] = "1"
+                os.execv(sys.executable, [sys.executable] + sys.argv)
             raise
-
-
 # Bootstrap PRIMA degli import ComfyUI
 auto_install_requirements()
 
