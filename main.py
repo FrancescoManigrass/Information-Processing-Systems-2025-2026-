@@ -2,6 +2,38 @@ import os
 import sys
 import subprocess
 
+
+extra_packages = [
+    # "requests",
+    "PyYAML",  # <-- il pacchetto pip corretto per import yaml
+]
+
+SHARED_MODELS_URLS = {
+    "checkpoints": [
+         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
+    ],
+    "loras": [
+        # "https://example.com/some_lora.safetensors",
+    ],
+    "vae": [
+        # "https://example.com/some_vae.safetensors",
+    ],
+    "clip": [],
+    "diffusion_models": [],
+    "embeddings": [],
+    "controlnet": [],
+    "upscale_models": [],
+    "clip_vision": [],
+    "style_models": [],
+    "gligen": [],
+    "hypernetworks": [],
+    "vae_approx": [],
+    "unet": [],
+    "text_encoders": [],
+}
+
+
+
 def auto_install_requirements():
     """
     Installa automaticamente i requirements prima degli import principali.
@@ -15,6 +47,15 @@ def auto_install_requirements():
 
     if os.environ.get("COMFYUI_AUTO_INSTALL_REQUIREMENTS", "1") != "1":
         return
+
+    # Pacchetti extra hardcoded
+    for pkg in extra_packages:
+        print(f"[BOOTSTRAP] Installing extra package: {pkg}")
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install",
+            "--disable-pip-version-check",
+            pkg
+        ])
 
     base_dir = os.path.dirname(os.path.realpath(__file__))
     req_files = []
@@ -49,6 +90,7 @@ def auto_install_requirements():
             print(f"[BOOTSTRAP] Errore installando {req}: {e}")
             raise
 
+
 # Bootstrap PRIMA degli import ComfyUI
 auto_install_requirements()
 
@@ -74,7 +116,7 @@ import urllib.parse
 import urllib.error
 
 if __name__ == "__main__":
-    #NOTE: These do not do anything on core ComfyUI, they are for custom nodes.
+    # NOTE: These do not do anything on core ComfyUI, they are for custom nodes.
     os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'
     os.environ['DO_NOT_TRACK'] = '1'
 
@@ -84,16 +126,6 @@ setup_logger(log_level=args.verbose, use_stdout=args.log_stdout)
 # ============================================================
 # CONFIGURAZIONE MODELLI CONDIVISI + DOWNLOAD AUTOMATICO
 # ============================================================
-# Imposta la cartella condivisa tramite env:
-#   Linux/macOS: export COMFYUI_SHARED_MODELS_DIR="/mnt/shared/comfy_models"
-#   Windows PS : $env:COMFYUI_SHARED_MODELS_DIR="D:\Shared\ComfyModels"
-#
-# Struttura attesa (esempio):
-#   /shared/comfy_models/checkpoints
-#   /shared/comfy_models/loras
-#   /shared/comfy_models/vae
-#   ...
-#
 # Puoi aggiungere URL per cartella qui sotto.
 # Formati supportati:
 # 1) stringa URL (il filename viene dedotto dall'URL)
@@ -108,29 +140,6 @@ setup_logger(log_level=args.verbose, use_stdout=args.log_stdout)
 #         "https://example.com/my_lora.safetensors",
 #     ],
 # }
-SHARED_MODELS_URLS = {
-    "checkpoints": [
-        # {"url": "https://example.com/model.safetensors", "filename": "model.safetensors"},
-    ],
-    "loras": [
-        # "https://example.com/some_lora.safetensors",
-    ],
-    "vae": [
-        # "https://example.com/some_vae.safetensors",
-    ],
-    "clip": [],
-    "diffusion_models": [],
-    "embeddings": [],
-    "controlnet": [],
-    "upscale_models": [],
-    "clip_vision": [],
-    "style_models": [],
-    "gligen": [],
-    "hypernetworks": [],
-    "vae_approx": [],
-    "unet": [],
-    "text_encoders": [],
-}
 
 
 def _infer_filename_from_url(url: str) -> str:
@@ -201,18 +210,46 @@ def _normalize_model_entries(entries):
     return normalized
 
 
+def _is_writable_directory(path: str) -> bool:
+    """
+    Verifica se la directory è realmente scrivibile provando a creare un file temporaneo.
+    """
+    try:
+        os.makedirs(path, exist_ok=True)
+        test_file = os.path.join(path, ".comfyui_write_test.tmp")
+        with open(test_file, "wb") as f:
+            f.write(b"ok")
+        os.remove(test_file)
+        return True
+    except Exception as e:
+        logging.warning(f"Directory non scrivibile (skip download): {path} -> {e}")
+        return False
+
+
 def ensure_shared_models_downloaded(shared_root: str):
     """
     Per ogni cartella in SHARED_MODELS_URLS:
-      - crea la cartella se non esiste
-      - scarica il modello se manca
+      - crea la cartella se non esiste (solo se scrivibile)
+      - scarica il modello se manca (solo se scrivibile)
+    Se la root è in sola lettura, salta i download senza crashare.
     """
     if not shared_root:
         return
 
+    shared_root = os.path.abspath(shared_root)
+
+    # Se la root non è scrivibile, salta TUTTI i download (ma ComfyUI potrà comunque leggere i modelli)
+    if not _is_writable_directory(shared_root):
+        logging.info(f"Shared root in sola lettura, download disabilitato: {shared_root}")
+        return
+
     for folder_name, entries in SHARED_MODELS_URLS.items():
         target_dir = os.path.join(shared_root, folder_name)
-        os.makedirs(target_dir, exist_ok=True)
+
+        # Prova a creare/validare la cartella; se non scrivibile, skip solo quella cartella
+        if not _is_writable_directory(target_dir):
+            logging.info(f"Cartella modelli non scrivibile, skip download per '{folder_name}': {target_dir}")
+            continue
 
         for url, filename in _normalize_model_entries(entries):
             dest_path = os.path.join(target_dir, filename)
@@ -221,25 +258,29 @@ def ensure_shared_models_downloaded(shared_root: str):
 
 def apply_shared_model_paths():
     """
-    Registra una cartella condivisa dei modelli e scarica automaticamente i modelli mancanti
-    da URL configurati in SHARED_MODELS_URLS.
-    Path configurabile via env var COMFYUI_SHARED_MODELS_DIR.
+    Registra più cartelle modelli condivise e scarica automaticamente i modelli mancanti
+    dalla cartella principale (prima root) usando SHARED_MODELS_URLS.
     """
-    shared_root = r"/vscode/workspace/models-default"  
+    model_roots = [
+        r"/vscode/workspace/models-default",   # cartella shared principale
+        r"/vscode/workspace/models",     # seconda cartella modelli (solo lettura/logica di scansione)
+    ]
 
+    # Filtra eventuali valori vuoti
+    model_roots = [os.path.abspath(p) for p in model_roots if p]
 
-    if not shared_root:
+    if not model_roots:
         return
 
-    shared_root = os.path.abspath(shared_root)
-    os.makedirs(shared_root, exist_ok=True)
+    # Crea le root (se vuoi che esistano). Se una non esiste, ComfyUI leggerà solo quelle presenti.
+    for root in model_roots:
+        os.makedirs(root, exist_ok=True)
+        logging.info(f"Using models root: {root}")
 
-    logging.info(f"Using shared models directory: {shared_root}")
+    # Scarica modelli mancanti SOLO nella prima root (quella principale)
+    # così non alteri la seconda cartella
+    ensure_shared_models_downloaded(model_roots[0])
 
-    # Scarica modelli mancanti PRIMA di registrare i path
-    ensure_shared_models_downloaded(shared_root)
-
-    # Mappa cartella -> tipo modello ComfyUI
     model_dirs = {
         "checkpoints": "checkpoints",
         "loras": "loras",
@@ -258,12 +299,13 @@ def apply_shared_model_paths():
         "text_encoders": "text_encoders",
     }
 
-    for model_type, subdir in model_dirs.items():
-        p = os.path.join(shared_root, subdir)
-        if os.path.isdir(p):
-            folder_paths.add_model_folder_path(model_type, p)
-            logging.info(f"Added shared model path [{model_type}] -> {p}")
-
+    # Aggiunge TUTTE le cartelle per ogni tipo modello
+    for root in model_roots:
+        for model_type, subdir in model_dirs.items():
+            p = os.path.join(root, subdir)
+            if os.path.isdir(p):
+                folder_paths.add_model_folder_path(model_type, p)
+                logging.info(f"Added model path [{model_type}] -> {p}")
 
 def apply_custom_paths():
     # extra model paths
@@ -346,6 +388,7 @@ def execute_prestartup_script():
             logging.info("{:6.1f} seconds{}: {}".format(n[0], import_message, n[1]))
         logging.info("")
 
+
 apply_custom_paths()
 execute_prestartup_script()
 
@@ -398,6 +441,7 @@ import comfy.model_management
 import comfyui_version
 import app.logger
 import hook_breaker_ac10a0
+
 
 def cuda_malloc_warning():
     device = comfy.model_management.get_torch_device()
@@ -488,6 +532,7 @@ async def run(server_instance, address='', port=8188, verbose=True, call_on_star
         server_instance.start_multi_address(addresses, call_on_start, verbose), server_instance.publish_loop()
     )
 
+
 def hijack_progress(server_instance):
     def hook(value, total, preview_image, prompt_id=None, node_id=None):
         executing_context = get_executing_context()
@@ -532,7 +577,10 @@ def setup_database():
         if dependencies_available():
             init_db()
     except Exception as e:
-        logging.error(f"Failed to initialize database. Please ensure you have installed the latest requirements. If the error persists, please report this as in future the database will be required: {e}")
+        logging.error(
+            f"Failed to initialize database. Please ensure you have installed the latest requirements. "
+            f"If the error persists, please report this as in future the database will be required: {e}"
+        )
 
 
 def start_comfyui(asyncio_loop=None):
