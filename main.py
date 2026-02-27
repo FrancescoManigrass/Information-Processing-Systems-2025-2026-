@@ -4,34 +4,157 @@ import subprocess
 
 
 extra_packages = [
-    # "requests",
+     "requests",
     "PyYAML",  # <-- il pacchetto pip corretto per import yaml
+    "tqdm",
 ]
 
 SHARED_MODELS_URLS = {
+    # =========================
+    # CHECKPOINTS (facili / base)
+    # =========================
     "checkpoints": [
-         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
+        # SD1.5 base (ottimo per template base text2img/img2img)
+        {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
+
+        # SD2 inpainting (template inpaint classici)
+        {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
+
+        # SDXL base / refiner / turbo
+        {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
+        {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
+        {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
+
+        # FLUX FP8 "easy checkpoint" (molto utili per template/esperimenti FLUX senza setup completo)
+        {"url": "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
     ],
-    "loras": [
-        # "https://example.com/some_lora.safetensors",
+
+    # =========================
+    # DIFFUSION MODELS (Qwen / Wan / Hunyuan / FLUX advanced)
+    # =========================
+    "diffusion_models": [
+        # Qwen Image / Edit (template Qwen nativi)
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors", "filename": "qwen_image_fp8_e4m3fn.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors", "filename": "qwen_image_distill_full_fp8_e4m3fn.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_fp8_e4m3fn.safetensors", "filename": "qwen_image_edit_fp8_e4m3fn.safetensors"},
+
+        # Wan 2.1 (video native templates)
+        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors", "filename": "wan2.1_t2v_1.3B_fp16.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_480p_14B_fp16.safetensors", "filename": "wan2.1_i2v_480p_14B_fp16.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_720p_14B_fp16.safetensors", "filename": "wan2.1_i2v_720p_14B_fp16.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_vace_14B_fp16.safetensors", "filename": "wan2.1_vace_14B_fp16.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_fun_camera_v1.1_1.3B_bf16.safetensors", "filename": "wan2.1_fun_camera_v1.1_1.3B_bf16.safetensors"},
+
+        # Hunyuan Video (video native templates)
+        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors", "filename": "hunyuan_video_t2v_720p_bf16.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_image_to_video_720p_bf16.safetensors", "filename": "hunyuan_video_image_to_video_720p_bf16.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors", "filename": "hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors"},
+
+        # FLUX advanced (gated / opzionali)
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev/resolve/main/flux1-fill-dev.safetensors", "filename": "flux1-fill-dev.safetensors"},
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/resolve/main/flux1-kontext-dev.safetensors", "filename": "flux1-kontext-dev.safetensors"},
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Canny-dev/resolve/main/flux1-canny-dev.safetensors", "filename": "flux1-canny-dev.safetensors"},
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Depth-dev/resolve/main/flux1-depth-dev.safetensors", "filename": "flux1-depth-dev.safetensors"},
     ],
+
+    # =========================
+    # TEXT ENCODERS
+    # =========================
+    "text_encoders": [
+        # FLUX shared text encoders
+        {"url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors", "filename": "clip_l.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn_scaled.safetensors", "filename": "t5xxl_fp8_e4m3fn_scaled.safetensors"},
+        # opzionale qualità / RAM alta:
+        # {"url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors", "filename": "t5xxl_fp16.safetensors"},
+
+        # Qwen shared encoder
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "filename": "qwen_2.5_vl_7b_fp8_scaled.safetensors"},
+
+        # Wan 2.1 shared encoder (scegline uno; fp8 è più leggero)
+        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors?download=true", "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors"},
+        # opzionale fp16:
+        # {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors?download=true", "filename": "umt5_xxl_fp16.safetensors"},
+
+        # Hunyuan shared text encoders
+        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/clip_l.safetensors?download=true", "filename": "clip_l_hunyuan.safetensors"},  # rinomina se vuoi evitare collisione con clip_l FLUX
+        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors?download=true", "filename": "llava_llama3_fp8_scaled.safetensors"},
+    ],
+
+    # =========================
+    # VAE
+    # =========================
     "vae": [
-        # "https://example.com/some_vae.safetensors",
+        # FLUX VAE (ae.safetensors)
+        {"url": "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/vae/ae.safetensors", "filename": "ae.safetensors"},
+
+        # Qwen shared VAE
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
+
+        # Wan shared VAE
+        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors?download=true", "filename": "wan_2.1_vae.safetensors"},
+
+        # Hunyuan shared VAE
+        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors?download=true", "filename": "hunyuan_video_vae_bf16.safetensors"},
     ],
+
+    # =========================
+    # CLIP VISION
+    # =========================
+    "clip_vision": [
+        # Wan I2V
+        {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
+
+        # Hunyuan I2V
+        {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
+
+        # FLUX Redux
+        {"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
+    ],
+
+    # =========================
+    # LORAS
+    # =========================
+    "loras": [
+        # Qwen accelerazioni (opzionali ma utilissime)
+        {"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-8steps-V1.0.safetensors"},
+        {"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-4steps-V1.0.safetensors"},
+
+        # FLUX Control LoRA (opzionali)
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Canny-dev-lora/resolve/main/flux1-canny-dev-lora.safetensors", "filename": "flux1-canny-dev-lora.safetensors"},
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Depth-dev-lora/resolve/main/flux1-depth-dev-lora.safetensors", "filename": "flux1-depth-dev-lora.safetensors"},
+    ],
+
+    # =========================
+    # STYLE MODELS
+    # =========================
+    "style_models": [
+        # FLUX Redux (opzionale)
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev/resolve/main/flux1-redux-dev.safetensors", "filename": "flux1-redux-dev.safetensors"},
+    ],
+
+    # =========================
+    # CONTROLNET (opzionale, per template FLUX/Qwen control)
+    # =========================
+    "controlnet": [
+        # Qwen union LoRA/control structures (se usi i template control Qwen)
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
+        # Nota: alcuni template Qwen usano anche patch models in models/model_patches (non supportati dal tuo dict attuale)
+    ],
+
+    # cartelle lasciate vuote
     "clip": [],
-    "diffusion_models": [],
     "embeddings": [],
-    "controlnet": [],
     "upscale_models": [],
-    "clip_vision": [],
-    "style_models": [],
     "gligen": [],
     "hypernetworks": [],
     "vae_approx": [],
-    "unet": [],
-    "text_encoders": [],
+    "unet": [
+        # FLUX schnell full (opzionale/gated; alcune guide/examples lo mettono in unet)
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors", "filename": "flux1-schnell.safetensors"},
+    ],
 }
-
 
 
 def auto_install_requirements():
@@ -114,6 +237,7 @@ from comfy_api import feature_flags
 import urllib.request
 import urllib.parse
 import urllib.error
+from tqdm import tqdm
 
 if __name__ == "__main__":
     # NOTE: These do not do anything on core ComfyUI, they are for custom nodes.
@@ -123,25 +247,6 @@ if __name__ == "__main__":
 setup_logger(log_level=args.verbose, use_stdout=args.log_stdout)
 
 
-# ============================================================
-# CONFIGURAZIONE MODELLI CONDIVISI + DOWNLOAD AUTOMATICO
-# ============================================================
-# Puoi aggiungere URL per cartella qui sotto.
-# Formati supportati:
-# 1) stringa URL (il filename viene dedotto dall'URL)
-# 2) dict con {"url": "...", "filename": "..."} per forzare il nome file
-#
-# Esempio:
-# SHARED_MODELS_URLS = {
-#     "checkpoints": [
-#         {"url": "https://example.com/model.safetensors", "filename": "sdxl_base.safetensors"},
-#     ],
-#     "loras": [
-#         "https://example.com/my_lora.safetensors",
-#     ],
-# }
-
-
 def _infer_filename_from_url(url: str) -> str:
     parsed = urllib.parse.urlparse(url)
     filename = os.path.basename(parsed.path)
@@ -149,11 +254,11 @@ def _infer_filename_from_url(url: str) -> str:
         raise ValueError(f"Impossibile dedurre filename da URL: {url}")
     return filename
 
-
 def _download_if_missing(url: str, dest_path: str, timeout: int = 120):
     """
     Scarica il file solo se non esiste già.
     Scrive su .part e poi fa rename atomico.
+    Mostra una progress bar con tqdm.
     """
     if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
         logging.info(f"Model already present, skip download: {dest_path}")
@@ -168,14 +273,33 @@ def _download_if_missing(url: str, dest_path: str, timeout: int = 120):
             url,
             headers={"User-Agent": "ComfyUI-ModelBootstrap/1.0"}
         )
-        with urllib.request.urlopen(req, timeout=timeout) as response, open(tmp_path, "wb") as f:
-            while True:
-                chunk = response.read(1024 * 1024)  # 1MB
-                if not chunk:
-                    break
-                f.write(chunk)
+
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            # Prova a leggere la dimensione totale (se disponibile)
+            total_size = response.headers.get("Content-Length")
+            total_size = int(total_size) if total_size is not None else None
+
+            chunk_size = 1024 * 1024  # 1MB
+            filename = os.path.basename(dest_path)
+
+            with open(tmp_path, "wb") as f, tqdm(
+                total=total_size,
+                unit="B",
+                unit_scale=True,
+                unit_divisor=1024,
+                desc=filename,
+                leave=True
+            ) as pbar:
+                while True:
+                    chunk = response.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    pbar.update(len(chunk))
+
         os.replace(tmp_path, dest_path)
         logging.info(f"Download completed: {dest_path}")
+
     except Exception as e:
         try:
             if os.path.exists(tmp_path):
@@ -183,8 +307,6 @@ def _download_if_missing(url: str, dest_path: str, timeout: int = 120):
         except Exception:
             pass
         logging.error(f"Failed downloading model from {url} -> {dest_path}: {e}")
-
-
 def _normalize_model_entries(entries):
     """
     Normalizza elementi del tipo:
