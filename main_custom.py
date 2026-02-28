@@ -7,6 +7,8 @@ extra_packages = [
      "requests",
     "PyYAML",  # <-- il pacchetto pip corretto per import yaml
     "tqdm",
+    "comfy_aimdo",
+        "comfyui-frontend-package==1.39.19"
 ]
 
 SHARED_MODELS_URLS = {
@@ -503,288 +505,128 @@ def execute_prestartup_script():
 apply_custom_paths()
 execute_prestartup_script()
 
+# ===== WRAPPER STABILE PER COMFYUI (compatibile con update futuri) =====
+# Sostituisce tutto il blocco "# Main code" e il vecchio if __name__ == "__main__"
 
-# Main code
-import asyncio
-import shutil
-import threading
-import gc
+from pathlib import Path
+import runpy
+import logging
 
+# Mappa cartelle modelli (stessa logica dei tuoi path)
+MODEL_DIRS_MAP = {
+    "checkpoints": "checkpoints",
+    "loras": "loras",
+    "vae": "vae",
+    "clip": "clip",
+    "diffusion_models": "diffusion_models",
+    "embeddings": "embeddings",
+    "controlnet": "controlnet",
+    "upscale_models": "upscale_models",
+    "clip_vision": "clip_vision",
+    "style_models": "style_models",
+    "gligen": "gligen",
+    "hypernetworks": "hypernetworks",
+    "vae_approx": "vae_approx",
+    "unet": "unet",
+    "text_encoders": "text_encoders",
+}
 
-if os.name == "nt":
-    os.environ['MIMALLOC_PURGE_DELAY'] = '0'
+MODEL_ROOTS = [
+    "/vscode/workspace/models-default",  # principale (download qui)
+    "/vscode/workspace/models",          # secondaria (lettura/scansione)
+]
 
-if __name__ == "__main__":
-    if args.default_device is not None:
-        default_dev = args.default_device
-        devices = list(range(32))
-        devices.remove(default_dev)
-        devices.insert(0, default_dev)
-        devices = ','.join(map(str, devices))
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(devices)
-        os.environ['HIP_VISIBLE_DEVICES'] = str(devices)
-
-    if args.cuda_device is not None:
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
-        os.environ['HIP_VISIBLE_DEVICES'] = str(args.cuda_device)
-        logging.info("Set cuda device to: {}".format(args.cuda_device))
-
-    if args.oneapi_device_selector is not None:
-        os.environ['ONEAPI_DEVICE_SELECTOR'] = args.oneapi_device_selector
-        logging.info("Set oneapi device selector to: {}".format(args.oneapi_device_selector))
-
-    if args.deterministic:
-        if 'CUBLAS_WORKSPACE_CONFIG' not in os.environ:
-            os.environ['CUBLAS_WORKSPACE_CONFIG'] = ":4096:8"
-
-    import cuda_malloc
-
-if 'torch' in sys.modules:
-    logging.warning("WARNING: Potential Error in code: Torch already imported, torch should never be imported before this point.")
-
-import comfy.utils
-
-import execution
-import server
-from protocol import BinaryEventTypes
-import nodes
-import comfy.model_management
-import comfyui_version
-import app.logger
-import hook_breaker_ac10a0
-
-
-def cuda_malloc_warning():
-    device = comfy.model_management.get_torch_device()
-    device_name = comfy.model_management.get_torch_device_name(device)
-    cuda_malloc_warning = False
-    if "cudaMallocAsync" in device_name:
-        for b in cuda_malloc.blacklist:
-            if b in device_name:
-                cuda_malloc_warning = True
-        if cuda_malloc_warning:
-            logging.warning("\nWARNING: this card most likely does not support cuda-malloc, if you get \"CUDA error\" please run ComfyUI with: --disable-cuda-malloc\n")
-
-
-def prompt_worker(q, server_instance):
-    current_time: float = 0.0
-    cache_type = execution.CacheType.CLASSIC
-    if args.cache_lru > 0:
-        cache_type = execution.CacheType.LRU
-    elif args.cache_none:
-        cache_type = execution.CacheType.DEPENDENCY_AWARE
-
-    import inspect
-
-    kwargs = {"cache_type": cache_type}
-    sig = inspect.signature(execution.PromptExecutor)
-
-    # Compat vecchie versioni
-    if "cache_size" in sig.parameters:
-        kwargs["cache_size"] = args.cache_lru
-
-    # Compat nuove versioni (0.15.x+)
-    if "cache_args" in sig.parameters:
-        # minimo indispensabile per evitare il crash su self.cache_args["ram"]
-        kwargs["cache_args"] = {"ram": 0}
-
-    e = execution.PromptExecutor(server_instance, **kwargs)
-
-
-    last_gc_collect = 0
-    need_gc = False
-    gc_collect_interval = 10.0
-
-    while True:
-        timeout = 1000.0
-        if need_gc:
-            timeout = max(gc_collect_interval - (current_time - last_gc_collect), 0.0)
-
-        queue_item = q.get(timeout=timeout)
-        if queue_item is not None:
-            item, item_id = queue_item
-            execution_start_time = time.perf_counter()
-            prompt_id = item[1]
-            server_instance.last_prompt_id = prompt_id
-
-            e.execute(item[2], prompt_id, item[3], item[4])
-            need_gc = True
-            q.task_done(item_id,
-                        e.history_result,
-                        status=execution.PromptQueue.ExecutionStatus(
-                            status_str='success' if e.success else 'error',
-                            completed=e.success,
-                            messages=e.status_messages))
-            if server_instance.client_id is not None:
-                server_instance.send_sync("executing", {"node": None, "prompt_id": prompt_id}, server_instance.client_id)
-
-            current_time = time.perf_counter()
-            execution_time = current_time - execution_start_time
-
-            # Log Time in a more readable way after 10 minutes
-            if execution_time > 600:
-                execution_time = time.strftime("%H:%M:%S", time.gmtime(execution_time))
-                logging.info(f"Prompt executed in {execution_time}")
-            else:
-                logging.info("Prompt executed in {:.2f} seconds".format(execution_time))
-
-        flags = q.get_flags()
-        free_memory = flags.get("free_memory", False)
-
-        if flags.get("unload_models", free_memory):
-            comfy.model_management.unload_all_models()
-            need_gc = True
-            last_gc_collect = 0
-
-        if free_memory:
-            e.reset()
-            need_gc = True
-            last_gc_collect = 0
-
-        if need_gc:
-            current_time = time.perf_counter()
-            if (current_time - last_gc_collect) > gc_collect_interval:
-                gc.collect()
-                comfy.model_management.soft_empty_cache()
-                last_gc_collect = current_time
-                need_gc = False
-                hook_breaker_ac10a0.restore_functions()
-
-
-async def run(server_instance, address='', port=8188, verbose=True, call_on_start=None):
-    addresses = []
-    for addr in address.split(","):
-        addresses.append((addr, port))
-    await asyncio.gather(
-        server_instance.start_multi_address(addresses, call_on_start, verbose), server_instance.publish_loop()
-    )
-
-
-def hijack_progress(server_instance):
-    def hook(value, total, preview_image, prompt_id=None, node_id=None):
-        executing_context = get_executing_context()
-        if prompt_id is None and executing_context is not None:
-            prompt_id = executing_context.prompt_id
-        if node_id is None and executing_context is not None:
-            node_id = executing_context.node_id
-        comfy.model_management.throw_exception_if_processing_interrupted()
-        if prompt_id is None:
-            prompt_id = server_instance.last_prompt_id
-        if node_id is None:
-            node_id = server_instance.last_node_id
-        progress = {"value": value, "max": total, "prompt_id": prompt_id, "node": node_id}
-        get_progress_state().update_progress(node_id, value, total, preview_image)
-
-        server_instance.send_sync("progress", progress, server_instance.client_id)
-        if preview_image is not None:
-            # Only send old method if client doesn't support preview metadata
-            if not feature_flags.supports_feature(
-                server_instance.sockets_metadata,
-                server_instance.client_id,
-                "supports_preview_metadata",
-            ):
-                server_instance.send_sync(
-                    BinaryEventTypes.UNENCODED_PREVIEW_IMAGE,
-                    preview_image,
-                    server_instance.client_id,
-                )
-
-    comfy.utils.set_progress_bar_global_hook(hook)
-
-
-def cleanup_temp():
-    temp_dir = folder_paths.get_temp_directory()
-    if os.path.exists(temp_dir):
-        shutil.rmtree(temp_dir, ignore_errors=True)
-
-
-def setup_database():
+def _write_auto_extra_model_paths_yaml(config_path: str, model_roots: list[str]):
+    """
+    Genera un file extra_model_paths YAML che ComfyUI carica nativamente.
+    Questo evita di toccare folder_paths.add_model_folder_path nel core runtime.
+    """
     try:
-        from app.database.db import init_db, dependencies_available
-        if dependencies_available():
-            init_db()
+        import yaml  # PyYAML (già installato dal tuo bootstrap)
     except Exception as e:
-        logging.error(
-            f"Failed to initialize database. Please ensure you have installed the latest requirements. "
-            f"If the error persists, please report this as in future the database will be required: {e}"
-        )
+        raise RuntimeError(f"PyYAML non disponibile per generare extra_model_paths: {e}")
+
+    data = {}
+    for idx, root in enumerate(model_roots, start=1):
+        root = os.path.abspath(root)
+        entry_name = f"shared_models_{idx}"
+        entry = {"base_path": root}
+        entry.update(MODEL_DIRS_MAP)
+        data[entry_name] = entry
+
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    with open(config_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+
+    logging.info(f"[WRAPPER] Generated extra model paths config: {config_path}")
+    return config_path
 
 
-def start_comfyui(asyncio_loop=None):
+def _append_extra_model_paths_arg(config_path: str):
     """
-    Starts the ComfyUI server using the provided asyncio event loop or creates a new one.
-    Returns the event loop, server instance, and a function to start the server asynchronously.
+    Aggiunge il config auto ai parametri di avvio ComfyUI.
+    Non rimuove gli eventuali config già passati dall'utente.
     """
-    if args.temp_directory:
-        temp_dir = os.path.join(os.path.abspath(args.temp_directory), "temp")
-        logging.info(f"Setting temp directory to: {temp_dir}")
-        folder_paths.set_temp_directory(temp_dir)
-    cleanup_temp()
+    sys.argv.extend(["--extra-model-paths-config", config_path])
+    logging.info(f"[WRAPPER] Added CLI arg --extra-model-paths-config {config_path}")
 
-    if args.windows_standalone_build:
+
+def _preflight_custom_logic():
+    """
+    Esegue SOLO la tua logica custom stabile:
+    - install requirements
+    - env vars
+    - crea cartelle model roots
+    - download modelli mancanti nella root principale
+    - genera extra_model_paths.yaml auto
+    """
+    # logging base (semplice; il logger vero lo inizializza poi ComfyUI)
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    # 1) bootstrap pip / requirements (la tua logica)
+    auto_install_requirements()
+
+    # 2) env vars opzionali
+    os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+    os.environ.setdefault("DO_NOT_TRACK", "1")
+
+    # 3) prepara root modelli
+    model_roots = [os.path.abspath(p) for p in MODEL_ROOTS if p]
+    for root in model_roots:
         try:
-            import new_updater
-            new_updater.update_windows_updater()
-        except:
-            pass
+            os.makedirs(root, exist_ok=True)
+            logging.info(f"[WRAPPER] Using models root: {root}")
+        except Exception as e:
+            logging.warning(f"[WRAPPER] Cannot create models root {root}: {e}")
 
-    if not asyncio_loop:
-        asyncio_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(asyncio_loop)
-    prompt_server = server.PromptServer(asyncio_loop)
+    # 4) download modelli mancanti SOLO nella root principale (come fai già)
+    if model_roots:
+        ensure_shared_models_downloaded(model_roots[0])
 
-    hook_breaker_ac10a0.save_functions()
-    asyncio_loop.run_until_complete(nodes.init_extra_nodes(
-        init_custom_nodes=(not args.disable_all_custom_nodes) or len(args.whitelist_custom_nodes) > 0,
-        init_api_nodes=not args.disable_api_nodes
-    ))
-    hook_breaker_ac10a0.restore_functions()
+    # 5) genera config path nativo ComfyUI per le shared folders
+    auto_cfg = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "extra_model_paths.auto.yaml"
+    )
+    _write_auto_extra_model_paths_yaml(auto_cfg, model_roots)
 
-    cuda_malloc_warning()
-    setup_database()
+    # 6) passa il config auto al main.py ufficiale
+    _append_extra_model_paths_arg(auto_cfg)
 
-    prompt_server.add_routes()
-    hijack_progress(prompt_server)
 
-    threading.Thread(target=prompt_worker, daemon=True, args=(prompt_server.prompt_queue, prompt_server,)).start()
+def _launch_official_comfyui_main():
+    """
+    Avvia il main.py UFFICIALE di ComfyUI.
+    Questo mantiene compatibilità con prompt worker / cache / websocket / Assets.
+    """
+    comfy_main = Path(__file__).resolve().with_name("main.py")
+    if not comfy_main.is_file():
+        raise FileNotFoundError(f"main.py ufficiale non trovato: {comfy_main}")
 
-    if args.quick_test_for_ci:
-        exit(0)
-
-    os.makedirs(folder_paths.get_temp_directory(), exist_ok=True)
-    call_on_start = None
-    if args.auto_launch:
-        def startup_server(scheme, address, port):
-            import webbrowser
-            if os.name == 'nt' and address == '0.0.0.0':
-                address = '127.0.0.1'
-            if ':' in address:
-                address = "[{}]".format(address)
-            webbrowser.open(f"{scheme}://{address}:{port}")
-        call_on_start = startup_server
-
-    async def start_all():
-        await prompt_server.setup()
-        await run(prompt_server, address=args.listen, port=args.port, verbose=not args.dont_print_server, call_on_start=call_on_start)
-
-    # Returning these so that other code can integrate with the ComfyUI loop and server
-    return asyncio_loop, prompt_server, start_all
+    logging.info(f"[WRAPPER] Launching official ComfyUI main: {comfy_main}")
+    runpy.run_path(str(comfy_main), run_name="__main__")
 
 
 if __name__ == "__main__":
-    # Running directly, just start ComfyUI.
-    logging.info("Python version: {}".format(sys.version))
-    logging.info("ComfyUI version: {}".format(comfyui_version.__version__))
-
-    if sys.version_info.major == 3 and sys.version_info.minor < 10:
-        logging.warning("WARNING: You are using a python version older than 3.10, please upgrade to a newer one. 3.12 and above is recommended.")
-
-    event_loop, _, start_all_func = start_comfyui()
-    try:
-        x = start_all_func()
-        app.logger.print_startup_warnings()
-        event_loop.run_until_complete(x)
-    except KeyboardInterrupt:
-        logging.info("\nStopped server")
-
-    cleanup_temp()
+    _preflight_custom_logic()
+    _launch_official_comfyui_main()
