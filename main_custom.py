@@ -83,7 +83,11 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
         {"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors?download=true", "filename": "wan_2.1_vae.safetensors"},
         {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors?download=true", "filename": "hunyuan_video_vae_bf16.safetensors"},
+         {"url": "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors", "filename": "flux2-vae.safetensors"},
     ],
+
+
+
 
     # =========================
     # CLIP VISION
@@ -570,7 +574,23 @@ def prompt_worker(q, server_instance):
     elif args.cache_none:
         cache_type = execution.CacheType.DEPENDENCY_AWARE
 
-    e = execution.PromptExecutor(server_instance, cache_type=cache_type, cache_size=args.cache_lru)
+    import inspect
+
+    kwargs = {"cache_type": cache_type}
+    sig = inspect.signature(execution.PromptExecutor)
+
+    # Compat vecchie versioni
+    if "cache_size" in sig.parameters:
+        kwargs["cache_size"] = args.cache_lru
+
+    # Compat nuove versioni (0.15.x+)
+    if "cache_args" in sig.parameters:
+        # minimo indispensabile per evitare il crash su self.cache_args["ram"]
+        kwargs["cache_args"] = {"ram": 0}
+
+    e = execution.PromptExecutor(server_instance, **kwargs)
+
+
     last_gc_collect = 0
     need_gc = False
     gc_collect_interval = 10.0
