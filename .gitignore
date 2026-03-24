@@ -1,0 +1,11 @@
+# Ignore image assets anywhere in the repository
+**/*.[jJ][pP][gG]
+**/*.[jJ][pP][eE][gG]
+**/*.[pP][nN][gG]
+**/*.[gG][iI][fF]
+**/*.[bB][mM][pP]
+**/*.[wW][eE][bB][pP]
+**/*.[tT][iI][fF]
+**/*.[tT][iI][fF][fF]
+**/*.[sS][vV][gG]
+**/*.[tT][xX][tT]
