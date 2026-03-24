@@ -1,29 +1,14 @@
 import os
 import sys
 import subprocess
-import re
 import shutil
 import ctypes.util
 import tempfile
-import time
 import urllib.request
 import venv
 import glob
 import types
 import colorsys
-
-try:
-    from importlib import metadata as importlib_metadata
-except Exception:
-    importlib_metadata = None
-
-try:
-    from packaging.requirements import Requirement
-except Exception:
-    Requirement = None
-
-# Evita prompt interattivi (es. pip uninstall "Proceed (Y/n)?") in ambienti non TTY.
-os.environ.setdefault("PIP_NO_INPUT", "1")
 
 
 COMFYUI_MANAGER_REPO_URL = "https://github.com/Comfy-Org/ComfyUI-Manager.git"
@@ -38,25 +23,7 @@ OPENCV_HEADLESS_PACKAGE = "opencv-python-headless"
 # NOTE: `diffusers` recenti importano `Dinov2WithRegistersConfig` da `transformers`.
 # Alcune versioni/build di transformers non lo espongono: o si aggiorna transformers,
 # oppure si applica una compat patch runtime (vedi sotto).
-TRANSFORMERS_TARGET_VERSION = os.environ.get("COMFYUI_TRANSFORMERS_VERSION", "4.44.0")
-ACCELERATE_TARGET_VERSION = os.environ.get("COMFYUI_ACCELERATE_VERSION", "1.6.0")
-TRANSFORMERS_TARGET_VERSION = os.environ.get("COMFYUI_TRANSFORMERS_VERSION", "4.54.1")
-DIFFUSERS_TARGET_VERSION = os.environ.get("COMFYUI_DIFFUSERS_VERSION", "0.32.1")
-HUGGINGFACE_HUB_TARGET_VERSION = os.environ.get("COMFYUI_HUGGINGFACE_HUB_VERSION", "0.34.3")
-SAFETENSORS_TARGET_VERSION = os.environ.get("COMFYUI_SAFETENSORS_VERSION", "0.4.5")
-PYTORCH_TARGET_VERSION = os.environ.get("COMFYUI_TORCH_VERSION", "2.9.1")
-TORCHVISION_TARGET_VERSION = os.environ.get("COMFYUI_TORCHVISION_VERSION", "0.24.1")
-TORCHAUDIO_TARGET_VERSION = os.environ.get("COMFYUI_TORCHAUDIO_VERSION", "2.9.1")
-PYTORCH_WHEEL_INDEX_URL = os.environ.get("COMFYUI_PYTORCH_INDEX_URL", "").strip()
-
-FLUXTRAINER_FORCE_PACKAGES = [
-    f"accelerate=={ACCELERATE_TARGET_VERSION}",
-    f"transformers=={TRANSFORMERS_TARGET_VERSION}",
-    f"diffusers[torch]=={DIFFUSERS_TARGET_VERSION}",
-    f"huggingface-hub=={HUGGINGFACE_HUB_TARGET_VERSION}",
-    f"safetensors=={SAFETENSORS_TARGET_VERSION}",
-    "sentencepiece>=0.2.0",
-]
+TRANSFORMERS_TARGET_VERSION = os.environ.get("COMFYUI_TRANSFORMERS_VERSION", "4.47.0")
 
 
 extra_packages = [
@@ -64,19 +31,11 @@ extra_packages = [
     "PyYAML",  # <-- il pacchetto pip corretto per import yaml
     "tqdm",
     "comfy_aimdo",
-          "diffusers>=0.25.0",
+        "comfyui-frontend-package==1.39.19",
     f"transformers=={TRANSFORMERS_TARGET_VERSION}"
         #        "transformers==4.4.1.2"
 
 ]
-
-
-_AUTO_REQUIREMENTS_ALREADY_RAN = False
-
-
-def _bootstrap_trace(message):
-    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[BOOTSTRAP][TRACE {timestamp}] {message}", flush=True)
 
 SHARED_MODELS_URLS = {
     # =========================
@@ -90,19 +49,17 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
 
-   ],
+        # >10GB circa (FP8 FLUX)
+        # {"url": "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
+    ],
 
     # =========================
     # DIFFUSION MODELS
     # =========================
     "diffusion_models": [
         # FLUX Trainer (set richiesto)
-        {"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
-{"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
-
-
-
-
+        {"url": "https://huggingface.co/lllyasviel/flux1-krea-dev/resolve/main/flux1-krea-dev.safetensors", "filename": "flux1-krea-dev.safetensors"},
 
         # >10GB circa (Qwen Image fp8)
         # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors", "filename": "qwen_image_fp8_e4m3fn.safetensors"},
@@ -126,10 +83,8 @@ SHARED_MODELS_URLS = {
         # {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors", "filename": "hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors"},
 
         # FLUX full (gated/opzionali, pesanti)
-      # >10GB circa (FP8 FLUX)
-        {"url": "https://huggingface.co/lllyasviel/flux1_dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
-   
         # >10GB circa
+        # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev/resolve/main/flux1-fill-dev.safetensors", "filename": "flux1-fill-dev.safetensors"},
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/resolve/main/flux1-kontext-dev.safetensors", "filename": "flux1-kontext-dev.safetensors"},
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Canny-dev/resolve/main/flux1-canny-dev.safetensors", "filename": "flux1-canny-dev.safetensors"},
@@ -225,159 +180,6 @@ SHARED_MODELS_URLS = {
 }
 
 
-def _find_fluxtrainer_requirements(custom_nodes_dir):
-    explicit_names = (
-        "comfyui-fluxtrainer",
-        "comfyui-flux-trainer",
-        "comfyui_fluxtrainer",
-        "comfyui_flux_trainer",
-        "fluxtrainer",
-        "flux-trainer",
-        "flux_trainer",
-    )
-
-    if not os.path.isdir(custom_nodes_dir):
-        return None
-
-    for entry_name in os.listdir(custom_nodes_dir):
-        if entry_name.endswith(".disabled"):
-            continue
-
-        full_path = os.path.join(custom_nodes_dir, entry_name)
-        if not os.path.isdir(full_path):
-            continue
-
-        normalized = entry_name.strip().lower()
-        if (
-            normalized in explicit_names
-            or "fluxtrainer" in normalized
-            or "flux-trainer" in normalized
-            or "flux_trainer" in normalized
-        ):
-            req = os.path.join(full_path, "requirements.txt")
-            if os.path.isfile(req):
-                return req
-
-    return None
-
-
-def _install_fluxtrainer_runtime_stack(custom_nodes_dir):
-    flux_req = _find_fluxtrainer_requirements(custom_nodes_dir)
-    if not flux_req:
-        print("[BOOTSTRAP] FluxTrainer requirements not found, skip final reconciliation")
-        return False
-
-    changed_any = False
-
-    if _requirements_file_needs_install(flux_req):
-        print(f"[BOOTSTRAP] Re-installing FluxTrainer requirements as final step: {flux_req}")
-        subprocess.check_call(_get_bootstrap_install_cmd(
-            "--disable-pip-version-check",
-            "--upgrade",
-            "--upgrade-strategy", "eager",
-            "-r",
-            flux_req,
-        ))
-        changed_any = True
-    else:
-        print(f"[BOOTSTRAP] FluxTrainer requirements already satisfied, skip: {flux_req}")
-
-    pending_fluxtrainer_packages = _get_pending_requirements(FLUXTRAINER_FORCE_PACKAGES)
-    if pending_fluxtrainer_packages:
-        print("[BOOTSTRAP] Enforcing FluxTrainer core package versions")
-        subprocess.check_call(_get_bootstrap_install_cmd(
-            "--disable-pip-version-check",
-            "--upgrade",
-            "--upgrade-strategy", "eager",
-            *pending_fluxtrainer_packages,
-        ))
-        changed_any = True
-    else:
-        print("[BOOTSTRAP] FluxTrainer core packages already aligned, skip")
-
-    return changed_any
-
-
-def _normalize_requirement_entry(requirement):
-    if requirement is None:
-        return ""
-
-    normalized = str(requirement).strip()
-    if not normalized or normalized.startswith("#"):
-        return ""
-
-    comment_index = normalized.find(" #")
-    if comment_index != -1:
-        normalized = normalized[:comment_index].rstrip()
-
-    return normalized
-
-
-def _is_requirement_satisfied(requirement):
-    requirement = _normalize_requirement_entry(requirement)
-    if not requirement or Requirement is None or importlib_metadata is None:
-        return False
-
-    if requirement.startswith(("-", ".", "/")) or requirement.startswith(("git+", "http://", "https://")):
-        return False
-
-    try:
-        parsed_requirement = Requirement(requirement)
-    except Exception:
-        return False
-
-    if parsed_requirement.marker and not parsed_requirement.marker.evaluate():
-        return True
-
-    if parsed_requirement.url or parsed_requirement.extras:
-        return False
-
-    try:
-        installed_version = importlib_metadata.version(parsed_requirement.name)
-    except Exception:
-        return False
-
-    if parsed_requirement.specifier and installed_version not in parsed_requirement.specifier:
-        return False
-
-    return True
-
-
-def _get_pending_requirements(requirements):
-    pending = []
-    seen = set()
-
-    for requirement in requirements:
-        normalized = _normalize_requirement_entry(requirement)
-        if not normalized or normalized in seen:
-            continue
-        seen.add(normalized)
-
-        if not _is_requirement_satisfied(normalized):
-            pending.append(normalized)
-
-    return pending
-
-
-def _requirements_file_needs_install(requirements_path):
-    try:
-        with open(requirements_path, "r", encoding="utf-8") as handle:
-            for raw_line in handle:
-                normalized = _normalize_requirement_entry(raw_line)
-                if not normalized:
-                    continue
-
-                if normalized.startswith("-"):
-                    return True
-
-                if not _is_requirement_satisfied(normalized):
-                    return True
-    except Exception as exc:
-        print(f"[BOOTSTRAP] Unable to inspect requirements file {requirements_path}, fallback to install: {exc}")
-        return True
-
-    return False
-
 def _run_cmd_quiet(command):
     try:
         subprocess.check_call(command)
@@ -387,163 +189,12 @@ def _run_cmd_quiet(command):
         return False
 
 
-def _get_ollama_base_url():
-    base_url = (
-        os.environ.get("COMFYUI_OLLAMA_BASE_URL", "").strip()
-        or os.environ.get("OLLAMA_HOST", "").strip()
-        or "http://127.0.0.1:11434"
-    )
-    if "://" not in base_url:
-        base_url = f"http://{base_url}"
-    return base_url.rstrip("/")
-
-
-def _get_bootstrap_ollama_models():
-    raw_models = os.environ.get("COMFYUI_OLLAMA_MODELS", "llama3.2:latest")
-    normalized = raw_models.replace("\n", ",").replace(";", ",")
-    models = []
-    seen = set()
-    for item in normalized.split(","):
-        model = item.strip()
-        if not model or model in seen:
-            continue
-        seen.add(model)
-        models.append(model)
-    return models
-
-
-def _ollama_api_request(path, payload=None, timeout=10):
-    import json
-
-    url = f"{_get_ollama_base_url()}{path}"
-    data = None
-    headers = {}
-    method = "GET"
-
-    if payload is not None:
-        data = json.dumps(payload).encode("utf-8")
-        headers["Content-Type"] = "application/json"
-        method = "POST"
-
-    request = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        content = response.read()
-
-    if not content:
-        return {}
-
-    return json.loads(content.decode("utf-8"))
-
-
-def _is_ollama_server_reachable(timeout=3):
-    try:
-        _ollama_api_request("/api/tags", timeout=timeout)
-        return True
-    except Exception:
-        return False
-
-
-def _is_local_ollama_base_url():
-    from urllib.parse import urlparse
-
-    parsed = urlparse(_get_ollama_base_url())
-    hostname = (parsed.hostname or "").strip().lower()
-    return hostname in {"127.0.0.1", "localhost", "0.0.0.0", "::1"}
-
-
-def _ensure_ollama_server_running():
-    if _is_ollama_server_reachable():
-        return True
-
-    if not shutil.which("ollama"):
-        return False
-
-    if not _is_local_ollama_base_url():
-        print(f"[BOOTSTRAP] Ollama server not reachable at {_get_ollama_base_url()}, skip local auto-start")
-        return False
-
-    try:
-        print(f"[BOOTSTRAP] Starting Ollama server in background on {_get_ollama_base_url()}")
-        subprocess.Popen(
-            ["ollama", "serve"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
-        )
-    except Exception as exc:
-        print(f"[BOOTSTRAP] Unable to start Ollama server: {exc}")
-        return False
-
-    deadline = time.time() + 20
-    while time.time() < deadline:
-        if _is_ollama_server_reachable(timeout=2):
-            print("[BOOTSTRAP] Ollama server is reachable")
-            return True
-        time.sleep(1)
-
-    print(f"[BOOTSTRAP] Ollama server did not become reachable at {_get_ollama_base_url()}")
-    return False
-
-
-def _get_installed_ollama_models():
-    payload = _ollama_api_request("/api/tags", timeout=10)
-    models = set()
-    for item in payload.get("models", []):
-        if not isinstance(item, dict):
-            continue
-        name = (item.get("name") or item.get("model") or "").strip()
-        if name:
-            models.add(name)
-    return models
-
-
-def _ensure_ollama_models_available():
-    if os.environ.get("COMFYUI_OLLAMA_AUTO_PULL", "1") != "1":
-        return
-
-    models = _get_bootstrap_ollama_models()
-    if not models:
-        return
-
-    if not _ensure_ollama_server_running():
-        print("[BOOTSTRAP] Ollama model pull skipped: server is not reachable")
-        return
-
-    try:
-        installed_models = _get_installed_ollama_models()
-    except Exception as exc:
-        print(f"[BOOTSTRAP] Unable to list Ollama models: {exc}")
-        return
-
-    for model in models:
-        if model in installed_models:
-            print(f"[BOOTSTRAP] Ollama model already available: {model}")
-            continue
-
-        try:
-            print(f"[BOOTSTRAP] Pulling Ollama model: {model}")
-            _ollama_api_request(
-                "/api/pull",
-                payload={"model": model, "stream": False},
-                timeout=3600,
-            )
-            print(f"[BOOTSTRAP] Ollama model ready: {model}")
-        except Exception as exc:
-            print(f"[BOOTSTRAP] Ollama model pull failed for {model}: {exc}")
-
-
 def _ensure_ollama_installed():
     if os.environ.get("COMFYUI_AUTO_INSTALL_OLLAMA", "1") != "1":
         return
 
     if shutil.which("ollama"):
         print("[BOOTSTRAP] Ollama already installed, skip")
-        _ensure_ollama_models_available()
-        return
-
-    geteuid = getattr(os, "geteuid", None)
-    if callable(geteuid) and geteuid() != 0:
-        print("[BOOTSTRAP] Ollama auto-install skipped: root privileges are required")
         return
 
     try:
@@ -554,7 +205,6 @@ def _ensure_ollama_installed():
             "curl -fsSL https://ollama.com/install.sh | sh",
         ])
         print("[BOOTSTRAP] Ollama installation completed")
-        _ensure_ollama_models_available()
     except Exception as exc:
         print(f"[BOOTSTRAP] Ollama installation failed: {exc}")
 
@@ -648,271 +298,8 @@ def _ensure_current_python_package_manager():
         ) from exc
 
 
-def _force_comfyui_cpu_mode(reason):
-    if os.environ.get("COMFYUI_CPU_FALLBACK_ACTIVE") == "1":
-        return
-
-    os.environ["COMFYUI_CPU_FALLBACK_ACTIVE"] = "1"
-    os.environ["CUDA_VISIBLE_DEVICES"] = ""
-    os.environ["HIP_VISIBLE_DEVICES"] = ""
-
-    if "--cpu" not in sys.argv:
-        sys.argv.append("--cpu")
-
-    print(f"[BOOTSTRAP] Forcing ComfyUI CPU mode: {reason}")
-
-
-def _cuda_failure_requires_cpu_fallback(message):
-    if not message:
-        return False
-
-    lowered = message.lower()
-    indicators = (
-        "nvidia driver on your system is too old",
-        "cuda initialization",
-        "found no nvidia driver",
-        "torch not compiled with cuda enabled",
-        "cuda driver version is insufficient",
-        "torch._c._cuda_init",
-    )
-    return any(indicator in lowered for indicator in indicators)
-
-
-def _run_torch_cuda_probe(python_executable=None, timeout=45):
-    python_executable = python_executable or sys.executable
-
-    try:
-        probe = subprocess.run(
-            [
-                python_executable,
-                "-c",
-                (
-                    "import torch\n"
-                    "if not hasattr(torch, 'cuda'):\n"
-                    "    raise SystemExit(0)\n"
-                    "try:\n"
-                    "    torch.cuda.current_device()\n"
-                    "except Exception as exc:\n"
-                    "    print(exc)\n"
-                    "    raise\n"
-                ),
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=timeout,
-        )
-    except Exception as exc:
-        return False, f"CUDA probe skipped for {python_executable}: {exc}"
-
-    output = (probe.stdout or "").strip()
-    return probe.returncode == 0, output
-
-
-def _parse_version_tuple(raw_version):
-    if not raw_version:
-        return ()
-
-    numbers = re.findall(r"\d+", str(raw_version))
-    return tuple(int(part) for part in numbers[:3])
-
-
-def _probe_nvidia_smi_cuda_version():
-    try:
-        output = subprocess.check_output(
-            ["nvidia-smi"],
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=10,
-        )
-    except Exception:
-        return ""
-
-    match = re.search(r"CUDA Version:\s*([0-9]+(?:\.[0-9]+)?)", output)
-    return match.group(1) if match else ""
-
-
-def _get_compatible_pytorch_index_url():
-    if PYTORCH_WHEEL_INDEX_URL:
-        return PYTORCH_WHEEL_INDEX_URL
-
-    cuda_version = _probe_nvidia_smi_cuda_version()
-    version_tuple = _parse_version_tuple(cuda_version)
-    if not version_tuple:
-        return ""
-
-    if version_tuple >= (13, 0):
-        return "https://download.pytorch.org/whl/cu130"
-    if version_tuple >= (12, 8):
-        return "https://download.pytorch.org/whl/cu128"
-    if version_tuple >= (12, 6):
-        return "https://download.pytorch.org/whl/cu126"
-    if version_tuple >= (12, 4):
-        return "https://download.pytorch.org/whl/cu124"
-    if version_tuple >= (12, 1):
-        return "https://download.pytorch.org/whl/cu121"
-    if version_tuple >= (11, 8):
-        return "https://download.pytorch.org/whl/cu118"
-
-    return ""
-
-
-def _inspect_torch_runtime(python_executable=None, timeout=45):
-    python_executable = python_executable or sys.executable
-    script = (
-        "import json\n"
-        "data = {}\n"
-        "try:\n"
-        "    import torch\n"
-        "    data['torch_version'] = getattr(torch, '__version__', '')\n"
-        "    data['torch_cuda_version'] = getattr(getattr(torch, 'version', None), 'cuda', '')\n"
-        "    try:\n"
-        "        data['cuda_available'] = bool(torch.cuda.is_available())\n"
-        "    except Exception as exc:\n"
-        "        data['cuda_available'] = False\n"
-        "        data['cuda_is_available_error'] = str(exc)\n"
-        "    try:\n"
-        "        torch.cuda.current_device()\n"
-        "        data['cuda_current_device_ok'] = True\n"
-        "    except Exception as exc:\n"
-        "        data['cuda_current_device_ok'] = False\n"
-        "        data['cuda_error'] = str(exc)\n"
-        "except Exception as exc:\n"
-        "    data['import_error'] = str(exc)\n"
-        "print(json.dumps(data))\n"
-    )
-
-    try:
-        probe = subprocess.run(
-            [python_executable, "-c", script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=timeout,
-        )
-    except Exception as exc:
-        return {"probe_error": str(exc)}
-
-    output = (probe.stdout or "").strip()
-    if probe.returncode != 0:
-        return {"probe_error": output or f"torch inspect failed with exit code {probe.returncode}"}
-
-    try:
-        import json
-
-        data = json.loads(output) if output else {}
-    except Exception:
-        data = {"probe_error": output}
-
-    if not isinstance(data, dict):
-        data = {"probe_error": output}
-
-    return data
-
-
-def _ensure_compatible_pytorch_runtime():
-    if os.environ.get("COMFYUI_AUTO_INSTALL_PYTORCH_COMPAT", "1") != "1":
-        return False
-
-    index_url = _get_compatible_pytorch_index_url()
-    if not index_url:
-        _bootstrap_trace("pytorch compat: no compatible PyTorch wheel index detected, skip")
-        return False
-
-    runtime_info = _inspect_torch_runtime(sys.executable)
-    if runtime_info.get("cuda_current_device_ok"):
-        _bootstrap_trace(
-            "pytorch compat: existing torch runtime already works with CUDA "
-            f"({runtime_info.get('torch_version', 'unknown')})"
-        )
-        return False
-
-    desired_stack = [
-        f"torch=={PYTORCH_TARGET_VERSION}",
-        f"torchvision=={TORCHVISION_TARGET_VERSION}",
-        f"torchaudio=={TORCHAUDIO_TARGET_VERSION}",
-    ]
-
-    install_reason = (
-        runtime_info.get("cuda_error")
-        or runtime_info.get("cuda_is_available_error")
-        or runtime_info.get("import_error")
-        or runtime_info.get("probe_error")
-        or "missing/incompatible torch runtime"
-    )
-    print(
-        "[BOOTSTRAP] Installing a PyTorch runtime compatible with the detected NVIDIA driver: "
-        f"{', '.join(desired_stack)} from {index_url}"
-    )
-    print(f"[BOOTSTRAP] Previous torch runtime status: {install_reason}")
-
-    subprocess.check_call(
-        _get_bootstrap_install_cmd(
-            "--disable-pip-version-check",
-            "--upgrade",
-            "--force-reinstall",
-            "--index-url",
-            index_url,
-            *desired_stack,
-        )
-    )
-
-    runtime_info = _inspect_torch_runtime(sys.executable)
-    if runtime_info.get("cuda_current_device_ok"):
-        _bootstrap_trace(
-            "pytorch compat: installed compatible torch runtime "
-            f"({runtime_info.get('torch_version', 'unknown')})"
-        )
-    else:
-        print(
-            "[BOOTSTRAP] WARNING: compatible PyTorch install completed but CUDA probe still fails: "
-            f"{runtime_info.get('cuda_error') or runtime_info.get('probe_error') or runtime_info}"
-        )
-
-    return True
-
-
-def _maybe_force_cpu_mode_from_torch_probe():
-    if os.environ.get("COMFYUI_AUTO_FORCE_CPU_ON_CUDA_FAILURE", "1") != "1":
-        return
-
-    if "--cpu" in sys.argv or os.environ.get("COMFYUI_CPU_FALLBACK_ACTIVE") == "1":
-        return
-
-    probe_ok, output = _run_torch_cuda_probe(sys.executable)
-    if probe_ok:
-        return
-
-    if _cuda_failure_requires_cpu_fallback(output):
-        _force_comfyui_cpu_mode(output.splitlines()[-1])
-
-
 def _should_force_headless_opencv():
     return sys.platform.startswith("linux") and ctypes.util.find_library("GL") is None
-
-
-def _is_headless_opencv_ready():
-    if importlib_metadata is None:
-        return False
-
-    try:
-        importlib_metadata.version(OPENCV_HEADLESS_PACKAGE)
-    except Exception:
-        return False
-
-    for package_name in OPENCV_GUI_PACKAGES:
-        try:
-            importlib_metadata.version(package_name)
-            return False
-        except Exception:
-            continue
-
-    ok, info = _check_cv2_import_subprocess()
-    if ok:
-        print(f"[BOOTSTRAP] OpenCV headless already ready: {info}")
-        return True
-
-    return False
 
 
 def _get_site_packages_dirs():
@@ -1122,15 +509,20 @@ def _ensure_headless_opencv():
     if not _should_force_headless_opencv():
         return False
 
-    if _is_headless_opencv_ready():
-        return False
-
     print("[BOOTSTRAP] libGL not found, normalizing OpenCV packages to headless variants")
     pip_cmd = _get_bootstrap_pip_cmd()
     changed_any = False
 
-    if _uninstall_opencv_packages(pip_cmd):
+    try:
+        subprocess.check_call(pip_cmd + [
+            "uninstall",
+            "-y",
+            *OPENCV_GUI_PACKAGES,
+            OPENCV_HEADLESS_PACKAGE,
+        ])
         changed_any = True
+    except Exception:
+        pass
 
     if _purge_opencv_site_packages():
         changed_any = True
@@ -1145,127 +537,6 @@ def _ensure_headless_opencv():
         _install_cv2_fallback()
 
     return changed_any or True
-
-
-def _check_cv2_import_subprocess():
-    try:
-        output = subprocess.check_output(
-            [
-                sys.executable,
-                "-c",
-                "import numpy as np; import cv2; print('ok', np.__version__, getattr(cv2, '__version__', 'unknown'))",
-            ],
-            stderr=subprocess.STDOUT,
-            timeout=30,
-        )
-        return True, output.decode("utf-8", errors="replace").strip()
-    except Exception as exc:
-        raw_output = getattr(exc, "output", b"")
-        if isinstance(raw_output, bytes) and raw_output:
-            return False, raw_output.decode("utf-8", errors="replace").strip()
-        return False, str(exc)
-
-
-def _uninstall_opencv_packages(pip_cmd):
-    try:
-        subprocess.check_call(
-            pip_cmd
-            + [
-                "uninstall",
-                "--no-input",
-                "-y",
-                "opencv-python",
-                "opencv-contrib-python",
-                "opencv-python-headless",
-            ],
-        )
-        return True
-    except Exception:
-        return False
-
-
-def _ensure_cv2_importable_or_fallback():
-    """
-    Garantisce che `import cv2` non blocchi l'avvio dei custom nodes.
-    Se OpenCV è installato ma rotto (spesso mismatch con NumPy), prova una riparazione
-    best-effort; in ultima istanza installa un fallback puro-Python (limitato).
-    """
-    if os.environ.get("COMFYUI_ENSURE_CV2", "1") != "1":
-        return True
-
-    ok, info = _check_cv2_import_subprocess()
-    if ok:
-        print(f"[BOOTSTRAP] cv2 import OK: {info}")
-        return True
-
-    print(f"[BOOTSTRAP] cv2 import FAILED, attempting repair...\n{info}")
-
-    pip_cmd = _get_bootstrap_pip_cmd()
-    _uninstall_opencv_packages(pip_cmd)
-
-    # Tentativo 1: reinstalla solo opencv headless (spesso basta).
-    try:
-        subprocess.check_call(
-            _get_bootstrap_install_cmd(
-                "--disable-pip-version-check",
-                "--force-reinstall",
-                "--no-cache-dir",
-                OPENCV_HEADLESS_PACKAGE,
-            )
-        )
-    except Exception as exc:
-        print(f"[BOOTSTRAP] OpenCV headless reinstall failed: {exc}")
-
-    ok, info = _check_cv2_import_subprocess()
-    if ok:
-        print(f"[BOOTSTRAP] cv2 import OK after OpenCV reinstall: {info}")
-        return True
-
-    # Tentativo 2: se è un errore di ABI NumPy<->OpenCV, forza NumPy 1.x e reinstalla.
-    numpy_abi_markers = ("_ARRAY_API not found", "numpy.core.multiarray failed to import")
-    if any(marker in info for marker in numpy_abi_markers) and os.environ.get("COMFYUI_CV2_NUMPY1_FALLBACK", "1") == "1":
-        numpy_spec = os.environ.get("COMFYUI_NUMPY_COMPAT_SPEC", "numpy<2")
-        print(f"[BOOTSTRAP] Detected NumPy/OpenCV ABI mismatch, installing: {numpy_spec}")
-        try:
-            subprocess.check_call(
-                _get_bootstrap_install_cmd(
-                    "--disable-pip-version-check",
-                    "--force-reinstall",
-                    "--no-cache-dir",
-                    numpy_spec,
-                )
-            )
-        except Exception as exc:
-            print(f"[BOOTSTRAP] NumPy compat install failed: {exc}")
-
-        _uninstall_opencv_packages(pip_cmd)
-        try:
-            subprocess.check_call(
-                _get_bootstrap_install_cmd(
-                    "--disable-pip-version-check",
-                    "--force-reinstall",
-                    "--no-cache-dir",
-                    OPENCV_HEADLESS_PACKAGE,
-                )
-            )
-        except Exception as exc:
-            print(f"[BOOTSTRAP] OpenCV headless reinstall (post-NumPy) failed: {exc}")
-
-        ok, info = _check_cv2_import_subprocess()
-        if ok:
-            print(f"[BOOTSTRAP] cv2 import OK after NumPy/OpenCV repair: {info}")
-            return True
-
-    if os.environ.get("COMFYUI_CV2_FALLBACK", "1") == "1":
-        try:
-            if _install_cv2_fallback():
-                print("[BOOTSTRAP] Using pure-Python cv2 fallback (limited)")
-                return True
-        except Exception as exc:
-            print(f"[BOOTSTRAP] cv2 fallback install failed: {exc}")
-
-    print("[BOOTSTRAP] cv2 import still failing; continuing startup (custom nodes may fail).")
-    return False
 
 
 def _iter_host_python_candidates():
@@ -1306,10 +577,7 @@ def _get_bootstrap_install_cmd(*install_args, python_executable=None):
     python_executable = os.path.realpath(python_executable)
 
     try:
-        effective_args = list(install_args)
-        if "--no-input" not in effective_args:
-            effective_args.insert(0, "--no-input")
-        return _get_bootstrap_pip_cmd(python_executable) + ["install", *effective_args]
+        return _get_bootstrap_pip_cmd(python_executable) + ["install", *install_args]
     except RuntimeError:
         pass
 
@@ -1329,7 +597,6 @@ def _get_bootstrap_install_cmd(*install_args, python_executable=None):
             "install",
             "--python",
             python_executable,
-            "--no-input",
             *install_args,
         ])
 
@@ -1340,7 +607,6 @@ def _get_bootstrap_install_cmd(*install_args, python_executable=None):
             "install",
             "--python",
             python_executable,
-            "--no-input",
             *install_args,
         ])
 
@@ -1466,17 +732,6 @@ def ensure_local_venv():
     if not _should_reexec_into_local_venv(base_dir):
         return
 
-    if os.environ.get("COMFYUI_PREFER_HOST_PYTHON_WITH_WORKING_CUDA", "1") == "1":
-        host_cuda_ok, host_cuda_output = _run_torch_cuda_probe(sys.executable)
-        if host_cuda_ok:
-            print(
-                "[BOOTSTRAP] Keeping current Python interpreter because it already has working CUDA support; "
-                "skip local virtualenv re-launch."
-            )
-            return
-        if host_cuda_output:
-            print(f"[BOOTSTRAP] Host Python CUDA probe before local venv failed: {host_cuda_output}")
-
     venv_dir = os.path.join(base_dir, LOCAL_VENV_DIRNAME)
     venv_python = _get_local_venv_python(base_dir)
     host_python = os.path.realpath(sys.executable)
@@ -1571,33 +826,21 @@ def ensure_comfyui_manager_installed():
         print(f"[BOOTSTRAP] Failed installing ComfyUI Manager: {exc}")
 
 def auto_install_requirements():
-    global _AUTO_REQUIREMENTS_ALREADY_RAN
-
     if __name__ != "__main__":
         return
 
     if os.environ.get("COMFYUI_AUTO_INSTALL_REQUIREMENTS", "1") != "1":
         return
 
-    if _AUTO_REQUIREMENTS_ALREADY_RAN:
-        _bootstrap_trace("auto_install_requirements: skipped (already ran in this process)")
-        return
-
-    _AUTO_REQUIREMENTS_ALREADY_RAN = True
-
-    _bootstrap_trace("auto_install_requirements: start")
     _ensure_current_python_package_manager()
-    _bootstrap_trace("auto_install_requirements: python package manager ready")
-    installed_any = False
-    if _ensure_compatible_pytorch_runtime():
-        installed_any = True
-        _bootstrap_trace("auto_install_requirements: PyTorch compatibility install completed")
     _ensure_ollama_installed()
-    _bootstrap_trace("auto_install_requirements: ollama check completed")
+
+    installed_any = False
 
     if _ensure_headless_opencv():
         installed_any = True
-    _bootstrap_trace(f"auto_install_requirements: OpenCV normalization completed (installed_any={installed_any})")
+
+
 
     base_dir = os.path.dirname(os.path.realpath(__file__))
     custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
@@ -1614,30 +857,21 @@ def auto_install_requirements():
                 if os.path.isfile(req):
                     req_files.append(req)
 
-    pending_extra_packages = _get_pending_requirements(extra_packages)
-    for pkg in pending_extra_packages:
+    
+    
+    for pkg in extra_packages:
         print(f"[BOOTSTRAP] Installing extra package: {pkg}")
         subprocess.check_call(_get_bootstrap_install_cmd(
             "--disable-pip-version-check",
             pkg,
         ))
         installed_any = True
-        _bootstrap_trace(f"auto_install_requirements: installed extra package {pkg}")
-
-    if not pending_extra_packages:
-        print("[BOOTSTRAP] Extra packages already satisfied, skip")
-    _bootstrap_trace(f"auto_install_requirements: extra package phase completed ({len(pending_extra_packages)} pending)")
-
     seen = set()
     for req in req_files:
         req = os.path.abspath(req)
         if req in seen:
             continue
         seen.add(req)
-
-        if not _requirements_file_needs_install(req):
-            print(f"[BOOTSTRAP] Requirements already satisfied, skip: {req}")
-            continue
 
         print(f"[BOOTSTRAP] Installing requirements from: {req}")
         try:
@@ -1647,7 +881,6 @@ def auto_install_requirements():
                 req,
             ))
             installed_any = True
-            _bootstrap_trace(f"auto_install_requirements: requirements install completed for {req}")
         except subprocess.CalledProcessError as exc:
             is_custom_node_req = os.path.realpath(req).startswith(os.path.realpath(custom_nodes_dir) + os.sep)
             strict_custom_req = os.environ.get("COMFYUI_STRICT_CUSTOM_NODE_REQUIREMENTS", "0") == "1"
@@ -1660,23 +893,20 @@ def auto_install_requirements():
                 continue
             raise
 
-    # IMPORTANT: riallinea FluxTrainer alla fine, dopo TUTTI gli altri requirements,
-    # così eventuali installazioni precedenti non lasciano l'ambiente in stato incoerente.
     if os.environ.get("COMFYUI_FORCE_TRANSFORMERS_FLUXTRAINER_COMPAT", "1") == "1":
-        if _install_fluxtrainer_runtime_stack(custom_nodes_dir):
-            installed_any = True
-        _bootstrap_trace("auto_install_requirements: FluxTrainer final reconciliation completed")
+        print(f"[BOOTSTRAP] Enforcing transformers=={TRANSFORMERS_TARGET_VERSION} for FluxTrainer compatibility")
+        subprocess.check_call(_get_bootstrap_install_cmd(
+            "--disable-pip-version-check",
+            "--upgrade",
+            f"transformers=={TRANSFORMERS_TARGET_VERSION}",
+        ))
+        installed_any = True
 
     if _should_force_headless_opencv():
         if _ensure_headless_opencv():
             installed_any = True
-        _bootstrap_trace("auto_install_requirements: post-requirements OpenCV normalization completed")
 
-    # Protegge l'avvio da cv2 rotto (mismatch NumPy/OpenCV).
-    _bootstrap_trace("auto_install_requirements: checking cv2 importability")
-    _ensure_cv2_importable_or_fallback()
-    _bootstrap_trace("auto_install_requirements: cv2 importability check completed")
-
+    # Refresh import system
     if installed_any:
         import importlib, site
         try:
@@ -1687,16 +917,15 @@ def auto_install_requirements():
             pass
         importlib.invalidate_caches()
 
+        # Se ancora non vede yaml, riavvia una volta sola
         try:
             import yaml  # noqa
         except ModuleNotFoundError:
             if os.environ.get("_COMFYUI_BOOTSTRAP_REEXEC", "0") != "1":
                 os.environ["_COMFYUI_BOOTSTRAP_REEXEC"] = "1"
-                _bootstrap_trace("auto_install_requirements: yaml missing after install, re-executing interpreter")
                 os.execv(sys.executable, [sys.executable] + sys.argv)
             raise
 
-    _bootstrap_trace(f"auto_install_requirements: completed (installed_any={installed_any})")
 
 def _apply_early_transformers_fluxtrainer_compat():
     """
@@ -1895,20 +1124,11 @@ def _ensure_transformers_encoderdecodercache_compat(transformers_module, log_pre
 
 
 # Install custom nodes PRIMA del bootstrap requirements, così i loro requirements vengono inclusi.
-_bootstrap_trace("startup: ensure_local_venv begin")
 ensure_local_venv()
-_bootstrap_trace("startup: ensure_local_venv completed")
-_bootstrap_trace("startup: ensure_comfyui_manager_installed begin")
 ensure_comfyui_manager_installed()
-_bootstrap_trace("startup: ensure_comfyui_manager_installed completed")
 
 # Bootstrap PRIMA degli import ComfyUI
-_bootstrap_trace("startup: initial auto_install_requirements begin")
 auto_install_requirements()
-_bootstrap_trace("startup: initial auto_install_requirements completed")
-_bootstrap_trace("startup: cuda probe begin")
-_maybe_force_cpu_mode_from_torch_probe()
-_bootstrap_trace("startup: cuda probe completed")
 
 # Stabilizza l'allocator CUDA PRIMA di qualunque import Comfy/PyTorch.
 # Evita mismatch: runtime cudaMallocAsync vs load-time native.
@@ -1917,19 +1137,16 @@ if "--disable-cuda-malloc" not in sys.argv and os.environ.get("COMFYUI_FORCE_CUD
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "backend:native")
 
 # Compat FluxTrainer/transformers prima di importare ComfyUI.
-_bootstrap_trace("startup: early transformers compat begin")
 _apply_early_transformers_fluxtrainer_compat()
-_bootstrap_trace("startup: early transformers compat completed")
 
-_bootstrap_trace("startup: importing comfy.options")
+
 import comfy.options
 comfy.options.enable_args_parsing()
-_bootstrap_trace("startup: comfy.options imported and args parsing enabled")
 
-_bootstrap_trace("startup: importing ComfyUI runtime modules")
 import os
 import importlib.util
 import folder_paths
+import time
 from comfy.cli_args import args
 from app.logger import setup_logger
 import itertools
@@ -1943,7 +1160,6 @@ import urllib.request
 import urllib.parse
 import urllib.error
 from tqdm import tqdm
-_bootstrap_trace("startup: ComfyUI runtime modules imported")
 
 if __name__ == "__main__":
     # NOTE: These do not do anything on core ComfyUI, they are for custom nodes.
@@ -1951,7 +1167,6 @@ if __name__ == "__main__":
     os.environ['DO_NOT_TRACK'] = '1'
 
 setup_logger(log_level=args.verbose, use_stdout=args.log_stdout)
-_bootstrap_trace("startup: logger configured")
 
 
 def _infer_filename_from_url(url: str) -> str:
@@ -2075,56 +1290,43 @@ def ensure_shared_models_downloaded(shared_root: str):
     Se la root è in sola lettura, salta i download senza crashare.
     """
     if not shared_root:
-        _bootstrap_trace("ensure_shared_models_downloaded: skipped because shared_root is empty")
         return
 
     shared_root = os.path.abspath(shared_root)
-    _bootstrap_trace(f"ensure_shared_models_downloaded: start for root {shared_root}")
 
     # Se la root non è scrivibile, salta TUTTI i download (ma ComfyUI potrà comunque leggere i modelli)
     if not _is_writable_directory(shared_root):
         logging.info(f"Shared root in sola lettura, download disabilitato: {shared_root}")
-        _bootstrap_trace(f"ensure_shared_models_downloaded: root not writable, skipping {shared_root}")
         return
 
     for folder_name, entries in SHARED_MODELS_URLS.items():
         target_dir = os.path.join(shared_root, folder_name)
-        _bootstrap_trace(f"ensure_shared_models_downloaded: checking folder {folder_name} -> {target_dir}")
 
         # Prova a creare/validare la cartella; se non scrivibile, skip solo quella cartella
         if not _is_writable_directory(target_dir):
             logging.info(f"Cartella modelli non scrivibile, skip download per '{folder_name}': {target_dir}")
-            _bootstrap_trace(f"ensure_shared_models_downloaded: target not writable, skipping folder {folder_name}")
             continue
 
         for url, filename in _normalize_model_entries(entries):
             dest_path = os.path.join(target_dir, filename)
-            _bootstrap_trace(f"ensure_shared_models_downloaded: ensure file {dest_path}")
             _download_if_missing(url, dest_path)
-            _bootstrap_trace(f"ensure_shared_models_downloaded: file ready {dest_path}")
-
-    _bootstrap_trace(f"ensure_shared_models_downloaded: completed for root {shared_root}")
 
 
 def _resolve_model_roots():
     """
     Risolve le root modelli in modo portabile:
     - COMFYUI_MODEL_ROOTS (path separati da os.pathsep) se definita
-    - COMFYUI_MODELS_DEFAULT_ROOT forza sempre la root primaria
-    - /mnt/default-models viene usata solo se gia' presente
-    - altrimenti usa una root locale al progetto per evitare mount non presenti/lenti
+    - usa /mnt/default-models come root primaria di fallback
+    - fallback locale solo se COMFYUI_MODELS_DEFAULT_ROOT e' esplicitamente impostata
     """
     env_primary_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
-    base_dir = os.path.dirname(os.path.realpath(__file__))
-    local_primary_root = os.path.join(base_dir, "models-default")
-    mnt_primary_root = "/mnt/default-models"
-
+    default_primary_root = "/mnt/default-models"
     if env_primary_root:
         primary_root = env_primary_root
-    elif os.path.isdir(mnt_primary_root):
-        primary_root = mnt_primary_root
     else:
-        primary_root = local_primary_root
+        primary_root = default_primary_root
+
+    base_dir = os.path.dirname(os.path.realpath(__file__))
 
     secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip() or os.path.join(base_dir, "models")
 
@@ -2143,7 +1345,6 @@ def _resolve_model_roots():
         seen.add(normalized)
         roots.append(normalized)
 
-    _bootstrap_trace(f"_resolve_model_roots: resolved {roots}")
     return roots
 
 
@@ -2154,11 +1355,9 @@ def _ensure_llm_subdirs(model_roots):
     """
     for root in model_roots:
         try:
-            _bootstrap_trace(f"_ensure_llm_subdirs: ensuring {os.path.join(root, 'LLM')}")
             os.makedirs(os.path.join(root, "LLM"), exist_ok=True)
         except Exception as exc:
             logging.warning(f"Unable to create LLM folder in {root}: {exc}")
-            _bootstrap_trace(f"_ensure_llm_subdirs: failed for {root} -> {exc}")
 
 
 def _sync_llm_primary_to_secondary(model_roots):
@@ -2167,39 +1366,32 @@ def _sync_llm_primary_to_secondary(model_roots):
     anche in root secondaria (models) per nodi che usano path hardcoded models/LLM.
     """
     if os.environ.get("COMFYUI_SYNC_LLM_TO_SECONDARY", "0") != "1":
-        _bootstrap_trace("_sync_llm_primary_to_secondary: disabled by env")
         return
 
     if len(model_roots) < 2:
-        _bootstrap_trace("_sync_llm_primary_to_secondary: skipped because fewer than 2 model roots")
         return
 
     primary_llm = os.path.join(model_roots[0], "LLM")
     secondary_llm = os.path.join(model_roots[1], "LLM")
 
     try:
-        _bootstrap_trace(f"_sync_llm_primary_to_secondary: ensuring primary {primary_llm}")
         os.makedirs(primary_llm, exist_ok=True)
     except Exception as exc:
         logging.warning(f"Unable to prepare primary LLM folder {primary_llm}: {exc}")
-        _bootstrap_trace(f"_sync_llm_primary_to_secondary: failed preparing primary -> {exc}")
         return
 
     if os.path.realpath(primary_llm) == os.path.realpath(secondary_llm):
-        _bootstrap_trace("_sync_llm_primary_to_secondary: primary and secondary already match")
         return
 
     if not os.path.exists(secondary_llm):
         try:
             os.symlink(primary_llm, secondary_llm, target_is_directory=True)
             logging.info(f"Linked LLM folder: {secondary_llm} -> {primary_llm}")
-            _bootstrap_trace(f"_sync_llm_primary_to_secondary: linked {secondary_llm} -> {primary_llm}")
             return
         except Exception:
             pass
 
     try:
-        _bootstrap_trace(f"_sync_llm_primary_to_secondary: copying contents {primary_llm} -> {secondary_llm}")
         os.makedirs(secondary_llm, exist_ok=True)
         for entry_name in os.listdir(primary_llm):
             src = os.path.join(primary_llm, entry_name)
@@ -2211,93 +1403,8 @@ def _sync_llm_primary_to_secondary(model_roots):
             else:
                 shutil.copy2(src, dst)
         logging.info(f"Synced LLM files from {primary_llm} to {secondary_llm}")
-        _bootstrap_trace(f"_sync_llm_primary_to_secondary: sync completed {primary_llm} -> {secondary_llm}")
     except Exception as exc:
         logging.warning(f"Unable to sync LLM folders {primary_llm} -> {secondary_llm}: {exc}")
-        _bootstrap_trace(f"_sync_llm_primary_to_secondary: sync failed -> {exc}")
-
-def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
-    """
-    Prova a rendere disponibile un file grande evitando duplicazioni disco:
-    1) hardlink (stesso filesystem)
-    2) symlink (fallback)
-    3) copia (ultimo fallback)
-    """
-    if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
-        return True
-
-    if not os.path.isfile(src_path) or os.path.getsize(src_path) <= 0:
-        return False
-
-    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-
-    try:
-        if os.path.exists(dest_path) and os.path.getsize(dest_path) <= 0:
-            os.remove(dest_path)
-    except Exception:
-        pass
-
-    try:
-        os.link(src_path, dest_path)
-        return True
-    except Exception:
-        pass
-
-    try:
-        rel_target = os.path.relpath(src_path, os.path.dirname(dest_path))
-        os.symlink(rel_target, dest_path)
-        return True
-    except Exception:
-        pass
-
-    try:
-        shutil.copy2(src_path, dest_path)
-        return True
-    except Exception:
-        return False
-
-
-def _try_hf_snapshot_download(repo_id: str, local_dir: str, revision: str = "main", ignore_patterns=None) -> bool:
-    """
-    Scarica l'intero snapshot HF dentro una cartella locale (tutti i file del repo),
-    utile per modelli che richiedono tokenizer/processor/config vari.
-    """
-    if os.environ.get("COMFYUI_FLORENCE2_SNAPSHOT", "1") != "1":
-        return False
-
-    try:
-        from huggingface_hub import snapshot_download
-    except Exception as exc:
-        logging.info(f"huggingface_hub non disponibile, salto snapshot_download: {exc}")
-        return False
-
-    os.makedirs(local_dir, exist_ok=True)
-
-    # best-effort: alcune versioni possono non supportare alcuni kwargs.
-    base_kwargs = {
-        "repo_id": repo_id,
-        "revision": revision,
-        "local_dir": local_dir,
-    }
-    try_kwargs = []
-    try_kwargs.append({**base_kwargs, "ignore_patterns": ignore_patterns or []})
-    try_kwargs.append({**base_kwargs})
-
-    last_exc = None
-    for kwargs in try_kwargs:
-        try:
-            snapshot_download(**kwargs)
-            logging.info(f"HF snapshot downloaded: {repo_id}@{revision} -> {local_dir}")
-            return True
-        except TypeError as exc:
-            last_exc = exc
-            continue
-        except Exception as exc:
-            last_exc = exc
-            break
-
-    logging.warning(f"HF snapshot download failed for {repo_id}@{revision}: {last_exc}")
-    return False
 
 
 def _ensure_florence2_layout(model_roots):
@@ -2306,14 +1413,10 @@ def _ensure_florence2_layout(model_roots):
     non un singolo file .safetensors nella root LLM.
     Costruisce un layout compatibile: LLM/Florence-2-large/...
     """
-    repo_id = os.environ.get("COMFYUI_FLORENCE2_REPO", "microsoft/Florence-2-large").strip() or "microsoft/Florence-2-large"
-    revision = os.environ.get("COMFYUI_FLORENCE2_REVISION", "main").strip() or "main"
-    hf_base = f"https://huggingface.co/{repo_id}/resolve/{revision}"
+    hf_base = "https://huggingface.co/microsoft/Florence-2-large/resolve/main"
     required_files = [
         "config.json",
-        "configuration_florence2.py",
         "generation_config.json",
-        "modeling_florence2.py",
         "preprocessor_config.json",
         "processor_config.json",
         "processing_florence2.py",
@@ -2328,64 +1431,38 @@ def _ensure_florence2_layout(model_roots):
     ]
 
     if not model_roots:
-        _bootstrap_trace("_ensure_florence2_layout: skipped because model_roots is empty")
         return
 
     # Scarica SOLO nella root primaria (models-default).
     root = model_roots[0]
     llm_root = os.path.join(root, "LLM")
     model_dir = os.path.join(llm_root, "Florence-2-large")
-    _bootstrap_trace(f"_ensure_florence2_layout: start for {model_dir}")
 
     try:
         os.makedirs(model_dir, exist_ok=True)
     except Exception as exc:
         logging.warning(f"Unable to create Florence-2-large dir in {root}: {exc}")
-        _bootstrap_trace(f"_ensure_florence2_layout: failed creating model dir -> {exc}")
         return
 
-    # Compat con i file già presenti nella root LLM (naming legacy del bootstrap),
-    # evitando copie inutili (hardlink/symlink se possibile).
-    legacy_weights = [
-        ("florence-2-large-model.safetensors", "model.safetensors", False),
-        ("florence-2-large-pytorch_model.bin", "pytorch_model.bin", True),  # opzionale: non sempre serve
+    # Compat con i file già presenti nella root LLM (naming legacy del bootstrap).
+    legacy_pairs = [
+        ("florence-2-large-model.safetensors", "model.safetensors"),
+        ("florence-2-large-pytorch_model.bin", "pytorch_model.bin"),
     ]
-    for src_name, dst_name, optional in legacy_weights:
+    for src_name, dst_name in legacy_pairs:
         src = os.path.join(llm_root, src_name)
         dst = os.path.join(model_dir, dst_name)
-        _bootstrap_trace(f"_ensure_florence2_layout: preparing legacy weight {dst_name}")
-        if os.path.isfile(dst) and os.path.getsize(dst) > 0:
-            continue
-        if _try_link_or_copy_file(src, dst):
-            logging.info(f"Prepared Florence-2-large file: {dst}")
-            continue
-        if optional:
-            continue
-        # Fallback: prova a scaricare direttamente il peso se non presente altrove.
-        _download_if_missing(f"{hf_base}/{dst_name}", dst, ignore_http_404=True)
-
-    # Snapshot completo del repo HF: scarica tutti i file presenti su
-    # https://huggingface.co/<repo_id>/tree/<revision>
-    # Evita di scaricare di nuovo i pesi se già preparati sopra.
-    ignore_snapshot = []
-    if os.path.isfile(os.path.join(model_dir, "model.safetensors")):
-        ignore_snapshot.append("model.safetensors")
-    if os.path.isfile(os.path.join(model_dir, "pytorch_model.bin")):
-        ignore_snapshot.append("pytorch_model.bin")
-    _try_hf_snapshot_download(
-        repo_id=repo_id,
-        local_dir=model_dir,
-        revision=revision,
-        ignore_patterns=ignore_snapshot,
-    )
-    _bootstrap_trace(f"_ensure_florence2_layout: snapshot step completed for {model_dir}")
+        if os.path.isfile(src) and not os.path.exists(dst):
+            try:
+                shutil.copy2(src, dst)
+                logging.info(f"Prepared Florence-2-large file: {dst}")
+            except Exception as exc:
+                logging.warning(f"Unable to copy Florence file {src} -> {dst}: {exc}")
 
     for filename in required_files:
-        _bootstrap_trace(f"_ensure_florence2_layout: ensuring required file {filename}")
         _download_if_missing(f"{hf_base}/{filename}", os.path.join(model_dir, filename))
 
     for filename in optional_files:
-        _bootstrap_trace(f"_ensure_florence2_layout: ensuring optional file {filename}")
         _download_if_missing(
             f"{hf_base}/{filename}",
             os.path.join(model_dir, filename),
@@ -2438,9 +1515,6 @@ def _ensure_florence2_layout(model_roots):
                 shutil.copytree(model_dir, lower_alias, dirs_exist_ok=True)
             except Exception as exc:
                 logging.warning(f"Unable to create lowercase Florence alias {lower_alias}: {exc}")
-                _bootstrap_trace(f"_ensure_florence2_layout: lowercase alias failed -> {exc}")
-
-    _bootstrap_trace(f"_ensure_florence2_layout: completed for {model_dir}")
 
 
 def apply_shared_model_paths():
@@ -2449,36 +1523,23 @@ def apply_shared_model_paths():
     dalla cartella principale (prima root) usando SHARED_MODELS_URLS.
     """
     model_roots = _resolve_model_roots()
-    _bootstrap_trace(f"apply_shared_model_paths: model_roots={model_roots}")
 
     if not model_roots:
-        _bootstrap_trace("apply_shared_model_paths: skipped because no model roots were resolved")
         return
 
     # Crea le root (se vuoi che esistano). Se una non esiste, ComfyUI leggerà solo quelle presenti.
     for root in model_roots:
-        _bootstrap_trace(f"apply_shared_model_paths: ensuring root {root}")
         os.makedirs(root, exist_ok=True)
         logging.info(f"Using models root: {root}")
 
-    _bootstrap_trace("apply_shared_model_paths: ensure LLM subdirs begin")
     _ensure_llm_subdirs(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: ensure LLM subdirs completed")
 
     # Scarica modelli mancanti SOLO nella prima root (quella principale)
     # così non alteri la seconda cartella
-    _bootstrap_trace(f"apply_shared_model_paths: ensure shared models begin on {model_roots[0]}")
     ensure_shared_models_downloaded(model_roots[0])
-    _bootstrap_trace("apply_shared_model_paths: ensure shared models completed")
-    _bootstrap_trace("apply_shared_model_paths: first LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: first LLM sync completed")
-    _bootstrap_trace("apply_shared_model_paths: Florence2 layout begin")
     _ensure_florence2_layout(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: Florence2 layout completed")
-    _bootstrap_trace("apply_shared_model_paths: second LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: second LLM sync completed")
 
     model_dirs = {
         "checkpoints": "checkpoints",
@@ -2511,84 +1572,61 @@ def apply_shared_model_paths():
             if os.path.isdir(p):
                 folder_paths.add_model_folder_path(model_type, p)
                 logging.info(f"Added model path [{model_type}] -> {p}")
-                _bootstrap_trace(f"apply_shared_model_paths: registered {model_type} -> {p}")
-
-    _bootstrap_trace("apply_shared_model_paths: completed")
 
 def apply_custom_paths():
     # extra model paths
-    _bootstrap_trace("apply_custom_paths: begin")
     extra_model_paths_config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "extra_model_paths.yaml")
     if os.path.isfile(extra_model_paths_config_path):
-        _bootstrap_trace(f"apply_custom_paths: loading default extra model config {extra_model_paths_config_path}")
         utils.extra_config.load_extra_path_config(extra_model_paths_config_path)
-        _bootstrap_trace("apply_custom_paths: default extra model config loaded")
 
     if args.extra_model_paths_config:
-        _bootstrap_trace(f"apply_custom_paths: loading CLI extra model configs {args.extra_model_paths_config}")
         for config_path in itertools.chain(*args.extra_model_paths_config):
-            _bootstrap_trace(f"apply_custom_paths: loading CLI config {config_path}")
             utils.extra_config.load_extra_path_config(config_path)
-            _bootstrap_trace(f"apply_custom_paths: loaded CLI config {config_path}")
 
     # --output-directory, --input-directory, --user-directory
     if args.output_directory:
         output_dir = os.path.abspath(args.output_directory)
         logging.info(f"Setting output directory to: {output_dir}")
         folder_paths.set_output_directory(output_dir)
-        _bootstrap_trace(f"apply_custom_paths: output directory set to {output_dir}")
 
     # NUOVO: cartella modelli condivisa (+ download automatico se mancano)
-    _bootstrap_trace("apply_custom_paths: apply_shared_model_paths begin")
     apply_shared_model_paths()
-    _bootstrap_trace("apply_custom_paths: apply_shared_model_paths completed")
 
     # These are the default folders that checkpoints, clip and vae models will be saved to when using CheckpointSave, etc.. nodes
-    _bootstrap_trace("apply_custom_paths: registering output subdirectories")
     folder_paths.add_model_folder_path("checkpoints", os.path.join(folder_paths.get_output_directory(), "checkpoints"))
     folder_paths.add_model_folder_path("clip", os.path.join(folder_paths.get_output_directory(), "clip"))
     folder_paths.add_model_folder_path("vae", os.path.join(folder_paths.get_output_directory(), "vae"))
     folder_paths.add_model_folder_path("diffusion_models",
                                        os.path.join(folder_paths.get_output_directory(), "diffusion_models"))
     folder_paths.add_model_folder_path("loras", os.path.join(folder_paths.get_output_directory(), "loras"))
-    _bootstrap_trace("apply_custom_paths: output subdirectories registered")
 
     if args.input_directory:
         input_dir = os.path.abspath(args.input_directory)
         logging.info(f"Setting input directory to: {input_dir}")
         folder_paths.set_input_directory(input_dir)
-        _bootstrap_trace(f"apply_custom_paths: input directory set to {input_dir}")
 
     if args.user_directory:
         user_dir = os.path.abspath(args.user_directory)
         logging.info(f"Setting user directory to: {user_dir}")
         folder_paths.set_user_directory(user_dir)
-        _bootstrap_trace(f"apply_custom_paths: user directory set to {user_dir}")
-
-    _bootstrap_trace("apply_custom_paths: completed")
 
 
 def execute_prestartup_script():
     if args.disable_all_custom_nodes and len(args.whitelist_custom_nodes) == 0:
-        _bootstrap_trace("prestartup: skipped because all custom nodes are disabled")
         return
 
     def execute_script(script_path):
         module_name = os.path.splitext(script_path)[0]
         try:
-            _bootstrap_trace(f"prestartup: executing {script_path}")
             spec = importlib.util.spec_from_file_location(module_name, script_path)
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
-            _bootstrap_trace(f"prestartup: completed {script_path}")
             return True
         except Exception as e:
-            _bootstrap_trace(f"prestartup: failed {script_path} -> {e}")
             logging.error(f"Failed to execute startup-script: {script_path} / {e}")
         return False
 
     node_paths = folder_paths.get_folder_paths("custom_nodes")
-    _bootstrap_trace(f"prestartup: scanning custom node paths {node_paths}")
     for custom_node_path in node_paths:
         possible_modules = os.listdir(custom_node_path)
         node_prestartup_times = []
@@ -2617,11 +1655,8 @@ def execute_prestartup_script():
         logging.info("")
 
 
-_bootstrap_trace("startup: apply_custom_paths begin")
 apply_custom_paths()
-_bootstrap_trace("startup: apply_custom_paths completed")
 execute_prestartup_script()
-_bootstrap_trace("startup: prestartup scripts completed")
 
 # ===== WRAPPER STABILE PER COMFYUI (compatibile con update futuri) =====
 # Sostituisce tutto il blocco "# Main code" e il vecchio if __name__ == "__main__"
@@ -2629,7 +1664,7 @@ _bootstrap_trace("startup: prestartup scripts completed")
 from pathlib import Path
 import runpy
 import logging
-os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
+
 
 def _ensure_transformers_clipfeatureextractor_compat():
     """
@@ -2639,8 +1674,6 @@ def _ensure_transformers_clipfeatureextractor_compat():
     try:
         import transformers
     except Exception as e:
-
-
         logging.warning(f"[WRAPPER] transformers non importabile per patch compat: {e}")
         return
 
@@ -2962,154 +1995,6 @@ def _normalize_prompt_payload_paths(payload):
     return _normalize_flux_prompt_value(payload)
 
 
-_KNOWN_BOOTSTRAP_MODELS_BY_TYPE = None
-_KNOWN_BOOTSTRAP_MODEL_SOURCES = None
-
-
-def _get_bootstrap_model_index():
-    global _KNOWN_BOOTSTRAP_MODELS_BY_TYPE, _KNOWN_BOOTSTRAP_MODEL_SOURCES
-
-    if _KNOWN_BOOTSTRAP_MODELS_BY_TYPE is not None and _KNOWN_BOOTSTRAP_MODEL_SOURCES is not None:
-        return _KNOWN_BOOTSTRAP_MODELS_BY_TYPE, _KNOWN_BOOTSTRAP_MODEL_SOURCES
-
-    known_by_type = {}
-    sources = {}
-
-    for folder_name, entries in SHARED_MODELS_URLS.items():
-        aliases = {folder_name}
-        for model_type, mapped_folder in MODEL_DIRS_MAP.items():
-            if mapped_folder == folder_name:
-                aliases.add(model_type)
-
-        for url, filename in _normalize_model_entries(entries):
-            for model_type in aliases:
-                known_by_type.setdefault(model_type, set()).add(filename)
-                sources[(model_type, filename)] = (folder_name, url)
-
-    _KNOWN_BOOTSTRAP_MODELS_BY_TYPE = known_by_type
-    _KNOWN_BOOTSTRAP_MODEL_SOURCES = sources
-    return _KNOWN_BOOTSTRAP_MODELS_BY_TYPE, _KNOWN_BOOTSTRAP_MODEL_SOURCES
-
-
-def _get_known_bootstrap_model_filenames(model_type):
-    known_by_type, _ = _get_bootstrap_model_index()
-    return sorted(known_by_type.get(model_type, set()))
-
-
-def _invalidate_folder_paths_filename_cache(folder_paths_module, model_type):
-    cache_attr_names = (
-        "filename_list_cache",
-        "cached_filename_list",
-        "_filename_list_cache",
-    )
-
-    for attr_name in cache_attr_names:
-        cache = getattr(folder_paths_module, attr_name, None)
-        if isinstance(cache, dict):
-            cache.pop(model_type, None)
-
-
-def _ensure_known_bootstrap_model_available(model_type, filename):
-    _, sources = _get_bootstrap_model_index()
-    source = sources.get((model_type, filename))
-    if not source:
-        return None
-
-    folder_name, url = source
-    model_roots = _resolve_model_roots()
-    if not model_roots:
-        return None
-
-    dest_path = os.path.join(model_roots[0], folder_name, filename)
-    try:
-        _download_if_missing(url, dest_path)
-    except Exception as exc:
-        logging.warning(
-            f"[WRAPPER] Unable to prepare bootstrap model '{filename}' for '{model_type}': {exc}"
-        )
-        return None
-
-    if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
-        return dest_path
-    return None
-
-
-def _install_known_model_selector_patch():
-    """
-    Espone ai selector anche i modelli dichiarati nel bootstrap locale, così
-    i prompt non falliscono con "Value not in list" quando il file è previsto
-    ma non è ancora stato indicizzato da folder_paths.
-    """
-    if os.environ.get("COMFYUI_PATCH_KNOWN_MODEL_SELECTORS", "1") != "1":
-        logging.info("[WRAPPER] Known model selector patch disabled by env")
-        return
-
-    original_get_filename_list = getattr(folder_paths, "get_filename_list", None)
-    if callable(original_get_filename_list) and not getattr(original_get_filename_list, "_comfyui_known_model_patch", False):
-        def _wrapped_get_filename_list(model_type, *args, **kwargs):
-            filenames = original_get_filename_list(model_type, *args, **kwargs) or []
-            known = _get_known_bootstrap_model_filenames(model_type)
-            if not known:
-                return filenames
-
-            merged = []
-            seen = set()
-            for item in list(filenames) + known:
-                if item in seen:
-                    continue
-                seen.add(item)
-                merged.append(item)
-            return merged
-
-        _wrapped_get_filename_list._comfyui_known_model_patch = True
-        folder_paths.get_filename_list = _wrapped_get_filename_list
-        logging.info("[WRAPPER] Installed known model selector patch for folder_paths.get_filename_list")
-
-    original_get_full_path = getattr(folder_paths, "get_full_path", None)
-    if callable(original_get_full_path) and not getattr(original_get_full_path, "_comfyui_known_model_patch", False):
-        def _wrapped_get_full_path(model_type, filename, *args, **kwargs):
-            result = original_get_full_path(model_type, filename, *args, **kwargs)
-            if result:
-                return result
-
-            if filename not in _get_known_bootstrap_model_filenames(model_type):
-                return result
-
-            prepared_path = _ensure_known_bootstrap_model_available(model_type, filename)
-            if not prepared_path:
-                return result
-
-            _invalidate_folder_paths_filename_cache(folder_paths, model_type)
-            retry_result = original_get_full_path(model_type, filename, *args, **kwargs)
-            return retry_result or prepared_path
-
-        _wrapped_get_full_path._comfyui_known_model_patch = True
-        folder_paths.get_full_path = _wrapped_get_full_path
-        logging.info("[WRAPPER] Installed on-demand bootstrap patch for folder_paths.get_full_path")
-
-    original_get_full_path_or_raise = getattr(folder_paths, "get_full_path_or_raise", None)
-    if callable(original_get_full_path_or_raise) and not getattr(original_get_full_path_or_raise, "_comfyui_known_model_patch", False):
-        def _wrapped_get_full_path_or_raise(model_type, filename, *args, **kwargs):
-            try:
-                return original_get_full_path_or_raise(model_type, filename, *args, **kwargs)
-            except Exception:
-                prepared_path = _ensure_known_bootstrap_model_available(model_type, filename)
-                if not prepared_path:
-                    raise
-
-                _invalidate_folder_paths_filename_cache(folder_paths, model_type)
-                retry_result = getattr(folder_paths, "get_full_path", None)
-                if callable(retry_result):
-                    resolved = retry_result(model_type, filename, *args, **kwargs)
-                    if resolved:
-                        return resolved
-                return prepared_path
-
-        _wrapped_get_full_path_or_raise._comfyui_known_model_patch = True
-        folder_paths.get_full_path_or_raise = _wrapped_get_full_path_or_raise
-        logging.info("[WRAPPER] Installed on-demand bootstrap patch for folder_paths.get_full_path_or_raise")
-
-
 def _install_prompt_path_normalization_patch():
     """
     Alcuni prompt inviati via API/UI possono contenere path modello con backslash
@@ -3154,17 +2039,12 @@ def _preflight_custom_logic():
     """
     # logging base (semplice; il logger vero lo inizializza poi ComfyUI)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    _bootstrap_trace("_preflight_custom_logic: begin")
 
     # 1) bootstrap pip / requirements (la tua logica)
-    _bootstrap_trace("_preflight_custom_logic: auto_install_requirements begin")
     auto_install_requirements()
-    _bootstrap_trace("_preflight_custom_logic: auto_install_requirements completed")
 
     # 1b) ripulisce eventuali cache JSON corrotte di ComfyUI-Manager
-    _bootstrap_trace("_preflight_custom_logic: cleanup manager cache begin")
     _cleanup_broken_manager_json_cache()
-    _bootstrap_trace("_preflight_custom_logic: cleanup manager cache completed")
 
     # 2) env vars opzionali
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -3172,11 +2052,8 @@ def _preflight_custom_logic():
 
     # 2a) Normalizza i workflow salvati con separatori Windows.
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    _bootstrap_trace("_preflight_custom_logic: workflow normalization begin")
     _normalize_flux_workflow_paths(base_dir)
     _install_prompt_path_normalization_patch()
-    _install_known_model_selector_patch()
-    _bootstrap_trace("_preflight_custom_logic: workflow normalization and prompt patch completed")
 
     # 2b) Compat per custom nodes legacy (es. fluxtrainer).
     # Modalita':
@@ -3189,32 +2066,24 @@ def _preflight_custom_logic():
         compat_mode = "1"
 
     if compat_mode == "1":
-        _bootstrap_trace("_preflight_custom_logic: transformers compat forced begin")
         _ensure_transformers_clipfeatureextractor_compat()
-        _bootstrap_trace("_preflight_custom_logic: transformers compat forced completed")
     elif compat_mode == "auto":
         custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
         found_fluxtrainer, detect_reason = _detect_fluxtrainer_custom_node(custom_nodes_dir)
 
         if found_fluxtrainer:
             logging.info(f"[WRAPPER] Enabling transformers compat (auto mode, {detect_reason})")
-            _bootstrap_trace(f"_preflight_custom_logic: transformers compat auto begin ({detect_reason})")
             _ensure_transformers_clipfeatureextractor_compat()
-            _bootstrap_trace("_preflight_custom_logic: transformers compat auto completed")
         else:
             logging.info(
                 "[WRAPPER] Skipping transformers compat patch "
                 f"(auto mode, FluxTrainer not detected: {detect_reason})"
             )
-            _bootstrap_trace(f"_preflight_custom_logic: transformers compat skipped ({detect_reason})")
     else:
         logging.info("[WRAPPER] Skipping transformers compat patch (COMFYUI_EAGER_TRANSFORMERS_COMPAT=0)")
-        _bootstrap_trace("_preflight_custom_logic: transformers compat disabled by env")
 
     # 3) prepara root modelli
-    _bootstrap_trace("_preflight_custom_logic: resolve model roots begin")
     model_roots = _resolve_model_roots()
-    _bootstrap_trace(f"_preflight_custom_logic: resolved model roots {model_roots}")
     for root in model_roots:
         try:
             os.makedirs(root, exist_ok=True)
@@ -3222,45 +2091,30 @@ def _preflight_custom_logic():
         except Exception as e:
             logging.warning(f"[WRAPPER] Cannot create models root {root}: {e}")
 
-    _bootstrap_trace("_preflight_custom_logic: ensure LLM subdirs begin")
     _ensure_llm_subdirs(model_roots)
-    _bootstrap_trace("_preflight_custom_logic: ensure LLM subdirs completed")
 
     # 4) download modelli mancanti SOLO nella root principale (come fai già)
     if model_roots:
-        _bootstrap_trace(f"_preflight_custom_logic: shared model bootstrap begin on {model_roots[0]}")
         ensure_shared_models_downloaded(model_roots[0])
-        _bootstrap_trace("_preflight_custom_logic: shared model downloads completed")
         _sync_llm_primary_to_secondary(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: first LLM sync completed")
         _ensure_florence2_layout(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: Florence2 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
 
     # 5) genera config path nativo ComfyUI per le shared folders
     auto_cfg = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         "extra_model_paths.auto.yaml"
     )
-    _bootstrap_trace(f"_preflight_custom_logic: writing extra model paths config {auto_cfg}")
     _write_auto_extra_model_paths_yaml(auto_cfg, model_roots)
-    _bootstrap_trace("_preflight_custom_logic: extra model paths config completed")
 
     # 6) passa il config auto al main.py ufficiale
-    _bootstrap_trace("_preflight_custom_logic: append extra model paths arg begin")
     _append_extra_model_paths_arg(auto_cfg)
-    _bootstrap_trace("_preflight_custom_logic: append extra model paths arg completed")
 
     # 7) stabilizza allocator CUDA nel flusso wrapper.
-    _bootstrap_trace("_preflight_custom_logic: disable cuda malloc arg begin")
     _append_disable_cuda_malloc_arg()
-    _bootstrap_trace("_preflight_custom_logic: disable cuda malloc arg completed")
 
     # 8) stampa snapshot pacchetti installati prima del launch del main.
-    _bootstrap_trace("_preflight_custom_logic: installed packages snapshot begin")
     _print_installed_packages_snapshot()
-    _bootstrap_trace("_preflight_custom_logic: installed packages snapshot completed")
 
 
 def _print_installed_packages_snapshot():
@@ -3332,23 +2186,11 @@ def _launch_official_comfyui_main():
     if not comfy_main.is_file():
         raise FileNotFoundError(f"main.py ufficiale non trovato: {comfy_main}")
 
-    _bootstrap_trace(f"_launch_official_comfyui_main: runpy begin for {comfy_main}")
     logging.info(f"[WRAPPER] Launching official ComfyUI main: {comfy_main}")
-    try:
-        runpy.run_path(str(comfy_main), run_name="__main__")
-    except RuntimeError as exc:
-        message = str(exc)
-        if "--cpu" not in sys.argv and _cuda_failure_requires_cpu_fallback(message):
-            logging.warning(f"[WRAPPER] CUDA startup failed, retrying in CPU mode: {message}")
-            _force_comfyui_cpu_mode(message)
-            os.execv(sys.executable, [sys.executable] + sys.argv)
-        raise
-    _bootstrap_trace("_launch_official_comfyui_main: runpy returned")
+    runpy.run_path(str(comfy_main), run_name="__main__")
 
 
 if __name__ == "__main__":
     # Bootstrap PRIMA degli import ComfyUI
-    _bootstrap_trace("__main__: entering wrapper main")
     _preflight_custom_logic()
-    _bootstrap_trace("__main__: preflight completed")
     _launch_official_comfyui_main()
