@@ -2855,7 +2855,7 @@
         "flux1-dev-fp8.safetensors",
         "flux_vae.safetensors",
         "clip_l.safetensors",
-        "t5\\google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors",
+        "t5/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors",
         ""
       ]
     },
