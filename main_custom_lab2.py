@@ -2447,6 +2447,65 @@ def _ensure_florence2_layout(model_roots):
     _bootstrap_trace(f"_ensure_florence2_layout: completed for {model_dir}")
 
 
+def _ensure_da3_large_layout(model_roots):
+    """
+    Prepara il layout locale per Depth Anything 3 Large dentro models/LLM.
+    Il repo HF espone almeno config.json e model.safetensors, quindi conviene
+    mantenere una cartella repo-like invece di un file singolo nella root LLM.
+    """
+    repo_id = os.environ.get("COMFYUI_DA3_LARGE_REPO", "depth-anything/DA3-LARGE").strip() or "depth-anything/DA3-LARGE"
+    revision = os.environ.get("COMFYUI_DA3_LARGE_REVISION", "main").strip() or "main"
+    hf_base = f"https://huggingface.co/{repo_id}/resolve/{revision}"
+    required_files = [
+        "config.json",
+        "model.safetensors",
+    ]
+
+    if not model_roots:
+        _bootstrap_trace("_ensure_da3_large_layout: skipped because model_roots is empty")
+        return
+
+    root = model_roots[0]
+    llm_root = os.path.join(root, "LLM")
+    model_dir = os.path.join(llm_root, "DA3-LARGE")
+    _bootstrap_trace(f"_ensure_da3_large_layout: start for {model_dir}")
+
+    try:
+        os.makedirs(model_dir, exist_ok=True)
+    except Exception as exc:
+        logging.warning(f"Unable to create DA3-LARGE dir in {root}: {exc}")
+        _bootstrap_trace(f"_ensure_da3_large_layout: failed creating model dir -> {exc}")
+        return
+
+    ignore_snapshot = []
+    if os.path.isfile(os.path.join(model_dir, "model.safetensors")):
+        ignore_snapshot.append("model.safetensors")
+    _try_hf_snapshot_download(
+        repo_id=repo_id,
+        local_dir=model_dir,
+        revision=revision,
+        ignore_patterns=ignore_snapshot,
+    )
+    _bootstrap_trace(f"_ensure_da3_large_layout: snapshot step completed for {model_dir}")
+
+    for filename in required_files:
+        _bootstrap_trace(f"_ensure_da3_large_layout: ensuring required file {filename}")
+        _download_if_missing(f"{hf_base}/{filename}", os.path.join(model_dir, filename))
+
+    lower_alias = os.path.join(llm_root, "da3-large")
+    if not os.path.exists(lower_alias):
+        try:
+            os.symlink(model_dir, lower_alias, target_is_directory=True)
+        except Exception:
+            try:
+                shutil.copytree(model_dir, lower_alias, dirs_exist_ok=True)
+            except Exception as exc:
+                logging.warning(f"Unable to create lowercase DA3 alias {lower_alias}: {exc}")
+                _bootstrap_trace(f"_ensure_da3_large_layout: lowercase alias failed -> {exc}")
+
+    _bootstrap_trace(f"_ensure_da3_large_layout: completed for {model_dir}")
+
+
 def apply_shared_model_paths():
     """
     Registra più cartelle modelli condivise e scarica automaticamente i modelli mancanti
@@ -2480,6 +2539,9 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: Florence2 layout begin")
     _ensure_florence2_layout(model_roots)
     _bootstrap_trace("apply_shared_model_paths: Florence2 layout completed")
+    _bootstrap_trace("apply_shared_model_paths: DA3 layout begin")
+    _ensure_da3_large_layout(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: DA3 layout completed")
     _bootstrap_trace("apply_shared_model_paths: second LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: second LLM sync completed")
@@ -3275,6 +3337,8 @@ def _preflight_custom_logic():
         _bootstrap_trace("_preflight_custom_logic: first LLM sync completed")
         _ensure_florence2_layout(model_roots)
         _bootstrap_trace("_preflight_custom_logic: Florence2 layout completed")
+        _ensure_da3_large_layout(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: DA3 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
 
