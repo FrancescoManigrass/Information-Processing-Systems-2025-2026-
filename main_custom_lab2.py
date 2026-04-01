@@ -85,6 +85,7 @@ SHARED_MODELS_URLS = {
     "checkpoints": [
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
+        {"url": "https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors", "filename": "dreamshaper_8.safetensors"},
 
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
@@ -206,6 +207,9 @@ SHARED_MODELS_URLS = {
     # =========================
     "controlnet": [
         {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-depth-controlnet-v3.safetensors", "filename": "flux-depth-controlnet-v3.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "controlV11pSd15_v10.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "control_v11p_sd15_openpose_fp16.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11f1p_sd15_depth_fp16.safetensors", "filename": "control_v11f1p_sd15_depth_fp16.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
     ],
 
@@ -2940,6 +2944,34 @@ FLUX_PROMPT_PATH_REPLACEMENTS = {
     "t5\\google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors": "t5/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors",
 }
 
+MODEL_FILENAME_ALIASES = {
+    # Alcuni workflow esportati referenziano il nome Civitai dello stesso OpenPose SD1.5.
+    "controlV11pSd15_v10.safetensors": "control_v11p_sd15_openpose_fp16.safetensors",
+}
+
+
+def _normalize_registered_model_path(value):
+    if not isinstance(value, str):
+        return value
+
+    normalized_value = value.replace("\\", "/")
+
+    if os.path.isabs(value):
+        dir_name, base_name = os.path.split(value)
+        aliased_name = MODEL_FILENAME_ALIASES.get(base_name)
+        if aliased_name:
+            return os.path.join(dir_name, aliased_name)
+        return value
+
+    if "/" in normalized_value:
+        dir_name, base_name = normalized_value.rsplit("/", 1)
+        aliased_name = MODEL_FILENAME_ALIASES.get(base_name)
+        if aliased_name:
+            return f"{dir_name}/{aliased_name}"
+        return normalized_value
+
+    return MODEL_FILENAME_ALIASES.get(normalized_value, value)
+
 
 def _normalize_flux_prompt_value(value):
     if not isinstance(value, str):
@@ -2949,7 +2981,7 @@ def _normalize_flux_prompt_value(value):
     for source, target in FLUX_PROMPT_PATH_REPLACEMENTS.items():
         new_value = new_value.replace(source, target)
 
-    return new_value
+    return _normalize_registered_model_path(new_value)
 
 
 def _normalize_prompt_payload_paths(payload):
@@ -2985,6 +3017,12 @@ def _get_bootstrap_model_index():
             for model_type in aliases:
                 known_by_type.setdefault(model_type, set()).add(filename)
                 sources[(model_type, filename)] = (folder_name, url)
+
+                for alias_name, canonical_name in MODEL_FILENAME_ALIASES.items():
+                    if canonical_name != filename:
+                        continue
+                    known_by_type.setdefault(model_type, set()).add(alias_name)
+                    sources[(model_type, alias_name)] = (folder_name, url)
 
     _KNOWN_BOOTSTRAP_MODELS_BY_TYPE = known_by_type
     _KNOWN_BOOTSTRAP_MODEL_SOURCES = sources
@@ -3068,6 +3106,7 @@ def _install_known_model_selector_patch():
     original_get_full_path = getattr(folder_paths, "get_full_path", None)
     if callable(original_get_full_path) and not getattr(original_get_full_path, "_comfyui_known_model_patch", False):
         def _wrapped_get_full_path(model_type, filename, *args, **kwargs):
+            filename = _normalize_registered_model_path(filename)
             result = original_get_full_path(model_type, filename, *args, **kwargs)
             if result:
                 return result
@@ -3090,6 +3129,7 @@ def _install_known_model_selector_patch():
     original_get_full_path_or_raise = getattr(folder_paths, "get_full_path_or_raise", None)
     if callable(original_get_full_path_or_raise) and not getattr(original_get_full_path_or_raise, "_comfyui_known_model_patch", False):
         def _wrapped_get_full_path_or_raise(model_type, filename, *args, **kwargs):
+            filename = _normalize_registered_model_path(filename)
             try:
                 return original_get_full_path_or_raise(model_type, filename, *args, **kwargs)
             except Exception:

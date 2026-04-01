@@ -22,6 +22,7 @@ SHARED_MODELS_URLS = {
     "checkpoints": [
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
+        {"url": "https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors", "filename": "dreamshaper_8.safetensors"},
 
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
@@ -122,6 +123,10 @@ SHARED_MODELS_URLS = {
     # CONTROLNET
     # =========================
     "controlnet": [
+        {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-depth-controlnet-v3.safetensors", "filename": "flux-depth-controlnet-v3.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "controlV11pSd15_v10.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "control_v11p_sd15_openpose_fp16.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11f1p_sd15_depth_fp16.safetensors", "filename": "control_v11f1p_sd15_depth_fp16.safetensors"},
         {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
     ],
 

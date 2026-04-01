@@ -85,6 +85,7 @@ SHARED_MODELS_URLS = {
     "checkpoints": [
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
+        {"url": "https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors", "filename": "dreamshaper_8.safetensors"},
 
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
@@ -206,6 +207,9 @@ SHARED_MODELS_URLS = {
     # =========================
     "controlnet": [
         {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-depth-controlnet-v3.safetensors", "filename": "flux-depth-controlnet-v3.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "controlV11pSd15_v10.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "control_v11p_sd15_openpose_fp16.safetensors"},
+        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11f1p_sd15_depth_fp16.safetensors", "filename": "control_v11f1p_sd15_depth_fp16.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
     ],
 
@@ -213,7 +217,9 @@ SHARED_MODELS_URLS = {
             {"url": "https://huggingface.co/Madespace/clip/resolve/main/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors", "filename": "t5/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors"},
        ],
     "embeddings": [],
-    "upscale_models": [],
+    "upscale_models": [
+        {"url": "https://huggingface.co/lokCX/4x-Ultrasharp/resolve/main/4x-UltraSharp.pth", "filename": "4x-UltraSharp.pth"},
+    ],
     "gligen": [],
     "hypernetworks": [],
     "vae_approx": [],
@@ -1914,7 +1920,10 @@ _bootstrap_trace("startup: cuda probe completed")
 # Evita mismatch: runtime cudaMallocAsync vs load-time native.
 if "--disable-cuda-malloc" not in sys.argv and os.environ.get("COMFYUI_FORCE_CUDA_MALLOC", "0") != "1":
     sys.argv.append("--disable-cuda-malloc")
-os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "backend:native")
+_legacy_pytorch_alloc_conf = os.environ.pop("PYTORCH_CUDA_ALLOC_CONF", "").strip()
+_current_pytorch_alloc_conf = os.environ.get("PYTORCH_ALLOC_CONF", "").strip()
+if not _current_pytorch_alloc_conf:
+    os.environ["PYTORCH_ALLOC_CONF"] = _legacy_pytorch_alloc_conf or "backend:native"
 
 # Compat FluxTrainer/transformers prima di importare ComfyUI.
 _bootstrap_trace("startup: early transformers compat begin")
@@ -2129,6 +2138,10 @@ def _resolve_model_roots():
     secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip() or os.path.join(base_dir, "models")
 
     candidates = [primary_root, secondary_root]
+    legacy_model_roots = globals().get("MODEL_ROOTS", ("/mnt/default-models", "/vscode/workspace/models"))
+    for legacy_root in legacy_model_roots:
+        if legacy_root and os.path.isdir(legacy_root):
+            candidates.append(legacy_root)
 
     env_value = os.environ.get("COMFYUI_MODEL_ROOTS", "").strip()
     if env_value:
@@ -2136,12 +2149,20 @@ def _resolve_model_roots():
 
     roots = []
     seen = set()
-    for candidate in candidates:
-        normalized = os.path.abspath(candidate)
+
+    def _append_root_candidate(path):
+        normalized = os.path.abspath(path)
         if normalized in seen:
-            continue
+            return
         seen.add(normalized)
         roots.append(normalized)
+
+    for candidate in candidates:
+        _append_root_candidate(candidate)
+
+        nested_default_models = os.path.join(candidate, "default-models")
+        if os.path.isdir(nested_default_models):
+            _append_root_candidate(nested_default_models)
 
     _bootstrap_trace(f"_resolve_model_roots: resolved {roots}")
     return roots
@@ -2255,6 +2276,73 @@ def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def _sync_model_alias_directories(model_roots):
+    """
+    Alcuni selector/nodi continuano a leggere solo le cartelle canoniche ComfyUI
+    (es. controlnet) anche se registriamo alias aggiuntivi. Manteniamo quindi i file
+    visibili in tutte le root rilevanti e in entrambe le posizioni senza duplicare
+    inutilmente il contenuto.
+    """
+    alias_pairs = [
+        ("controlnet", "xlabs/controlnets"),
+    ]
+
+    normalized_roots = []
+    seen_roots = set()
+    for root in model_roots:
+        normalized = os.path.abspath(root)
+        if normalized in seen_roots:
+            continue
+        seen_roots.add(normalized)
+        normalized_roots.append(normalized)
+
+    for canonical_subdir, alias_subdir in alias_pairs:
+        discovered_files = {}
+
+        for root in normalized_roots:
+            for subdir in (canonical_subdir, alias_subdir):
+                source_dir = os.path.join(root, subdir)
+                if not os.path.isdir(source_dir):
+                    continue
+
+                try:
+                    entry_names = os.listdir(source_dir)
+                except Exception:
+                    continue
+
+                for entry_name in entry_names:
+                    src_path = os.path.join(source_dir, entry_name)
+                    if os.path.isdir(src_path):
+                        continue
+                    discovered_files.setdefault(entry_name, src_path)
+
+        if not discovered_files:
+            continue
+
+        for root in normalized_roots:
+            target_dirs = [
+                os.path.join(root, canonical_subdir),
+                os.path.join(root, alias_subdir),
+            ]
+
+            for target_dir in target_dirs:
+                try:
+                    os.makedirs(target_dir, exist_ok=True)
+                except Exception as exc:
+                    logging.warning(f"Unable to prepare model alias directory {target_dir}: {exc}")
+                    continue
+
+                for entry_name, src_path in discovered_files.items():
+                    dst_path = os.path.join(target_dir, entry_name)
+                    if os.path.abspath(src_path) == os.path.abspath(dst_path):
+                        continue
+
+                    if _try_link_or_copy_file(src_path, dst_path):
+                        _bootstrap_trace(
+                            f"_sync_model_alias_directories: mirrored {src_path} -> {dst_path}"
+                        )
 
 
 def _try_hf_snapshot_download(repo_id: str, local_dir: str, revision: str = "main", ignore_patterns=None) -> bool:
@@ -2479,34 +2567,63 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: second LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: second LLM sync completed")
+    _bootstrap_trace("apply_shared_model_paths: model alias sync begin")
+    _sync_model_alias_directories(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: model alias sync completed")
 
-    model_dirs = {
-        "checkpoints": "checkpoints",
-        "loras": "loras",
-        "vae": "vae",
-        "clip": "clip",
-        "diffusion_models": "diffusion_models",
-        "transformer": "diffusion_models",
-        "embeddings": "embeddings",
-        "controlnet": "controlnet",
-        "upscale_models": "upscale_models",
-        "clip_vision": "clip_vision",
-        "style_models": "style_models",
-        "gligen": "gligen",
-        "hypernetworks": "hypernetworks",
-        "vae_approx": "vae_approx",
-        "unet": "unet",
-        "text_encoders": "text_encoders",
-        "t5": "text_encoders",
-        "clip_l": "text_encoders",
-        # Compat Florence/LLM: alcuni nodi cercano "LLM", altri "llm".
-        "LLM": "LLM",
-        "llm": "LLM",
-    }
+    iter_model_dir_bindings = globals().get("_iter_model_dir_bindings")
+    if callable(iter_model_dir_bindings):
+        model_dir_bindings = list(iter_model_dir_bindings())
+    else:
+        # Fallback sicuro: apply_custom_paths() gira prima dei helper definiti nel wrapper.
+        base_model_dirs = {
+            "checkpoints": "checkpoints",
+            "loras": "loras",
+            "vae": "vae",
+            "clip": "clip",
+            "diffusion_models": "diffusion_models",
+            "transformer": "diffusion_models",
+            "embeddings": "embeddings",
+            "controlnet": "controlnet",
+            "upscale_models": "upscale_models",
+            "clip_vision": "clip_vision",
+            "style_models": "style_models",
+            "gligen": "gligen",
+            "hypernetworks": "hypernetworks",
+            "vae_approx": "vae_approx",
+            "unet": "unet",
+            "text_encoders": "text_encoders",
+            "t5": "text_encoders",
+            "clip_l": "text_encoders",
+            "LLM": "LLM",
+            "llm": "LLM",
+        }
+        alias_model_dirs = {
+            "controlnet": [
+                "xlabs/controlnets",
+            ],
+        }
+
+        model_dir_bindings = []
+        seen_bindings = set()
+        for model_type, subdir in base_model_dirs.items():
+            binding = (model_type, subdir)
+            if binding in seen_bindings:
+                continue
+            seen_bindings.add(binding)
+            model_dir_bindings.append(binding)
+
+        for model_type, extra_subdirs in alias_model_dirs.items():
+            for subdir in extra_subdirs:
+                binding = (model_type, subdir)
+                if binding in seen_bindings:
+                    continue
+                seen_bindings.add(binding)
+                model_dir_bindings.append(binding)
 
     # Aggiunge TUTTE le cartelle per ogni tipo modello
     for root in model_roots:
-        for model_type, subdir in model_dirs.items():
+        for model_type, subdir in model_dir_bindings:
             p = os.path.join(root, subdir)
             if os.path.isdir(p):
                 folder_paths.add_model_folder_path(model_type, p)
@@ -2629,7 +2746,11 @@ _bootstrap_trace("startup: prestartup scripts completed")
 from pathlib import Path
 import runpy
 import logging
-os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
+_current_pytorch_alloc_conf = os.environ.get("PYTORCH_ALLOC_CONF", "").strip()
+if "expandable_segments:True" not in _current_pytorch_alloc_conf.split(","):
+    os.environ["PYTORCH_ALLOC_CONF"] = ",".join(
+        part for part in [_current_pytorch_alloc_conf, "expandable_segments:True"] if part
+    )
 
 def _ensure_transformers_clipfeatureextractor_compat():
     """
@@ -2757,6 +2878,119 @@ MODEL_DIRS_MAP = {
     "llm": "LLM",
 }
 
+MODEL_DIR_ALIASES_MAP = {
+    # XLabs salva i controlnet Flux in una sottocartella dedicata.
+    "controlnet": [
+        "xlabs/controlnets",
+    ],
+}
+
+
+def _iter_model_dir_bindings():
+    seen = set()
+
+    for model_type, subdir in MODEL_DIRS_MAP.items():
+        binding = (model_type, subdir)
+        if binding in seen:
+            continue
+        seen.add(binding)
+        yield binding
+
+    for model_type, extra_subdirs in MODEL_DIR_ALIASES_MAP.items():
+        for subdir in extra_subdirs:
+            binding = (model_type, subdir)
+            if binding in seen:
+                continue
+            seen.add(binding)
+            yield binding
+
+
+def _build_extra_model_paths_config(model_roots: list[str]):
+    data = {}
+    for idx, root in enumerate(model_roots, start=1):
+        root = os.path.abspath(root)
+        entry_name = f"shared_models_{idx}"
+        entry = {"base_path": root}
+        entry.update(MODEL_DIRS_MAP)
+        data[entry_name] = entry
+
+        alias_index = 0
+        for model_type, subdir in _iter_model_dir_bindings():
+            if MODEL_DIRS_MAP.get(model_type) == subdir:
+                continue
+
+            alias_index += 1
+            data[f"{entry_name}_alias_{alias_index}"] = {
+                "base_path": root,
+                model_type: subdir,
+            }
+
+    return data
+
+
+MODEL_FILENAME_ALIASES = {
+    # Alcuni workflow esportati referenziano il nome Civitai dello stesso OpenPose SD1.5.
+    "controlV11pSd15_v10.safetensors": "control_v11p_sd15_openpose_fp16.safetensors",
+}
+
+
+def _normalize_known_model_alias(value):
+    if not isinstance(value, str):
+        return value
+
+    normalized_value = value.replace("\\", "/")
+
+    if os.path.isabs(value):
+        dir_name, base_name = os.path.split(value)
+        aliased_name = MODEL_FILENAME_ALIASES.get(base_name)
+        if aliased_name:
+            return os.path.join(dir_name, aliased_name)
+        return value
+
+    if "/" in normalized_value:
+        dir_name, base_name = normalized_value.rsplit("/", 1)
+        aliased_name = MODEL_FILENAME_ALIASES.get(base_name)
+        if aliased_name:
+            return f"{dir_name}/{aliased_name}"
+        return normalized_value
+
+    return MODEL_FILENAME_ALIASES.get(normalized_value, value)
+
+
+def _normalize_registered_model_path(value):
+    value = _normalize_known_model_alias(value)
+    if not isinstance(value, str) or not os.path.isabs(value):
+        return value
+
+    normalized_value = os.path.abspath(value)
+    best_match = None
+    best_prefix_len = -1
+
+    for root in _resolve_model_roots():
+        for _, subdir in _iter_model_dir_bindings():
+            registered_dir = os.path.abspath(os.path.join(root, subdir))
+            try:
+                if os.path.commonpath([normalized_value, registered_dir]) != registered_dir:
+                    continue
+            except ValueError:
+                continue
+
+            try:
+                relative_path = os.path.relpath(normalized_value, registered_dir)
+            except ValueError:
+                continue
+
+            if relative_path == os.pardir or relative_path.startswith(f"{os.pardir}{os.sep}"):
+                continue
+
+            prefix_len = len(registered_dir)
+            if prefix_len > best_prefix_len:
+                best_match = relative_path.replace("\\", "/")
+                best_prefix_len = prefix_len
+
+    return best_match or value
+
+
 MODEL_ROOTS = [
     # Resta come fallback statico, ma il wrapper usa _resolve_model_roots().
     "/mnt/default-models",
@@ -2773,13 +3007,7 @@ def _write_auto_extra_model_paths_yaml(config_path: str, model_roots: list[str])
     except Exception as e:
         raise RuntimeError(f"PyYAML non disponibile per generare extra_model_paths: {e}")
 
-    data = {}
-    for idx, root in enumerate(model_roots, start=1):
-        root = os.path.abspath(root)
-        entry_name = f"shared_models_{idx}"
-        entry = {"base_path": root}
-        entry.update(MODEL_DIRS_MAP)
-        data[entry_name] = entry
+    data = _build_extra_model_paths_config(model_roots)
 
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
     with open(config_path, "w", encoding="utf-8") as f:
@@ -2949,6 +3177,7 @@ def _normalize_flux_prompt_value(value):
     for source, target in FLUX_PROMPT_PATH_REPLACEMENTS.items():
         new_value = new_value.replace(source, target)
 
+    new_value = _normalize_registered_model_path(new_value)
     return new_value
 
 
@@ -2985,6 +3214,12 @@ def _get_bootstrap_model_index():
             for model_type in aliases:
                 known_by_type.setdefault(model_type, set()).add(filename)
                 sources[(model_type, filename)] = (folder_name, url)
+
+                for alias_name, canonical_name in MODEL_FILENAME_ALIASES.items():
+                    if canonical_name != filename:
+                        continue
+                    known_by_type.setdefault(model_type, set()).add(alias_name)
+                    sources[(model_type, alias_name)] = (folder_name, url)
 
     _KNOWN_BOOTSTRAP_MODELS_BY_TYPE = known_by_type
     _KNOWN_BOOTSTRAP_MODEL_SOURCES = sources
@@ -3068,6 +3303,7 @@ def _install_known_model_selector_patch():
     original_get_full_path = getattr(folder_paths, "get_full_path", None)
     if callable(original_get_full_path) and not getattr(original_get_full_path, "_comfyui_known_model_patch", False):
         def _wrapped_get_full_path(model_type, filename, *args, **kwargs):
+            filename = _normalize_registered_model_path(filename)
             result = original_get_full_path(model_type, filename, *args, **kwargs)
             if result:
                 return result
@@ -3090,6 +3326,7 @@ def _install_known_model_selector_patch():
     original_get_full_path_or_raise = getattr(folder_paths, "get_full_path_or_raise", None)
     if callable(original_get_full_path_or_raise) and not getattr(original_get_full_path_or_raise, "_comfyui_known_model_patch", False):
         def _wrapped_get_full_path_or_raise(model_type, filename, *args, **kwargs):
+            filename = _normalize_registered_model_path(filename)
             try:
                 return original_get_full_path_or_raise(model_type, filename, *args, **kwargs)
             except Exception:
@@ -3237,6 +3474,8 @@ def _preflight_custom_logic():
         _bootstrap_trace("_preflight_custom_logic: Florence2 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
+        _sync_model_alias_directories(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: model alias sync completed")
 
     # 5) genera config path nativo ComfyUI per le shared folders
     auto_cfg = os.path.join(
