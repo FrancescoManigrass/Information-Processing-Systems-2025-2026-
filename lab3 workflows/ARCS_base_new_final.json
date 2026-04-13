@@ -1,28 +1,443 @@
 {
-  "id": "a060737b-596d-4fe8-bd55-93968ce24347",
+  "id": "00000000-0000-0000-0000-000000000000",
   "revision": 0,
   "last_node_id": 86,
-  "last_link_id": 329,
+  "last_link_id": 48,
   "nodes": [
+    {
+      "id": 5,
+      "type": "EmptyLatentImage",
+      "pos": [
+        1490.4380859375,
+        130
+      ],
+      "size": [
+        270,
+        106
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 25
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            32
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "widgets_values": [
+        512,
+        512,
+        1
+      ]
+    },
+    {
+      "id": 8,
+      "type": "VAEDecode",
+      "pos": [
+        2334.2974609375,
+        130
+      ],
+      "size": [
+        140,
+        46
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 27
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            34
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 10,
+      "type": "VAELoader",
+      "pos": [
+        100,
+        130
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            28
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "ae.safetensors"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "DualCLIPLoader",
+      "pos": [
+        100,
+        318
+      ],
+      "size": [
+        270,
+        130
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            36
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "DualCLIPLoader"
+      },
+      "widgets_values": [
+        "t5xxl_fp16.safetensors",
+        "clip_l.safetensors",
+        "flux",
+        "default"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "UNETLoader",
+      "pos": [
+        100,
+        578
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            35
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "UNETLoader"
+      },
+      "widgets_values": [
+        "flux1-dev-fp8.safetensors",
+        "fp8_e4m3fn"
+      ]
+    },
+    {
+      "id": 36,
+      "type": "ttN text",
+      "pos": [
+        100,
+        790
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            37,
+            38
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui_tinyterranodes",
+        "ver": "b5bb57f4b13463bd31355edf0aeb83c57ff795b3",
+        "Node name for S&R": "ttN text"
+      },
+      "widgets_values": [
+        "ARCS-Brutalist. A cavernous atrium of raw, board-formed concrete. A massive concrete spiral staircase dominates the space, with dramatic light filtering through large windows and heavy exterior brise-soleil, framing views of historic Seville. Moody architectural photography, high contrast."
+      ]
+    },
+    {
+      "id": 45,
+      "type": "XlabsSampler",
+      "pos": [
+        1926.4029296875,
+        130
+      ],
+      "size": [
+        307.89453125,
+        282
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 29
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 30
+        },
+        {
+          "name": "neg_conditioning",
+          "type": "CONDITIONING",
+          "link": 31
+        },
+        {
+          "name": "latent_image",
+          "shape": 7,
+          "type": "LATENT",
+          "link": 32
+        },
+        {
+          "name": "controlnet_condition",
+          "shape": 7,
+          "type": "ControlNetCondition",
+          "link": 33
+        }
+      ],
+      "outputs": [
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": [
+            27
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "x-flux-comfyui",
+        "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
+        "Node name for S&R": "XlabsSampler"
+      },
+      "widgets_values": [
+        409337200120047,
+        "randomize",
+        20,
+        25,
+        3.5,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 47,
+      "type": "LoadFluxControlNet",
+      "pos": [
+        100,
+        1120
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "ControlNet",
+          "type": "FluxControlNet",
+          "links": [
+            47
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "x-flux-comfyui",
+        "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
+        "Node name for S&R": "LoadFluxControlNet"
+      },
+      "widgets_values": [
+        "flux-dev-fp8",
+        "flux-depth-controlnet-v3.safetensors"
+      ]
+    },
+    {
+      "id": 64,
+      "type": "SaveImage",
+      "pos": [
+        2574.2974609375,
+        130
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 34
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0"
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 66,
+      "type": "LoraLoader",
+      "pos": [
+        600,
+        130
+      ],
+      "size": [
+        290.4380859375,
+        126
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 35
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 36
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            29
+          ]
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            39,
+            40
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "LoraLoader"
+      },
+      "widgets_values": [
+        "flux_lora_file_name_rank16_bf16.safetensors",
+        0.7,
+        1
+      ]
+    },
     {
       "id": 69,
       "type": "CLIPTextEncodeFlux",
       "pos": [
-        1139.723388671875,
-        2022.8428955078125
+        990.4380859375,
+        130
       ],
       "size": [
-        232.7277069091797,
-        166
+        400,
+        200
       ],
       "flags": {},
-      "order": 21,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 160
+          "link": 39
         },
         {
           "name": "clip_l",
@@ -30,7 +445,7 @@
           "widget": {
             "name": "clip_l"
           },
-          "link": 313
+          "link": 37
         },
         {
           "name": "t5xxl",
@@ -38,35 +453,22 @@
           "widget": {
             "name": "t5xxl"
           },
-          "link": 314
+          "link": 38
         }
       ],
       "outputs": [
         {
           "name": "CONDITIONING",
           "type": "CONDITIONING",
-          "slot_index": 0,
           "links": [
-            163
+            30
           ]
         }
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "CLIPTextEncodeFlux",
-        "ue_properties": {
-          "widget_ue_connectable": {
-            "clip_l": true,
-            "t5xxl": true
-          },
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {
-          "clip_l": true,
-          "t5xxl": true
-        }
+        "ver": "0.17.0",
+        "Node name for S&R": "CLIPTextEncodeFlux"
       },
       "widgets_values": [
         "",
@@ -78,43 +480,36 @@
       "id": 70,
       "type": "CLIPTextEncodeFlux",
       "pos": [
-        1138.5908203125,
-        2232.723388671875
+        990.4380859375,
+        460
       ],
       "size": [
-        234.64395141601562,
-        166
+        400,
+        200
       ],
       "flags": {},
-      "order": 10,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 165
+          "link": 40
         }
       ],
       "outputs": [
         {
           "name": "CONDITIONING",
           "type": "CONDITIONING",
-          "slot_index": 0,
           "links": [
-            164
+            31
           ]
         }
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "CLIPTextEncodeFlux",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
+        "ver": "0.17.0",
+        "Node name for S&R": "CLIPTextEncodeFlux"
       },
       "widgets_values": [
         "",
@@ -123,411 +518,24 @@
       ]
     },
     {
-      "id": 5,
-      "type": "EmptyLatentImage",
-      "pos": [
-        1136.8446044921875,
-        2444.398193359375
-      ],
-      "size": [
-        236.04464721679688,
-        106
-      ],
-      "flags": {},
-      "order": 16,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "width",
-          "type": "INT",
-          "widget": {
-            "name": "width"
-          },
-          "link": 192
-        },
-        {
-          "name": "height",
-          "type": "INT",
-          "widget": {
-            "name": "height"
-          },
-          "link": 193
-        }
-      ],
-      "outputs": [
-        {
-          "name": "LATENT",
-          "type": "LATENT",
-          "slot_index": 0,
-          "links": [
-            71
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "EmptyLatentImage",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {
-          "width": true,
-          "height": true
-        }
-      },
-      "widgets_values": [
-        800,
-        800,
-        1
-      ]
-    },
-    {
-      "id": 45,
-      "type": "XlabsSampler",
-      "pos": [
-        1400.066162109375,
-        2038.755859375
-      ],
-      "size": [
-        283.1074523925781,
-        359.1315612792969
-      ],
-      "flags": {},
-      "order": 19,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 129
-        },
-        {
-          "name": "conditioning",
-          "type": "CONDITIONING",
-          "link": 163
-        },
-        {
-          "name": "neg_conditioning",
-          "type": "CONDITIONING",
-          "link": 164
-        },
-        {
-          "name": "latent_image",
-          "shape": 7,
-          "type": "LATENT",
-          "link": 71
-        },
-        {
-          "name": "controlnet_condition",
-          "shape": 7,
-          "type": "ControlNetCondition",
-          "link": 329
-        }
-      ],
-      "outputs": [
-        {
-          "name": "latent",
-          "type": "LATENT",
-          "slot_index": 0,
-          "links": [
-            72
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "x-flux-comfyui",
-        "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
-        "Node name for S&R": "XlabsSampler",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        566554611333290,
-        "fixed",
-        20,
-        25,
-        3.5,
-        0,
-        1
-      ]
-    },
-    {
-      "id": 10,
-      "type": "VAELoader",
-      "pos": [
-        1397.239013671875,
-        2448.399658203125
-      ],
-      "size": [
-        286.85980224609375,
-        98.43191528320312
-      ],
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "slot_index": 0,
-          "links": [
-            12
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "VAELoader",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "ae.safetensors"
-      ]
-    },
-    {
-      "id": 8,
-      "type": "VAEDecode",
-      "pos": [
-        1705.6766357421875,
-        2043.0855712890625
-      ],
-      "size": [
-        140,
-        91.40807342529297
-      ],
-      "flags": {},
-      "order": 18,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "samples",
-          "type": "LATENT",
-          "link": 72
-        },
-        {
-          "name": "vae",
-          "type": "VAE",
-          "link": 12
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "slot_index": 0,
-          "links": [
-            124
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "VAEDecode",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": []
-    },
-    {
-      "id": 64,
-      "type": "SaveImage",
-      "pos": [
-        2053.918701171875,
-        2042.4102783203125
-      ],
-      "size": [
-        829.0743408203125,
-        510.3020324707031
-      ],
-      "flags": {},
-      "order": 20,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 124
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "SaveImage",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "ComfyUI"
-      ]
-    },
-    {
-      "id": 12,
-      "type": "UNETLoader",
-      "pos": [
-        -1015.4912109375,
-        2648.968505859375
-      ],
-      "size": [
-        812.3685913085938,
-        82
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "slot_index": 0,
-          "links": [
-            127
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "UNETLoader",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "flux1-dev-fp8.safetensors",
-        "fp8_e4m3fn"
-      ]
-    },
-    {
-      "id": 11,
-      "type": "DualCLIPLoader",
-      "pos": [
-        -1015.362060546875,
-        2773.8388671875
-      ],
-      "size": [
-        817.5059204101562,
-        130
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "slot_index": 0,
-          "links": [
-            128
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "DualCLIPLoader",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "t5xxl_fp16.safetensors",
-        "clip_l.safetensors",
-        "flux",
-        "default"
-      ]
-    },
-    {
-      "id": 36,
-      "type": "ttN text",
-      "pos": [
-        -1011.6524658203125,
-        2002.809326171875
-      ],
-      "size": [
-        818.7344970703125,
-        525.4301147460938
-      ],
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "text",
-          "type": "STRING",
-          "slot_index": 0,
-          "links": [
-            62
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui_tinyterranodes",
-        "ver": "2.0.9",
-        "Node name for S&R": "ttN text",
-        "ttNnodeVersion": "1.0.0",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "ARCS-Brutalist. A cavernous atrium of raw, board-formed concrete. A massive concrete spiral staircase dominates the space, with dramatic light filtering through large windows and heavy exterior brise-soleil, framing views of historic Seville. Moody architectural photography, high contrast."
-      ]
-    },
-    {
       "id": 72,
       "type": "GetImageSize+",
       "pos": [
-        -359.6986389160156,
-        1488.344970703125
+        990.4380859375,
+        790
       ],
       "size": [
-        173.57618713378906,
-        394.7673034667969
+        161.5943359375,
+        66
       ],
       "flags": {},
-      "order": 11,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 318
+          "link": 41
         }
       ],
       "outputs": [
@@ -535,14 +543,14 @@
           "name": "width",
           "type": "INT",
           "links": [
-            192
+            25
           ]
         },
         {
           "name": "height",
           "type": "INT",
           "links": [
-            193
+            26
           ]
         },
         {
@@ -554,145 +562,15 @@
       "properties": {
         "cnr_id": "comfyui_essentials",
         "ver": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
-        "Node name for S&R": "GetImageSize+",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "input_ue_unconnectable": {},
-          "version": "7.2.2"
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": []
-    },
-    {
-      "id": 81,
-      "type": "PreviewImage",
-      "pos": [
-        -826.9234379128094,
-        1144.6518161113609
-      ],
-      "size": [
-        140,
-        246
-      ],
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 319
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.17.0",
-        "Node name for S&R": "PreviewImage"
-      },
-      "widgets_values": []
-    },
-    {
-      "id": 82,
-      "type": "PreviewImage",
-      "pos": [
-        -209.23935920812383,
-        1150.1860404184833
-      ],
-      "size": [
-        140,
-        246
-      ],
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 320
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.17.0",
-        "Node name for S&R": "PreviewImage"
-      },
-      "widgets_values": []
-    },
-    {
-      "id": 83,
-      "type": "DownloadAndLoadDepthAnythingV3Model",
-      "pos": [
-        -148.65055047658444,
-        1482.9081011523551
-      ],
-      "size": [
-        388.65,
-        82
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "da3_model",
-          "type": "DA3MODEL",
-          "slot_index": 0,
-          "links": [
-            324
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "ComfyUI-DepthAnythingV3",
-        "ver": "f900962397f5dd3df02d3caba1e99b0cfe80c25a",
-        "Node name for S&R": "DownloadAndLoadDepthAnythingV3Model",
-        "aux_id": "PozzettiAndrea/ComfyUI-DepthAnythingV3"
-      },
-      "widgets_values": [
-        "da3nested_giant_large.safetensors",
-        "auto"
-      ]
-    },
-    {
-      "id": 85,
-      "type": "PreviewImage",
-      "pos": [
-        868.6871354556004,
-        1479.2059788398087
-      ],
-      "size": [
-        474.6,
-        258
-      ],
-      "flags": {},
-      "order": 17,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 325
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.17.0",
-        "Node name for S&R": "PreviewImage"
-      },
-      "widgets_values": []
+        "Node name for S&R": "GetImageSize+"
+      }
     },
     {
       "id": 79,
       "type": "ImageResize+",
       "pos": [
-        -633.7764854248522,
-        1150.682345667467
+        600,
+        386
       ],
       "size": [
         270,
@@ -705,7 +583,7 @@
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 315
+          "link": 42
         }
       ],
       "outputs": [
@@ -713,11 +591,8 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            318,
-            320,
-            322,
-            326,
-            327
+            41,
+            45
           ]
         },
         {
@@ -746,15 +621,44 @@
       ]
     },
     {
-      "id": 47,
-      "type": "LoadFluxControlNet",
+      "id": 81,
+      "type": "PreviewImage",
       "pos": [
-        -125.29999542236328,
-        1628.154296875
+        600,
+        734
       ],
       "size": [
-        310.7865295410156,
-        260.3684997558594
+        140,
+        246
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 43
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 83,
+      "type": "DownloadAndLoadDepthAnythingV3Model",
+      "pos": [
+        100,
+        1564
+      ],
+      "size": [
+        353.103125,
+        82
       ],
       "flags": {},
       "order": 5,
@@ -762,53 +666,47 @@
       "inputs": [],
       "outputs": [
         {
-          "name": "ControlNet",
-          "type": "FluxControlNet",
+          "name": "da3_model",
+          "type": "DA3MODEL",
           "links": [
-            328
+            44
           ]
         }
       ],
       "properties": {
-        "cnr_id": "x-flux-comfyui",
-        "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
-        "Node name for S&R": "LoadFluxControlNet",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
+        "cnr_id": "comfyui-depthanythingv3",
+        "ver": "0.1.1",
+        "Node name for S&R": "DownloadAndLoadDepthAnythingV3Model"
       },
       "widgets_values": [
-        "flux-dev-fp8",
-        "flux-depth-controlnet-v3.safetensors"
+        "da3nested_giant_large.safetensors",
+        "auto"
       ]
     },
     {
       "id": 86,
       "type": "ApplyFluxControlNet",
       "pos": [
-        251.81409818286807,
-        1700.7070879477114
+        1490.4380859375,
+        522
       ],
       "size": [
-        476.5,
-        101.7
+        335.96484375,
+        98
       ],
       "flags": {},
-      "order": 15,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
           "name": "controlnet",
           "type": "FluxControlNet",
-          "link": 328
+          "link": 47
         },
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 327
+          "link": 48
         },
         {
           "name": "controlnet_condition",
@@ -821,133 +719,30 @@
         {
           "name": "controlnet_condition",
           "type": "ControlNetCondition",
-          "slot_index": 0,
           "links": [
-            329
+            33
           ]
         }
       ],
       "properties": {
         "cnr_id": "x-flux-comfyui",
         "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
-        "Node name for S&R": "ApplyFluxControlNet",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
+        "Node name for S&R": "ApplyFluxControlNet"
       },
       "widgets_values": [
-        0.9000000000000001
+        0.9
       ]
-    },
-    {
-      "id": 66,
-      "type": "LoraLoader",
-      "pos": [
-        -119.45858764648438,
-        2652.13037109375
-      ],
-      "size": [
-        798.2710571289062,
-        255.07887268066406
-      ],
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 127
-        },
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 128
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            129
-          ]
-        },
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "slot_index": 1,
-          "links": [
-            160,
-            165
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "LoraLoader",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "flux_lora_file_name_rank16_bf16.safetensors",
-        0.7000000000000002,
-        1.0000000000000002
-      ]
-    },
-    {
-      "id": 56,
-      "type": "PreviewImage",
-      "pos": [
-        67.83093257968662,
-        2113.2857473428962
-      ],
-      "size": [
-        390.71976307917294,
-        246.00000000000023
-      ],
-      "flags": {},
-      "order": 13,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 322
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "PreviewImage",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": []
     },
     {
       "id": 75,
       "type": "LoadImage",
       "pos": [
-        -1017.3492431640625,
-        1481.8228759765625
+        100,
+        1332
       ],
       "size": [
-        416.5491027832031,
-        398.8439025878906
+        282.798828125,
+        314
       ],
       "flags": {},
       "order": 6,
@@ -958,8 +753,8 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            315,
-            319
+            42,
+            43
           ]
         },
         {
@@ -970,9 +765,8 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.3.45",
-        "Node name for S&R": "LoadImage",
-        "widget_ue_connectable": {}
+        "ver": "0.17.0",
+        "Node name for S&R": "LoadImage"
       },
       "widgets_values": [
         "building.png",
@@ -980,29 +774,58 @@
       ]
     },
     {
+      "id": 85,
+      "type": "PreviewImage",
+      "pos": [
+        1657.921132384874,
+        794.079836326844
+      ],
+      "size": [
+        140,
+        246
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 46
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
       "id": 84,
       "type": "DepthAnything_V3",
       "pos": [
-        253.58510934508263,
-        1259.813168720149
+        990.4380859375,
+        986
       ],
       "size": [
-        272.05859375,
+        302.296875,
         330
       ],
       "flags": {},
-      "order": 14,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
           "name": "da3_model",
           "type": "DA3MODEL",
-          "link": 324
+          "link": 44
         },
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 326
+          "link": 45
         },
         {
           "name": "camera_params",
@@ -1015,9 +838,9 @@
         {
           "name": "depth",
           "type": "IMAGE",
-          "slot_index": 0,
           "links": [
-            325
+            46,
+            48
           ]
         },
         {
@@ -1072,8 +895,8 @@
         }
       ],
       "properties": {
-        "cnr_id": "ComfyUI-DepthAnythingV3",
-        "ver": "0bb483bb0db9bf0fdae73117fec75ea96dc45b7c",
+        "cnr_id": "comfyui-depthanythingv3",
+        "ver": "0.1.1",
         "Node name for S&R": "DepthAnything_V3"
       },
       "widgets_values": [
@@ -1086,7 +909,31 @@
   ],
   "links": [
     [
-      12,
+      25,
+      72,
+      0,
+      5,
+      0,
+      "INT"
+    ],
+    [
+      26,
+      72,
+      1,
+      5,
+      1,
+      "INT"
+    ],
+    [
+      27,
+      45,
+      0,
+      8,
+      0,
+      "LATENT"
+    ],
+    [
+      28,
       10,
       0,
       8,
@@ -1094,7 +941,31 @@
       "VAE"
     ],
     [
-      71,
+      29,
+      66,
+      0,
+      45,
+      0,
+      "MODEL"
+    ],
+    [
+      30,
+      69,
+      0,
+      45,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      31,
+      70,
+      0,
+      45,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      32,
       5,
       0,
       45,
@@ -1102,15 +973,15 @@
       "LATENT"
     ],
     [
-      72,
+      33,
+      86,
+      0,
       45,
-      0,
-      8,
-      0,
-      "LATENT"
+      4,
+      "ControlNetCondition"
     ],
     [
-      124,
+      34,
       8,
       0,
       64,
@@ -1118,7 +989,7 @@
       "IMAGE"
     ],
     [
-      127,
+      35,
       12,
       0,
       66,
@@ -1126,7 +997,7 @@
       "MODEL"
     ],
     [
-      128,
+      36,
       11,
       0,
       66,
@@ -1134,63 +1005,7 @@
       "CLIP"
     ],
     [
-      129,
-      66,
-      0,
-      45,
-      0,
-      "MODEL"
-    ],
-    [
-      160,
-      66,
-      1,
-      69,
-      0,
-      "CLIP"
-    ],
-    [
-      163,
-      69,
-      0,
-      45,
-      1,
-      "CONDITIONING"
-    ],
-    [
-      164,
-      70,
-      0,
-      45,
-      2,
-      "CONDITIONING"
-    ],
-    [
-      165,
-      66,
-      1,
-      70,
-      0,
-      "CLIP"
-    ],
-    [
-      192,
-      72,
-      0,
-      5,
-      0,
-      "INT"
-    ],
-    [
-      193,
-      72,
-      1,
-      5,
-      1,
-      "INT"
-    ],
-    [
-      313,
+      37,
       36,
       0,
       69,
@@ -1198,7 +1013,7 @@
       "STRING"
     ],
     [
-      314,
+      38,
       36,
       0,
       69,
@@ -1206,7 +1021,31 @@
       "STRING"
     ],
     [
-      315,
+      39,
+      66,
+      1,
+      69,
+      0,
+      "CLIP"
+    ],
+    [
+      40,
+      66,
+      1,
+      70,
+      0,
+      "CLIP"
+    ],
+    [
+      41,
+      79,
+      0,
+      72,
+      0,
+      "IMAGE"
+    ],
+    [
+      42,
       75,
       0,
       79,
@@ -1214,15 +1053,7 @@
       "IMAGE"
     ],
     [
-      318,
-      79,
-      0,
-      72,
-      0,
-      "IMAGE"
-    ],
-    [
-      319,
+      43,
       75,
       0,
       81,
@@ -1230,23 +1061,7 @@
       "IMAGE"
     ],
     [
-      320,
-      79,
-      0,
-      82,
-      0,
-      "IMAGE"
-    ],
-    [
-      322,
-      79,
-      0,
-      56,
-      0,
-      "IMAGE"
-    ],
-    [
-      324,
+      44,
       83,
       0,
       84,
@@ -1254,7 +1069,15 @@
       "DA3MODEL"
     ],
     [
-      325,
+      45,
+      79,
+      0,
+      84,
+      1,
+      "IMAGE"
+    ],
+    [
+      46,
       84,
       0,
       85,
@@ -1262,23 +1085,7 @@
       "IMAGE"
     ],
     [
-      326,
-      79,
-      0,
-      84,
-      1,
-      "IMAGE"
-    ],
-    [
-      327,
-      79,
-      0,
-      86,
-      1,
-      "IMAGE"
-    ],
-    [
-      328,
+      47,
       47,
       0,
       86,
@@ -1286,137 +1093,25 @@
       "FluxControlNet"
     ],
     [
-      329,
-      86,
+      48,
+      84,
       0,
-      45,
-      4,
-      "ControlNetCondition"
+      86,
+      1,
+      "IMAGE"
     ]
   ],
-  "groups": [
-    {
-      "id": 3,
-      "title": "Depth ControlNet",
-      "bounding": [
-        -142.6131134033203,
-        1407.93017578125,
-        841.54150390625,
-        492.5013427734375
-      ],
-      "color": "#ffffff",
-      "font_size": 24,
-      "flags": {}
-    },
-    {
-      "id": 4,
-      "title": "Prompt engineering through LLM",
-      "bounding": [
-        -139.22169494628906,
-        1926.8109130859375,
-        839.7971801757812,
-        614.7494506835938
-      ],
-      "color": "#ffffff",
-      "font_size": 24,
-      "flags": {}
-    },
-    {
-      "id": 5,
-      "title": "LoRA: Low-Rank Adaptation",
-      "bounding": [
-        -138.86195373535156,
-        2569.716064453125,
-        832.539306640625,
-        349.9041748046875
-      ],
-      "color": "#ffffff",
-      "font_size": 24,
-      "flags": {}
-    },
-    {
-      "id": 6,
-      "title": "Diffusion Model",
-      "bounding": [
-        -1030.31201171875,
-        2571.240234375,
-        854.6851196289062,
-        346.7095642089844
-      ],
-      "color": "#ffffff",
-      "font_size": 24,
-      "flags": {}
-    },
-    {
-      "id": 7,
-      "title": "Raw textual prompt",
-      "bounding": [
-        -1027.76953125,
-        1923.397705078125,
-        849.1945190429688,
-        615.635009765625
-      ],
-      "color": "#ffffff",
-      "font_size": 24,
-      "flags": {}
-    },
-    {
-      "id": 8,
-      "title": "ControlNet input image",
-      "bounding": [
-        -1030.8865966796875,
-        1400.4666748046875,
-        857.158935546875,
-        495.6669006347656
-      ],
-      "color": "#ffffff",
-      "font_size": 24,
-      "flags": {}
-    },
-    {
-      "id": 9,
-      "title": "Inference processing",
-      "bounding": [
-        1117.521240234375,
-        1957.2540283203125,
-        749.6213989257812,
-        612.1331787109375
-      ],
-      "color": "#ffffff",
-      "font_size": 24,
-      "flags": {}
-    },
-    {
-      "id": 10,
-      "title": "Output image",
-      "bounding": [
-        2030.46142578125,
-        1960.885986328125,
-        870.9461059570312,
-        614.364013671875
-      ],
-      "color": "#ffffff",
-      "font_size": 24,
-      "flags": {}
-    }
-  ],
+  "groups": [],
   "config": {},
   "extra": {
     "ds": {
       "scale": 0.42416548331697684,
       "offset": [
-        -53.503559244358584,
-        -1097.2703602620581
+        166.08691630998422,
+        372.25117559142797
       ]
     },
-    "ue_links": [],
-    "links_added_by_ue": [],
-    "frontendVersion": "1.41.20",
-    "VHS_latentpreview": false,
-    "VHS_latentpreviewrate": 0,
-    "VHS_MetadataImage": true,
-    "VHS_KeepIntermediate": true,
-    "workflowRendererVersion": "LG"
+    "frontendVersion": "1.41.20"
   },
   "version": 0.4
 }
