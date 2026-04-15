@@ -90,6 +90,8 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
+        # URL firmato Civitai: se scade, va aggiornato con un nuovo download URL.
+        {"url": "https://civitai-delivery-worker-prod.5ac0637cfd0766c97916cefa3764fbdf.r2.cloudflarestorage.com/model/764940/juggernautxlRagnarok.k3mq.safetensors?X-Amz-Expires=86400&response-content-disposition=attachment%3B%20filename%3D%22juggernautXL_ragnarokBy.safetensors%22&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=e01358d793ad6966166af8b3064953ad/20260413/us-east-1/s3/aws4_request&X-Amz-Date=20260413T224358Z&X-Amz-SignedHeaders=host&X-Amz-Signature=735a7f9a95c3a6645f9b5fa5efb4af97916b552ad1ee0308f5029fc040af4976", "filename": "juggernautXL_ragnarokBy.safetensors"},
 
    ],
 
@@ -211,6 +213,17 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "control_v11p_sd15_openpose_fp16.safetensors"},
         {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11f1p_sd15_depth_fp16.safetensors", "filename": "control_v11f1p_sd15_depth_fp16.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
+    ],
+
+    # =========================
+    # INPAINT
+    # =========================
+    "inpaint": [
+        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/fooocus_inpaint_head.pth", "filename": "fooocus_inpaint_head.pth"},
+        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/fooocus_lama.safetensors", "filename": "fooocus_lama.safetensors"},
+        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint.fooocus.patch", "filename": "inpaint.fooocus.patch"},
+        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint_v25.fooocus.patch", "filename": "inpaint_v25.fooocus.patch"},
+        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint_v26.fooocus.patch", "filename": "inpaint_v26.fooocus.patch"},
     ],
 
         "clip": [ 
@@ -3019,6 +3032,7 @@ def apply_shared_model_paths():
             "transformer": "diffusion_models",
             "embeddings": "embeddings",
             "controlnet": "controlnet",
+            "inpaint": "inpaint",
             "upscale_models": "upscale_models",
             "clip_vision": "clip_vision",
             "style_models": "style_models",
@@ -3297,6 +3311,7 @@ MODEL_DIRS_MAP = {
     "transformer": "diffusion_models",
     "embeddings": "embeddings",
     "controlnet": "controlnet",
+    "inpaint": "inpaint",
     "upscale_models": "upscale_models",
     "clip_vision": "clip_vision",
     "style_models": "style_models",
@@ -3365,6 +3380,8 @@ def _build_extra_model_paths_config(model_roots: list[str]):
 MODEL_FILENAME_ALIASES = {
     # Alcuni workflow esportati referenziano il nome Civitai dello stesso OpenPose SD1.5.
     "controlV11pSd15_v10.safetensors": "control_v11p_sd15_openpose_fp16.safetensors",
+    # Compat tra basename del download URL Civitai e filename finale salvato localmente.
+    "juggernautxlRagnarok.k3mq.safetensors": "juggernautXL_ragnarokBy.safetensors",
 }
 
 
