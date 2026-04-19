@@ -2,7 +2,7 @@
   "id": "bdefdcfd-3d48-4f11-91e9-79bd1a33d9f8",
   "revision": 0,
   "last_node_id": 44,
-  "last_link_id": 38,
+  "last_link_id": 40,
   "nodes": [
     {
       "id": 10,
@@ -16,7 +16,7 @@
         120
       ],
       "flags": {},
-      "order": 16,
+      "order": 15,
       "mode": 0,
       "inputs": [
         {
@@ -52,46 +52,6 @@
       },
       "widgets_values": [
         1
-      ]
-    },
-    {
-      "id": 14,
-      "type": "CLIPTextEncode",
-      "pos": [
-        1040,
-        310
-      ],
-      "size": [
-        280,
-        130
-      ],
-      "flags": {},
-      "order": 9,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 3
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "slot_index": 0,
-          "links": [
-            23
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.17.0",
-        "Node name for S&R": "CLIPTextEncode"
-      },
-      "widgets_values": [
-        "lowres, blurry, bad anatomy, noisy, watermark, text"
       ]
     },
     {
@@ -159,7 +119,7 @@
         46
       ],
       "flags": {},
-      "order": 18,
+      "order": 17,
       "mode": 0,
       "inputs": [
         {
@@ -202,7 +162,7 @@
         260
       ],
       "flags": {},
-      "order": 19,
+      "order": 18,
       "mode": 0,
       "inputs": [
         {
@@ -367,7 +327,7 @@
         120
       ],
       "flags": {},
-      "order": 15,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {
@@ -383,7 +343,7 @@
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 10
+          "link": 40
         }
       ],
       "outputs": [
@@ -417,7 +377,7 @@
         90
       ],
       "flags": {},
-      "order": 12,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -467,7 +427,7 @@
         130
       ],
       "flags": {},
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -496,56 +456,6 @@
       ]
     },
     {
-      "id": 41,
-      "type": "LineArtPreprocessor",
-      "pos": [
-        495.5819228674899,
-        44.58514678470567
-      ],
-      "size": [
-        250,
-        90
-      ],
-      "flags": {},
-      "order": 11,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 5
-        },
-        {
-          "name": "resolution",
-          "shape": 7,
-          "type": "INT",
-          "widget": {
-            "name": "resolution"
-          },
-          "link": 8
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "slot_index": 0,
-          "links": [
-            10
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui_controlnet_aux",
-        "ver": "1.1.5",
-        "Node name for S&R": "LineArtPreprocessor"
-      },
-      "widgets_values": [
-        "disable",
-        512
-      ]
-    },
-    {
       "id": 38,
       "type": "Get Image Size",
       "pos": [
@@ -557,7 +467,7 @@
         100
       ],
       "flags": {},
-      "order": 6,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -571,9 +481,7 @@
           "name": "width",
           "type": "INT",
           "slot_index": 0,
-          "links": [
-            8
-          ]
+          "links": []
         },
         {
           "name": "height",
@@ -609,7 +517,7 @@
         78
       ],
       "flags": {},
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -647,79 +555,6 @@
       },
       "widgets_values": [
         "LIGHT - SD1.5 only (low strength)"
-      ]
-    },
-    {
-      "id": 17,
-      "type": "IPAdapterAdvanced",
-      "pos": [
-        1429.8183781792566,
-        655.2127647920523
-      ],
-      "size": [
-        260,
-        278
-      ],
-      "flags": {},
-      "order": 13,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 37
-        },
-        {
-          "name": "ipadapter",
-          "type": "IPADAPTER",
-          "link": 38
-        },
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 24
-        },
-        {
-          "name": "image_negative",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": null
-        },
-        {
-          "name": "attn_mask",
-          "shape": 7,
-          "type": "MASK",
-          "link": null
-        },
-        {
-          "name": "clip_vision",
-          "shape": 7,
-          "type": "CLIP_VISION",
-          "link": null
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "slot_index": 0,
-          "links": [
-            30
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui_ipadapter_plus",
-        "ver": "2.0.0",
-        "Node name for S&R": "IPAdapterAdvanced"
-      },
-      "widgets_values": [
-        1,
-        "linear",
-        "concat",
-        0,
-        1,
-        "V only"
       ]
     },
     {
@@ -791,49 +626,6 @@
       ]
     },
     {
-      "id": 1,
-      "type": "LoadImage",
-      "pos": [
-        -3.54052734375,
-        177.1171875
-      ],
-      "size": [
-        300,
-        314
-      ],
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "slot_index": 0,
-          "links": [
-            4,
-            5,
-            6
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "slot_index": 1,
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.17.0",
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": [
-        "architettura_grayscale_1canale.png",
-        "image"
-      ]
-    },
-    {
       "id": 16,
       "type": "CheckpointLoaderSimple",
       "pos": [
@@ -845,7 +637,7 @@
         98
       ],
       "flags": {},
-      "order": 4,
+      "order": 3,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -896,13 +688,13 @@
         270
       ],
       "flags": {},
-      "order": 17,
+      "order": 16,
       "mode": 0,
       "inputs": [
         {
           "name": "model",
           "type": "MODEL",
-          "link": 30
+          "link": 39
         },
         {
           "name": "positive",
@@ -936,13 +728,169 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        543347477076892,
+        155969140083074,
         "randomize",
         20,
         8,
         "dpmpp_2m",
         "karras",
         1
+      ]
+    },
+    {
+      "id": 17,
+      "type": "IPAdapterAdvanced",
+      "pos": [
+        1429.8183781792566,
+        655.2127647920523
+      ],
+      "size": [
+        260,
+        278
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 37
+        },
+        {
+          "name": "ipadapter",
+          "type": "IPADAPTER",
+          "link": 38
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 24
+        },
+        {
+          "name": "image_negative",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "attn_mask",
+          "shape": 7,
+          "type": "MASK",
+          "link": null
+        },
+        {
+          "name": "clip_vision",
+          "shape": 7,
+          "type": "CLIP_VISION",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            39
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui_ipadapter_plus",
+        "ver": "2.0.0",
+        "Node name for S&R": "IPAdapterAdvanced"
+      },
+      "widgets_values": [
+        1,
+        "linear",
+        "concat",
+        0,
+        1,
+        "V only"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "CLIPTextEncode",
+      "pos": [
+        1040,
+        310
+      ],
+      "size": [
+        280,
+        130
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "lowres, blurry, bad anatomy, noisy, watermark, text"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [
+        -3.54052734375,
+        177.1171875
+      ],
+      "size": [
+        300,
+        314
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            4,
+            6,
+            40
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "building.png",
+        "image"
       ]
     }
   ],
@@ -972,14 +920,6 @@
       "IMAGE"
     ],
     [
-      5,
-      1,
-      0,
-      41,
-      0,
-      "IMAGE"
-    ],
-    [
       6,
       1,
       0,
@@ -988,28 +928,12 @@
       "IMAGE"
     ],
     [
-      8,
-      38,
-      0,
-      41,
-      1,
-      "INT"
-    ],
-    [
       9,
       38,
       1,
       42,
       1,
       "INT"
-    ],
-    [
-      10,
-      41,
-      0,
-      5,
-      2,
-      "IMAGE"
     ],
     [
       11,
@@ -1108,14 +1032,6 @@
       "INT"
     ],
     [
-      30,
-      17,
-      0,
-      4,
-      0,
-      "MODEL"
-    ],
-    [
       31,
       4,
       0,
@@ -1170,16 +1086,32 @@
       17,
       1,
       "IPADAPTER"
+    ],
+    [
+      39,
+      17,
+      0,
+      4,
+      0,
+      "MODEL"
+    ],
+    [
+      40,
+      1,
+      0,
+      5,
+      2,
+      "IMAGE"
     ]
   ],
   "groups": [],
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.6580737209865886,
+      "scale": 0.5865260666311584,
       "offset": [
-        -517.2241566841774,
-        314.11772941787115
+        499.4544941789258,
+        508.6889731298141
       ]
     },
     "workflowRendererVersion": "LG",
