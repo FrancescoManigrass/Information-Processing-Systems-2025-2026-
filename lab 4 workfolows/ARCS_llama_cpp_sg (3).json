@@ -1,0 +1,1696 @@
+{
+  "id": "a060737b-596d-4fe8-bd55-93968ce24347",
+  "revision": 0,
+  "last_node_id": 80,
+  "last_link_id": 326,
+  "nodes": [
+    {
+      "id": 69,
+      "type": "CLIPTextEncodeFlux",
+      "pos": [
+        681.4858872687647,
+        2000.583441647257
+      ],
+      "size": [
+        232.7277069091797,
+        166
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 160
+        },
+        {
+          "name": "clip_l",
+          "type": "STRING",
+          "widget": {
+            "name": "clip_l"
+          },
+          "link": 308
+        },
+        {
+          "name": "t5xxl",
+          "type": "STRING",
+          "widget": {
+            "name": "t5xxl"
+          },
+          "link": 309
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            163
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "CLIPTextEncodeFlux",
+        "ue_properties": {
+          "widget_ue_connectable": {
+            "clip_l": true,
+            "t5xxl": true
+          },
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {
+          "clip_l": true,
+          "t5xxl": true
+        }
+      },
+      "widgets_values": [
+        "",
+        "",
+        4
+      ]
+    },
+    {
+      "id": 70,
+      "type": "CLIPTextEncodeFlux",
+      "pos": [
+        680.3533189093897,
+        2210.4639348113196
+      ],
+      "size": [
+        234.64395141601562,
+        166
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 165
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            164
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "CLIPTextEncodeFlux",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "",
+        "",
+        4
+      ]
+    },
+    {
+      "id": 5,
+      "type": "EmptyLatentImage",
+      "pos": [
+        678.6071030890772,
+        2422.1387394988196
+      ],
+      "size": [
+        236.04464721679688,
+        106
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 192
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 193
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            71
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "EmptyLatentImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {
+          "width": true,
+          "height": true
+        }
+      },
+      "widgets_values": [
+        800,
+        800,
+        1
+      ]
+    },
+    {
+      "id": 45,
+      "type": "XlabsSampler",
+      "pos": [
+        941.8286607062648,
+        2016.4964055144444
+      ],
+      "size": [
+        283.1074523925781,
+        359.1315612792969
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 129
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 163
+        },
+        {
+          "name": "neg_conditioning",
+          "type": "CONDITIONING",
+          "link": 164
+        },
+        {
+          "name": "latent_image",
+          "shape": 7,
+          "type": "LATENT",
+          "link": 71
+        },
+        {
+          "name": "controlnet_condition",
+          "shape": 7,
+          "type": "ControlNetCondition",
+          "link": 256
+        }
+      ],
+      "outputs": [
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            72
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "x-flux-comfyui",
+        "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
+        "Node name for S&R": "XlabsSampler",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        566554611333290,
+        "fixed",
+        20,
+        25,
+        3.5,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 10,
+      "type": "VAELoader",
+      "pos": [
+        939.0015122687648,
+        2426.1402043425696
+      ],
+      "size": [
+        286.85980224609375,
+        98.43191528320312
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            12
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "VAELoader",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "ae.safetensors"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "VAEDecode",
+      "pos": [
+        1247.4391343390776,
+        2020.826117428507
+      ],
+      "size": [
+        140,
+        91.40807342529297
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 72
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            124
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "VAEDecode",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 12,
+      "type": "UNETLoader",
+      "pos": [
+        -1015.4912109375,
+        2648.968505859375
+      ],
+      "size": [
+        812.3685913085938,
+        82
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            127
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "UNETLoader",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "flux1-dev-fp8.safetensors",
+        "fp8_e4m3fn"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "DualCLIPLoader",
+      "pos": [
+        -1015.362060546875,
+        2773.8388671875
+      ],
+      "size": [
+        817.5059204101562,
+        130
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 0,
+          "links": [
+            128
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "DualCLIPLoader",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "t5xxl_fp16.safetensors",
+        "clip_l.safetensors",
+        "flux",
+        "default"
+      ]
+    },
+    {
+      "id": 31,
+      "type": "LlamaCPPEngine",
+      "pos": [
+        217.833984375,
+        2010.3116455078125
+      ],
+      "size": [
+        358,
+        470
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "LLAMA_MODEL",
+          "link": 312
+        },
+        {
+          "name": "images",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "options",
+          "shape": 7,
+          "type": "LLAMA_OPTIONS",
+          "link": 313
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 62
+        },
+        {
+          "name": "system_prompt",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "system_prompt"
+          },
+          "link": 52
+        },
+        {
+          "name": "seed",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": 54
+        }
+      ],
+      "outputs": [
+        {
+          "name": "RESPONSE",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            125
+          ]
+        }
+      ],
+      "title": "Llama CPP Prompt Generator",
+      "properties": {
+        "cnr_id": "comfyui-sg-llama-cpp",
+        "ver": "2.0.1",
+        "Node name for S&R": "LlamaCPPEngine",
+        "ue_properties": {
+          "widget_ue_connectable": {
+            "prompt": true,
+            "system_prompt": true,
+            "seed": true
+          },
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {
+          "prompt": true,
+          "system_prompt": true,
+          "seed": true
+        }
+      },
+      "widgets_values": [
+        "ARCS-Brutalist. A cavernous atrium of raw, board-formed concrete. A massive concrete spiral staircase dominates the space, with dramatic light filtering through large windows and heavy exterior brise-soleil, framing views of historic Seville. Moody architectural photography, high contrast.",
+        "You must use the word ARCS-Brutalist.\nAct as an expert prompt designer specialising in description enhancers for inference Flux.1-dev model. Follow these rules:\n\nTake the simple description and enhance it.\nKeep only elements from the original description.\nThe output doesn't have any brackets.\nAdd details about:\n\nLighting\nStyle\nAtmosphere\n\nMaximum length of the output: 50 words\nDo not introduce any new elements.\nFocus on visual aspects that would help image generation\nKeep descriptions realistic and coherent\nMaintain the original mood and setting\n\nReturn only the enhanced description.",
+        "close",
+        "text",
+        96,
+        0.8,
+        0.9,
+        40,
+        0.05,
+        1.1,
+        0,
+        0,
+        -957369651439897,
+        "randomize"
+      ]
+    },
+    {
+      "id": 30,
+      "type": "MathExpression|pysssss",
+      "pos": [
+        -116.49066925048828,
+        2410.232666015625
+      ],
+      "size": [
+        312.5716857910156,
+        128
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "a",
+          "shape": 7,
+          "type": "INT,FLOAT,IMAGE,LATENT",
+          "link": null
+        },
+        {
+          "name": "b",
+          "shape": 7,
+          "type": "INT,FLOAT,IMAGE,LATENT",
+          "link": null
+        },
+        {
+          "name": "c",
+          "shape": 7,
+          "type": "INT,FLOAT,IMAGE,LATENT",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "INT",
+          "type": "INT",
+          "slot_index": 0,
+          "links": [
+            54
+          ]
+        },
+        {
+          "name": "FLOAT",
+          "type": "FLOAT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "f2838ed5e59de4d73cde5c98354b87a8d3200190",
+        "Node name for S&R": "MathExpression|pysssss",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "randomint(1000000000,9999999999)"
+      ]
+    },
+    {
+      "id": 32,
+      "type": "PrimitiveNode",
+      "pos": [
+        -117.3560791015625,
+        2012.94775390625
+      ],
+      "size": [
+        307.5680236816406,
+        356.799072265625
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "widget": {
+            "name": "system_prompt"
+          },
+          "links": [
+            52
+          ]
+        }
+      ],
+      "title": "Llama CPP System Prompt (Primitive)",
+      "properties": {
+        "Run widget replace on values": false,
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "You must use the word ARCS-Brutalist.\nAct as an expert prompt designer specialising in description enhancers for inference Flux.1-dev model. Follow these rules:\n\nTake the simple description and enhance it.\nKeep only elements from the original description.\nThe output doesn't have any brackets.\nAdd details about:\n\nLighting\nStyle\nAtmosphere\n\nMaximum length of the output: 50 words\nDo not introduce any new elements.\nFocus on visual aspects that would help image generation\nKeep descriptions realistic and coherent\nMaintain the original mood and setting\n\nReturn only the enhanced description."
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 36,
+      "type": "ttN text",
+      "pos": [
+        -1011.6524658203125,
+        2002.809326171875
+      ],
+      "size": [
+        818.7344970703125,
+        525.4301147460938
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            62
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui_tinyterranodes",
+        "ver": "2.0.9",
+        "Node name for S&R": "ttN text",
+        "ttNnodeVersion": "1.0.0",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "ARCS-Brutalist. A cavernous atrium of raw, board-formed concrete. A massive concrete spiral staircase dominates the space, with dramatic light filtering through large windows and heavy exterior brise-soleil, framing views of historic Seville. Moody architectural photography, high contrast."
+      ]
+    },
+    {
+      "id": 66,
+      "type": "LoraLoader",
+      "pos": [
+        -119.45858764648438,
+        2652.13037109375
+      ],
+      "size": [
+        798.2710571289062,
+        255.07887268066406
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 127
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 128
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            129
+          ]
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 1,
+          "links": [
+            160,
+            165
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "LoraLoader",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "my lora.safetensors",
+        0.7000000000000002,
+        1.0000000000000002
+      ]
+    },
+    {
+      "id": 64,
+      "type": "SaveImage",
+      "pos": [
+        1580.0694522304193,
+        2019.9045332956243
+      ],
+      "size": [
+        829.0743408203125,
+        510.3020324707031
+      ],
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 124
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "SaveImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 77,
+      "type": "LlamaCPPOptions",
+      "pos": [
+        800.2035088219201,
+        2696.4824407747865
+      ],
+      "size": [
+        345,
+        490
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "OPTIONS",
+          "type": "LLAMA_OPTIONS",
+          "slot_index": 0,
+          "links": [
+            313
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-sg-llama-cpp",
+        "ver": "2.0.1",
+        "Node name for S&R": "LlamaCPPOptions",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        -1,
+        2048,
+        -1,
+        -1,
+        2048,
+        512,
+        0,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        true,
+        -1,
+        -1,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "id": 75,
+      "type": "LoadImage",
+      "pos": [
+        -1653.5820284015663,
+        1467.6037826134593
+      ],
+      "size": [
+        416.5491027832031,
+        398.8439025878906
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            320
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45",
+        "Node name for S&R": "LoadImage",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "building.png",
+        "image"
+      ]
+    },
+    {
+      "id": 72,
+      "type": "GetImageSize+",
+      "pos": [
+        -1027.8080879162499,
+        1456.5735783237549
+      ],
+      "size": [
+        173.57618713378906,
+        394.7673034667969
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 321
+        }
+      ],
+      "outputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "links": [
+            192
+          ]
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": [
+            193
+          ]
+        },
+        {
+          "name": "count",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui_essentials",
+        "ver": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
+        "Node name for S&R": "GetImageSize+",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.2.2"
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 65,
+      "type": "ShowText|pysssss",
+      "pos": [
+        1280.4863903649532,
+        2359.3624370661078
+      ],
+      "size": [
+        230.67909240722656,
+        512.8274536132812
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 125
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            308,
+            309
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "f2838ed5e59de4d73cde5c98354b87a8d3200190",
+        "Node name for S&R": "ShowText|pysssss",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "Error generating response: Llama.create_chat_completion() got an unexpected keyword argument 'present_penalty'"
+      ]
+    },
+    {
+      "id": 76,
+      "type": "LlamaCPPModelLoader",
+      "pos": [
+        866.981333984775,
+        1738.4358611367732
+      ],
+      "size": [
+        320,
+        130
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "LLAMA_MODEL",
+          "slot_index": 0,
+          "links": [
+            312
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-sg-llama-cpp",
+        "ver": "2.0.1",
+        "Node name for S&R": "LlamaCPPModelLoader",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+        "llama-2",
+        "None"
+      ]
+    },
+    {
+      "id": 78,
+      "type": "ResizeAndPadImage",
+      "pos": [
+        -1221.351842662906,
+        1158.7325256648505
+      ],
+      "size": [
+        270,
+        130
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 320
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            321,
+            325
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "ResizeAndPadImage"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        "white",
+        "area"
+      ]
+    },
+    {
+      "id": 61,
+      "type": "ApplyFluxControlNet",
+      "pos": [
+        357.4366952718259,
+        1241.6352222519502
+      ],
+      "size": [
+        476.4450378417969,
+        101.69184112548828
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "controlnet",
+          "type": "FluxControlNet",
+          "link": 94
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 325
+        },
+        {
+          "name": "controlnet_condition",
+          "shape": 7,
+          "type": "ControlNetCondition",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "controlnet_condition",
+          "type": "ControlNetCondition",
+          "slot_index": 0,
+          "links": [
+            256
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "x-flux-comfyui",
+        "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
+        "Node name for S&R": "ApplyFluxControlNet",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        0.9000000000000001
+      ]
+    },
+    {
+      "id": 79,
+      "type": "DownloadAndLoadDepthAnythingV3Model",
+      "pos": [
+        -701.9205076571983,
+        1328.56912568061
+      ],
+      "size": [
+        388.65,
+        82
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "da3_model",
+          "type": "DA3MODEL",
+          "slot_index": 0,
+          "links": [
+            323
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-DepthAnythingV3",
+        "ver": "f900962397f5dd3df02d3caba1e99b0cfe80c25a",
+        "Node name for S&R": "DownloadAndLoadDepthAnythingV3Model",
+        "aux_id": "PozzettiAndrea/ComfyUI-DepthAnythingV3"
+      },
+      "widgets_values": [
+        "da3nested_giant_large.safetensors",
+        "auto"
+      ]
+    },
+    {
+      "id": 80,
+      "type": "DepthAnything_V3",
+      "pos": [
+        -98.57096138185324,
+        1378.9345648769681
+      ],
+      "size": [
+        272.05859375,
+        330
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "da3_model",
+          "type": "DA3MODEL",
+          "link": 323
+        },
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "camera_params",
+          "shape": 7,
+          "type": "CAMERA_PARAMS",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "depth",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            326
+          ]
+        },
+        {
+          "name": "confidence",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "resized_rgb_image",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "ray_origin",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "ray_direction",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "extrinsics_json",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "intrinsics_json",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "sky_mask",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "extrinsics",
+          "type": "EXTRINSICS",
+          "links": null
+        },
+        {
+          "name": "intrinsics",
+          "type": "INTRINSICS",
+          "links": null
+        },
+        {
+          "name": "gaussian_ply_path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-DepthAnythingV3",
+        "ver": "0bb483bb0db9bf0fdae73117fec75ea96dc45b7c",
+        "Node name for S&R": "DepthAnything_V3"
+      },
+      "widgets_values": [
+        "V2-Style",
+        "resize",
+        false,
+        false
+      ]
+    },
+    {
+      "id": 47,
+      "type": "LoadFluxControlNet",
+      "pos": [
+        -621.8873845766026,
+        1470.6718198866904
+      ],
+      "size": [
+        310.7865295410156,
+        260.3684997558594
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "ControlNet",
+          "type": "FluxControlNet",
+          "links": [
+            94
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "x-flux-comfyui",
+        "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
+        "Node name for S&R": "LoadFluxControlNet",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "flux-dev-fp8",
+        "flux-depth-controlnet-v3.safetensors"
+      ]
+    },
+    {
+      "id": 56,
+      "type": "PreviewImage",
+      "pos": [
+        330.950301278182,
+        1403.3181938935738
+      ],
+      "size": [
+        474.5332336425781,
+        258
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 326
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "PreviewImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [
+      12,
+      10,
+      0,
+      8,
+      1,
+      "VAE"
+    ],
+    [
+      52,
+      32,
+      0,
+      31,
+      4,
+      "STRING"
+    ],
+    [
+      54,
+      30,
+      0,
+      31,
+      5,
+      "INT"
+    ],
+    [
+      62,
+      36,
+      0,
+      31,
+      3,
+      "STRING"
+    ],
+    [
+      71,
+      5,
+      0,
+      45,
+      3,
+      "LATENT"
+    ],
+    [
+      72,
+      45,
+      0,
+      8,
+      0,
+      "LATENT"
+    ],
+    [
+      94,
+      47,
+      0,
+      61,
+      0,
+      "FluxControlNet"
+    ],
+    [
+      124,
+      8,
+      0,
+      64,
+      0,
+      "IMAGE"
+    ],
+    [
+      125,
+      31,
+      0,
+      65,
+      0,
+      "STRING"
+    ],
+    [
+      127,
+      12,
+      0,
+      66,
+      0,
+      "MODEL"
+    ],
+    [
+      128,
+      11,
+      0,
+      66,
+      1,
+      "CLIP"
+    ],
+    [
+      129,
+      66,
+      0,
+      45,
+      0,
+      "MODEL"
+    ],
+    [
+      160,
+      66,
+      1,
+      69,
+      0,
+      "CLIP"
+    ],
+    [
+      163,
+      69,
+      0,
+      45,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      164,
+      70,
+      0,
+      45,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      165,
+      66,
+      1,
+      70,
+      0,
+      "CLIP"
+    ],
+    [
+      192,
+      72,
+      0,
+      5,
+      0,
+      "INT"
+    ],
+    [
+      193,
+      72,
+      1,
+      5,
+      1,
+      "INT"
+    ],
+    [
+      256,
+      61,
+      0,
+      45,
+      4,
+      "ControlNetCondition"
+    ],
+    [
+      308,
+      65,
+      0,
+      69,
+      1,
+      "STRING"
+    ],
+    [
+      309,
+      65,
+      0,
+      69,
+      2,
+      "STRING"
+    ],
+    [
+      312,
+      76,
+      0,
+      31,
+      0,
+      "LLAMA_MODEL"
+    ],
+    [
+      313,
+      77,
+      0,
+      31,
+      2,
+      "LLAMA_OPTIONS"
+    ],
+    [
+      320,
+      75,
+      0,
+      78,
+      0,
+      "IMAGE"
+    ],
+    [
+      321,
+      78,
+      0,
+      72,
+      0,
+      "IMAGE"
+    ],
+    [
+      323,
+      79,
+      0,
+      80,
+      0,
+      "DA3MODEL"
+    ],
+    [
+      325,
+      78,
+      0,
+      61,
+      1,
+      "IMAGE"
+    ],
+    [
+      326,
+      80,
+      0,
+      56,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 3,
+      "title": "Depth ControlNet",
+      "bounding": [
+        -753.4240501025296,
+        1182.6040828662174,
+        1646.1368011039694,
+        633.4979681605619
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "Prompt engineering through llama.cpp",
+      "bounding": [
+        -139.22169494628906,
+        1760,
+        1200,
+        790
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 5,
+      "title": "LoRA: Low-Rank Adaptation",
+      "bounding": [
+        -138.86195373535156,
+        2569.716064453125,
+        832.539306640625,
+        349.9041748046875
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 6,
+      "title": "Diffusion Model",
+      "bounding": [
+        -1030.31201171875,
+        2571.240234375,
+        854.6851196289062,
+        346.7095642089844
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 7,
+      "title": "Raw textual prompt",
+      "bounding": [
+        -1027.76953125,
+        1923.397705078125,
+        849.1945190429688,
+        615.635009765625
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 8,
+      "title": "ControlNet input image",
+      "bounding": [
+        -1667.1193819171913,
+        1386.2475814415843,
+        857.158935546875,
+        495.6669006347656
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 9,
+      "title": "Inference processing",
+      "bounding": [
+        659.2837388312647,
+        1934.994574459757,
+        749.6213989257812,
+        612.1331787109375
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 10,
+      "title": "Output image",
+      "bounding": [
+        1556.6121768397943,
+        1938.3802413034368,
+        870.9461059570312,
+        614.364013671875
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.5129838176045723,
+      "offset": [
+        315.96463129513273,
+        -1093.6217040237298
+      ]
+    },
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "frontendVersion": "1.41.20",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true,
+    "workflowRendererVersion": "LG"
+  },
+  "version": 0.4
+}
