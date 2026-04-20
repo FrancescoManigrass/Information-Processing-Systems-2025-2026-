@@ -1490,6 +1490,49 @@ def _ensure_headless_opencv():
 
     return changed_any or True
 
+def _apply_llama_cpp_present_penalty_compat():
+    """
+    Alcuni nodi/custom wrapper passano per errore `present_penalty` a llama_cpp,
+    mentre le versioni recenti espongono `presence_penalty` o non supportano
+    affatto questo parametro. Rendiamo la chiamata tollerante lato runtime.
+    """
+    if os.environ.get("COMFYUI_LLAMA_CPP_PRESENT_PENALTY_COMPAT", "1") != "1":
+        return
+
+    try:
+        from llama_cpp import Llama
+    except Exception as exc:
+        print(f"[BOOTSTRAP] Skipping llama_cpp present_penalty compat, import failed: {exc}")
+        return
+
+    original_create_chat_completion = getattr(Llama, "create_chat_completion", None)
+    if not callable(original_create_chat_completion):
+        print("[BOOTSTRAP] Skipping llama_cpp present_penalty compat, create_chat_completion not found")
+        return
+
+    if getattr(original_create_chat_completion, "_comfyui_present_penalty_patch", False):
+        return
+
+    def _wrapped_create_chat_completion(self, *args, **kwargs):
+        if "present_penalty" in kwargs:
+            present_penalty = kwargs.pop("present_penalty")
+            kwargs.setdefault("presence_penalty", present_penalty)
+
+        try:
+            return original_create_chat_completion(self, *args, **kwargs)
+        except TypeError as exc:
+            message = str(exc)
+            if "unexpected keyword argument 'presence_penalty'" not in message:
+                raise
+
+            fallback_kwargs = dict(kwargs)
+            fallback_kwargs.pop("presence_penalty", None)
+            return original_create_chat_completion(self, *args, **fallback_kwargs)
+
+    _wrapped_create_chat_completion._comfyui_present_penalty_patch = True
+    Llama.create_chat_completion = _wrapped_create_chat_completion
+    print("[BOOTSTRAP] Applied llama_cpp compat patch: present_penalty -> presence_penalty")
+
 
 def _check_cv2_import_subprocess():
     try:
@@ -1508,6 +1551,48 @@ def _check_cv2_import_subprocess():
         if isinstance(raw_output, bytes) and raw_output:
             return False, raw_output.decode("utf-8", errors="replace").strip()
         return False, str(exc)
+
+
+def _check_onnxruntime_import_subprocess():
+    try:
+        output = subprocess.check_output(
+            [
+                sys.executable,
+                "-c",
+                "import numpy as np; import onnxruntime as ort; print('ok', np.__version__, ort.__version__)",
+            ],
+            stderr=subprocess.STDOUT,
+            timeout=30,
+        )
+        return True, output.decode("utf-8", errors="replace").strip()
+    except Exception as exc:
+        raw_output = getattr(exc, "output", b"")
+        if isinstance(raw_output, bytes) and raw_output:
+            return False, raw_output.decode("utf-8", errors="replace").strip()
+        return False, str(exc)
+
+
+def _has_numpy_abi_mismatch(info):
+    markers = ("_ARRAY_API not found", "numpy.core.multiarray failed to import")
+    return any(marker in info for marker in markers)
+
+
+def _install_numpy_compat_runtime(log_context):
+    numpy_spec = os.environ.get("COMFYUI_NUMPY_COMPAT_SPEC", "numpy<2")
+    print(f"[BOOTSTRAP] Detected {log_context} ABI mismatch, installing: {numpy_spec}")
+    try:
+        subprocess.check_call(
+            _get_bootstrap_install_cmd(
+                "--disable-pip-version-check",
+                "--force-reinstall",
+                "--no-cache-dir",
+                numpy_spec,
+            )
+        )
+        return True
+    except Exception as exc:
+        print(f"[BOOTSTRAP] NumPy compat install failed for {log_context}: {exc}")
+        return False
 
 
 def _uninstall_opencv_packages(pip_cmd):
@@ -1566,22 +1651,8 @@ def _ensure_cv2_importable_or_fallback():
         return True
 
     # Tentativo 2: se è un errore di ABI NumPy<->OpenCV, forza NumPy 1.x e reinstalla.
-    numpy_abi_markers = ("_ARRAY_API not found", "numpy.core.multiarray failed to import")
-    if any(marker in info for marker in numpy_abi_markers) and os.environ.get("COMFYUI_CV2_NUMPY1_FALLBACK", "1") == "1":
-        numpy_spec = os.environ.get("COMFYUI_NUMPY_COMPAT_SPEC", "numpy<2")
-        print(f"[BOOTSTRAP] Detected NumPy/OpenCV ABI mismatch, installing: {numpy_spec}")
-        try:
-            subprocess.check_call(
-                _get_bootstrap_install_cmd(
-                    "--disable-pip-version-check",
-                    "--force-reinstall",
-                    "--no-cache-dir",
-                    numpy_spec,
-                )
-            )
-        except Exception as exc:
-            print(f"[BOOTSTRAP] NumPy compat install failed: {exc}")
-
+    if _has_numpy_abi_mismatch(info) and os.environ.get("COMFYUI_CV2_NUMPY1_FALLBACK", "1") == "1":
+        _install_numpy_compat_runtime("NumPy/OpenCV")
         _uninstall_opencv_packages(pip_cmd)
         try:
             subprocess.check_call(
@@ -1609,6 +1680,32 @@ def _ensure_cv2_importable_or_fallback():
             print(f"[BOOTSTRAP] cv2 fallback install failed: {exc}")
 
     print("[BOOTSTRAP] cv2 import still failing; continuing startup (custom nodes may fail).")
+    return False
+
+
+def _ensure_onnxruntime_importable_or_fallback():
+    """
+    Garantisce che `import onnxruntime` non fallisca per mismatch ABI con NumPy.
+    Questo evita che nodi come comfyui_controlnet_aux/DWPose saltino durante il load.
+    """
+    if os.environ.get("COMFYUI_ENSURE_ONNXRUNTIME", "1") != "1":
+        return True
+
+    ok, info = _check_onnxruntime_import_subprocess()
+    if ok:
+        print(f"[BOOTSTRAP] onnxruntime import OK: {info}")
+        return True
+
+    print(f"[BOOTSTRAP] onnxruntime import FAILED, attempting repair...\n{info}")
+
+    if _has_numpy_abi_mismatch(info) and os.environ.get("COMFYUI_ONNXRUNTIME_NUMPY1_FALLBACK", "1") == "1":
+        if _install_numpy_compat_runtime("NumPy/onnxruntime"):
+            ok, info = _check_onnxruntime_import_subprocess()
+            if ok:
+                print(f"[BOOTSTRAP] onnxruntime import OK after NumPy repair: {info}")
+                return True
+
+    print("[BOOTSTRAP] onnxruntime import still failing; continuing startup (DWPose/custom nodes may fail).")
     return False
 
 
@@ -2020,6 +2117,9 @@ def auto_install_requirements():
     _bootstrap_trace("auto_install_requirements: checking cv2 importability")
     _ensure_cv2_importable_or_fallback()
     _bootstrap_trace("auto_install_requirements: cv2 importability check completed")
+    _bootstrap_trace("auto_install_requirements: checking onnxruntime importability")
+    _ensure_onnxruntime_importable_or_fallback()
+    _bootstrap_trace("auto_install_requirements: onnxruntime importability check completed")
 
     if installed_any:
         import importlib, site
@@ -3028,6 +3128,7 @@ def apply_shared_model_paths():
             "loras": "loras",
             "vae": "vae",
             "clip": "clip",
+            "inpaint": "inpaint",
             "diffusion_models": "diffusion_models",
             "transformer": "diffusion_models",
             "embeddings": "embeddings",
@@ -3307,6 +3408,7 @@ MODEL_DIRS_MAP = {
     "loras": "loras",
     "vae": "vae",
     "clip": "clip",
+    "inpaint": "inpaint",
     "diffusion_models": "diffusion_models",
     "transformer": "diffusion_models",
     "embeddings": "embeddings",
@@ -3540,6 +3642,115 @@ def _cleanup_broken_manager_json_cache():
 
     if renamed:
         logging.info("[WRAPPER] Cleaned %d corrupt ComfyUI-Manager cache JSON file(s)", renamed)
+
+
+def _get_comfyui_manager_config_path():
+    get_user_directory = getattr(folder_paths, "get_user_directory", None)
+    if not callable(get_user_directory):
+        return None
+
+    try:
+        user_dir = os.path.abspath(get_user_directory())
+    except Exception as exc:
+        logging.warning(f"[WRAPPER] Unable to resolve ComfyUI user directory for manager config: {exc}")
+        return None
+
+    if hasattr(folder_paths, "get_system_user_directory"):
+        manager_files_path = os.path.join(user_dir, "__manager")
+    else:
+        manager_files_path = os.path.join(user_dir, "default", "ComfyUI-Manager")
+
+    return os.path.join(manager_files_path, "config.ini")
+
+
+def _is_comfyregistry_reachable(timeout=5):
+    probe_url = (
+        os.environ.get("COMFYUI_MANAGER_REGISTRY_PROBE_URL", "").strip()
+        or "https://api.comfy.org/nodes?page=1&limit=1"
+    )
+    request = urllib.request.Request(
+        probe_url,
+        headers={"User-Agent": "ComfyUI-Manager-NetworkProbe/1.0"},
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            status = getattr(response, "status", 200)
+            return 200 <= status < 500
+    except Exception as exc:
+        logging.warning(f"[WRAPPER] ComfyRegistry probe failed ({probe_url}): {exc}")
+        return False
+
+
+def _ensure_comfyui_manager_network_mode():
+    """
+    Permette di forzare `network_mode` via env e, in auto mode, ripiega su
+    `offline` quando ComfyRegistry non e' raggiungibile per evitare startup lenti
+    o apparentemente bloccati nel fetch iniziale.
+    """
+    if os.environ.get("COMFYUI_MANAGER_AUTO_CONFIGURE_NETWORK_MODE", "1") != "1":
+        return
+
+    config_path = _get_comfyui_manager_config_path()
+    if not config_path:
+        _bootstrap_trace("_ensure_comfyui_manager_network_mode: skipped because config path is unavailable")
+        return
+
+    import configparser
+
+    config = configparser.ConfigParser(strict=False)
+    if os.path.isfile(config_path):
+        config.read(config_path)
+
+    if "default" not in config:
+        config["default"] = {}
+
+    current_mode = (config["default"].get("network_mode") or "public").strip().lower() or "public"
+    requested_mode = os.environ.get("COMFYUI_MANAGER_NETWORK_MODE", "").strip().lower()
+    valid_modes = {"public", "private", "offline"}
+
+    if requested_mode and requested_mode not in valid_modes:
+        logging.warning(f"[WRAPPER] Ignoring unsupported COMFYUI_MANAGER_NETWORK_MODE='{requested_mode}'")
+        requested_mode = ""
+
+    target_mode = current_mode
+    change_reason = None
+
+    if requested_mode:
+        target_mode = requested_mode
+        if target_mode != current_mode:
+            change_reason = f"env override ({target_mode})"
+    else:
+        auto_offline_enabled = os.environ.get("COMFYUI_MANAGER_AUTO_OFFLINE_ON_REGISTRY_FAILURE", "1") == "1"
+        try:
+            probe_timeout = int(os.environ.get("COMFYUI_MANAGER_REGISTRY_PROBE_TIMEOUT", "5"))
+        except ValueError:
+            probe_timeout = 5
+
+        if auto_offline_enabled and current_mode == "public" and not _is_comfyregistry_reachable(timeout=probe_timeout):
+            target_mode = "offline"
+            change_reason = "ComfyRegistry unreachable"
+
+    if target_mode == current_mode and os.path.isfile(config_path):
+        _bootstrap_trace(
+            f"_ensure_comfyui_manager_network_mode: keeping network_mode={current_mode} ({config_path})"
+        )
+        return
+
+    config["default"]["network_mode"] = target_mode
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    with open(config_path, "w", encoding="utf-8") as config_file:
+        config.write(config_file)
+
+    logging.info(
+        "[WRAPPER] Set ComfyUI-Manager network_mode=%s in %s%s",
+        target_mode,
+        config_path,
+        f" ({change_reason})" if change_reason else "",
+    )
+    _bootstrap_trace(
+        f"_ensure_comfyui_manager_network_mode: wrote network_mode={target_mode} to {config_path}"
+    )
 
 
 def _append_disable_cuda_malloc_arg():
@@ -3852,6 +4063,9 @@ def _preflight_custom_logic():
     _bootstrap_trace("_preflight_custom_logic: cleanup manager cache begin")
     _cleanup_broken_manager_json_cache()
     _bootstrap_trace("_preflight_custom_logic: cleanup manager cache completed")
+    _bootstrap_trace("_preflight_custom_logic: manager network mode check begin")
+    _ensure_comfyui_manager_network_mode()
+    _bootstrap_trace("_preflight_custom_logic: manager network mode check completed")
 
     # 2) env vars opzionali
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
