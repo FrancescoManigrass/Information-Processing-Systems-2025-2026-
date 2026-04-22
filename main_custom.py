@@ -11,7 +11,6 @@ import venv
 import glob
 import types
 import colorsys
-import socket
 
 try:
     from importlib import metadata as importlib_metadata
@@ -1511,53 +1510,27 @@ def _apply_llama_cpp_present_penalty_compat():
         print("[BOOTSTRAP] Skipping llama_cpp present_penalty compat, create_chat_completion not found")
         return
 
-    def _patch_llama_method(method_name):
-        original_method = getattr(Llama, method_name, None)
-        if not callable(original_method):
-            return False
-
-        if getattr(original_method, "_comfyui_present_penalty_patch", False):
-            return False
-
-        def _wrapped_method(self, *args, **kwargs):
-            if "present_penalty" in kwargs:
-                present_penalty = kwargs.pop("present_penalty")
-                kwargs.setdefault("presence_penalty", present_penalty)
-
-            try:
-                return original_method(self, *args, **kwargs)
-            except TypeError as exc:
-                message = str(exc)
-                if "unexpected keyword argument 'present_penalty'" in message:
-                    fallback_kwargs = dict(kwargs)
-                    fallback_kwargs.pop("present_penalty", None)
-                    return original_method(self, *args, **fallback_kwargs)
-
-                if "unexpected keyword argument 'presence_penalty'" in message:
-                    fallback_kwargs = dict(kwargs)
-                    fallback_kwargs.pop("presence_penalty", None)
-                    return original_method(self, *args, **fallback_kwargs)
-
-                raise
-
-        _wrapped_method._comfyui_present_penalty_patch = True
-        setattr(Llama, method_name, _wrapped_method)
-        return True
-
-    patched_any = False
-    for method_name in (
-        "create_chat_completion",
-        "create_chat_completion_openai_v1",
-        "create_completion",
-        "__call__",
-    ):
-        if _patch_llama_method(method_name):
-            patched_any = True
-
-    if not patched_any:
-        print("[BOOTSTRAP] Skipping llama_cpp present_penalty compat, no patchable methods found")
+    if getattr(original_create_chat_completion, "_comfyui_present_penalty_patch", False):
         return
 
+    def _wrapped_create_chat_completion(self, *args, **kwargs):
+        if "present_penalty" in kwargs:
+            present_penalty = kwargs.pop("present_penalty")
+            kwargs.setdefault("presence_penalty", present_penalty)
+
+        try:
+            return original_create_chat_completion(self, *args, **kwargs)
+        except TypeError as exc:
+            message = str(exc)
+            if "unexpected keyword argument 'presence_penalty'" not in message:
+                raise
+
+            fallback_kwargs = dict(kwargs)
+            fallback_kwargs.pop("presence_penalty", None)
+            return original_create_chat_completion(self, *args, **fallback_kwargs)
+
+    _wrapped_create_chat_completion._comfyui_present_penalty_patch = True
+    Llama.create_chat_completion = _wrapped_create_chat_completion
     print("[BOOTSTRAP] Applied llama_cpp compat patch: present_penalty -> presence_penalty")
 
 
@@ -1886,17 +1859,7 @@ def _create_local_venv(venv_dir, venv_python):
         venv.EnvBuilder(with_pip=True).create(venv_dir)
         return
     except Exception as exc:
-        print(f"[BOOTSTRAP] Standard venv creation with pip failed: {exc}")
-
-    try:
-        print("[BOOTSTRAP] Retrying local virtualenv creation without pip/bootstrap tools")
-        venv.EnvBuilder(with_pip=False).create(venv_dir)
-        if os.path.isfile(venv_python):
-            return
-    except Exception as exc:
-        print(f"[BOOTSTRAP] Standard venv creation without pip failed: {exc}")
-
-    print("[BOOTSTRAP] Falling back to uv-based virtualenv creation")
+        print(f"[BOOTSTRAP] Standard venv creation failed, trying uv fallback: {exc}")
 
     uv_commands = [
         [sys.executable, "-m", "uv", "venv", venv_dir],
@@ -1936,38 +1899,6 @@ def _should_reexec_into_local_venv(base_dir):
     return os.path.realpath(sys.prefix).startswith("/usr")
 
 
-def _delete_local_venv_if_present(base_dir):
-    venv_dir = os.path.join(base_dir, LOCAL_VENV_DIRNAME)
-    if not os.path.exists(venv_dir):
-        return
-
-    real_venv_dir = os.path.realpath(venv_dir)
-    if os.path.basename(real_venv_dir) != LOCAL_VENV_DIRNAME:
-        raise RuntimeError(f"Refusing to delete unexpected virtualenv path: {real_venv_dir}")
-
-    print(f"[BOOTSTRAP] Removing existing local virtualenv: {real_venv_dir}")
-    shutil.rmtree(real_venv_dir)
-
-
-def _clear_custom_nodes_if_present(base_dir):
-    custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
-    if not os.path.isdir(custom_nodes_dir):
-        return
-
-    real_custom_nodes_dir = os.path.realpath(custom_nodes_dir)
-    if os.path.basename(real_custom_nodes_dir) != "custom_nodes":
-        raise RuntimeError(f"Refusing to clear unexpected custom_nodes path: {real_custom_nodes_dir}")
-
-    for entry_name in os.listdir(real_custom_nodes_dir):
-        entry_path = os.path.join(real_custom_nodes_dir, entry_name)
-        if os.path.isdir(entry_path) and not os.path.islink(entry_path):
-            print(f"[BOOTSTRAP] Removing custom node directory: {entry_path}")
-            shutil.rmtree(entry_path)
-        else:
-            print(f"[BOOTSTRAP] Removing custom node file: {entry_path}")
-            os.unlink(entry_path)
-
-
 def ensure_local_venv():
     if __name__ != "__main__":
         return
@@ -1992,8 +1923,6 @@ def ensure_local_venv():
     host_python = os.path.realpath(sys.executable)
 
     try:
-        _delete_local_venv_if_present(base_dir)
-
         if not os.path.isfile(venv_python):
             print(f"[BOOTSTRAP] Creating local virtualenv: {venv_dir}")
             _create_local_venv(venv_dir, venv_python)
@@ -2015,10 +1944,6 @@ def ensure_local_venv():
 
 
 def ensure_comfyui_manager_installed():
-    if os.environ.get("COMFYUI_KEEP_CUSTOM_NODES_EMPTY", "1") == "1":
-        print("[BOOTSTRAP] Skipping ComfyUI Manager install because custom_nodes must stay empty")
-        return
-
     if os.environ.get("COMFYUI_MANAGER_AUTO_INSTALL", "1") != "1":
         return
 
@@ -2458,9 +2383,6 @@ def _ensure_transformers_encoderdecodercache_compat(transformers_module, log_pre
 
 
 # Install custom nodes PRIMA del bootstrap requirements, così i loro requirements vengono inclusi.
-_bootstrap_trace("startup: clear_custom_nodes_if_present begin")
-_clear_custom_nodes_if_present(os.path.dirname(os.path.realpath(__file__)))
-_bootstrap_trace("startup: clear_custom_nodes_if_present completed")
 _bootstrap_trace("startup: ensure_local_venv begin")
 ensure_local_venv()
 _bootstrap_trace("startup: ensure_local_venv completed")
@@ -3930,96 +3852,6 @@ def _normalize_prompt_payload_paths(payload):
     return _normalize_flux_prompt_value(payload)
 
 
-def _get_effective_input_directory(base_dir: str) -> str:
-    get_input_directory = getattr(folder_paths, "get_input_directory", None)
-    if callable(get_input_directory):
-        try:
-            return os.path.abspath(get_input_directory())
-        except Exception:
-            pass
-    return os.path.join(base_dir, "input")
-
-
-def _iter_workflow_loadimage_references(workflow_path: str):
-    try:
-        import json
-
-        with open(workflow_path, "r", encoding="utf-8") as handle:
-            workflow = json.load(handle)
-    except Exception as exc:
-        logging.warning(f"[WRAPPER] Unable to inspect workflow assets in {workflow_path}: {exc}")
-        return
-
-    nodes = workflow.get("nodes")
-    if not isinstance(nodes, list):
-        return
-
-    for node in nodes:
-        if not isinstance(node, dict):
-            continue
-        if node.get("type") != "LoadImage":
-            continue
-
-        widgets_values = node.get("widgets_values")
-        if not isinstance(widgets_values, list) or not widgets_values:
-            continue
-
-        image_name = widgets_values[0]
-        if isinstance(image_name, str) and image_name.strip():
-            yield image_name.strip()
-
-
-def _sync_workflow_input_assets(base_dir: str):
-    """
-    Se un workflow referenzia file `LoadImage` e il file esiste accanto al workflow,
-    lo rende disponibile automaticamente nella input directory di ComfyUI.
-    """
-    if os.environ.get("COMFYUI_SYNC_WORKFLOW_INPUT_ASSETS", "1") != "1":
-        return
-
-    input_dir = _get_effective_input_directory(base_dir)
-    os.makedirs(input_dir, exist_ok=True)
-
-    search_dirs = [
-        os.path.join(base_dir, "workflows"),
-        os.path.join(base_dir, "lab 4 workfolows"),
-        os.path.join(base_dir, "lab2 workflows"),
-        os.path.join(base_dir, "lab3 workflows"),
-        os.path.join(base_dir, "user"),
-    ]
-
-    synced_any = False
-    for search_dir in search_dirs:
-        if not os.path.isdir(search_dir):
-            continue
-
-        for root, _, files in os.walk(search_dir):
-            for name in files:
-                if not name.lower().endswith(".json"):
-                    continue
-
-                workflow_path = os.path.join(root, name)
-                for image_name in _iter_workflow_loadimage_references(workflow_path):
-                    src_path = os.path.join(root, image_name)
-                    dest_path = os.path.join(input_dir, os.path.basename(image_name))
-
-                    if not os.path.isfile(src_path):
-                        continue
-                    if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
-                        continue
-
-                    if _try_link_or_copy_file(src_path, dest_path):
-                        synced_any = True
-                        logging.info(
-                            "[WRAPPER] Prepared workflow input asset: %s -> %s",
-                            src_path,
-                            dest_path,
-                        )
-
-    if not synced_any:
-        logging.info("[WRAPPER] No workflow input assets were synced into %s", input_dir)
-
-
 _KNOWN_BOOTSTRAP_MODELS_BY_TYPE = None
 _KNOWN_BOOTSTRAP_MODEL_SOURCES = None
 
@@ -4245,7 +4077,6 @@ def _preflight_custom_logic():
     _normalize_flux_workflow_paths(base_dir)
     _install_prompt_path_normalization_patch()
     _install_known_model_selector_patch()
-    _sync_workflow_input_assets(base_dir)
     _bootstrap_trace("_preflight_custom_logic: workflow normalization and prompt patch completed")
 
     # 2b) Compat per custom nodes legacy (es. fluxtrainer).
@@ -4400,46 +4231,6 @@ def _print_installed_packages_snapshot():
             print(f"[BOOTSTRAP] Unable to list installed packages via importlib.metadata: {fallback_exc}")
 
 
-def _find_available_tcp_port(host="127.0.0.1", start_port=8188):
-    """
-    Restituisce una porta TCP libera sullo stesso host usato da ComfyUI.
-    Prova prima la porta richiesta; se occupata chiede al sistema una porta effimera.
-    """
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.bind((host, start_port))
-            return start_port
-    except OSError:
-        pass
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind((host, 0))
-        return sock.getsockname()[1]
-
-
-def _maybe_switch_to_free_port(error):
-    message = str(error)
-    if "address already in use" not in message.lower():
-        return False
-
-    listen_host = getattr(args, "listen", None) or "127.0.0.1"
-    current_port = int(getattr(args, "port", 8188) or 8188)
-    replacement_port = _find_available_tcp_port(host=listen_host, start_port=current_port)
-
-    if replacement_port == current_port:
-        return False
-
-    logging.warning(
-        "[WRAPPER] Port %s on %s is already in use, retrying on free port %s",
-        current_port,
-        listen_host,
-        replacement_port,
-    )
-    args.port = replacement_port
-    return True
-
-
 def _launch_official_comfyui_main():
     """
     Avvia il main.py UFFICIALE di ComfyUI.
@@ -4453,18 +4244,8 @@ def _launch_official_comfyui_main():
     logging.info(f"[WRAPPER] Launching official ComfyUI main: {comfy_main}")
     try:
         runpy.run_path(str(comfy_main), run_name="__main__")
-    except OSError as exc:
-        if _maybe_switch_to_free_port(exc):
-            _bootstrap_trace(f"_launch_official_comfyui_main: retry on alternate port {args.port}")
-            runpy.run_path(str(comfy_main), run_name="__main__")
-            return
-        raise
     except RuntimeError as exc:
         message = str(exc)
-        if _maybe_switch_to_free_port(exc):
-            _bootstrap_trace(f"_launch_official_comfyui_main: retry on alternate port {args.port}")
-            runpy.run_path(str(comfy_main), run_name="__main__")
-            return
         if "--cpu" not in sys.argv and _cuda_failure_requires_cpu_fallback(message):
             logging.warning(f"[WRAPPER] CUDA startup failed, retrying in CPU mode: {message}")
             _force_comfyui_cpu_mode(message)
