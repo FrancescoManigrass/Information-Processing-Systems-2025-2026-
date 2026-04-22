@@ -1511,27 +1511,53 @@ def _apply_llama_cpp_present_penalty_compat():
         print("[BOOTSTRAP] Skipping llama_cpp present_penalty compat, create_chat_completion not found")
         return
 
-    if getattr(original_create_chat_completion, "_comfyui_present_penalty_patch", False):
-        return
+    def _patch_llama_method(method_name):
+        original_method = getattr(Llama, method_name, None)
+        if not callable(original_method):
+            return False
 
-    def _wrapped_create_chat_completion(self, *args, **kwargs):
-        if "present_penalty" in kwargs:
-            present_penalty = kwargs.pop("present_penalty")
-            kwargs.setdefault("presence_penalty", present_penalty)
+        if getattr(original_method, "_comfyui_present_penalty_patch", False):
+            return False
 
-        try:
-            return original_create_chat_completion(self, *args, **kwargs)
-        except TypeError as exc:
-            message = str(exc)
-            if "unexpected keyword argument 'presence_penalty'" not in message:
+        def _wrapped_method(self, *args, **kwargs):
+            if "present_penalty" in kwargs:
+                present_penalty = kwargs.pop("present_penalty")
+                kwargs.setdefault("presence_penalty", present_penalty)
+
+            try:
+                return original_method(self, *args, **kwargs)
+            except TypeError as exc:
+                message = str(exc)
+                if "unexpected keyword argument 'present_penalty'" in message:
+                    fallback_kwargs = dict(kwargs)
+                    fallback_kwargs.pop("present_penalty", None)
+                    return original_method(self, *args, **fallback_kwargs)
+
+                if "unexpected keyword argument 'presence_penalty'" in message:
+                    fallback_kwargs = dict(kwargs)
+                    fallback_kwargs.pop("presence_penalty", None)
+                    return original_method(self, *args, **fallback_kwargs)
+
                 raise
 
-            fallback_kwargs = dict(kwargs)
-            fallback_kwargs.pop("presence_penalty", None)
-            return original_create_chat_completion(self, *args, **fallback_kwargs)
+        _wrapped_method._comfyui_present_penalty_patch = True
+        setattr(Llama, method_name, _wrapped_method)
+        return True
 
-    _wrapped_create_chat_completion._comfyui_present_penalty_patch = True
-    Llama.create_chat_completion = _wrapped_create_chat_completion
+    patched_any = False
+    for method_name in (
+        "create_chat_completion",
+        "create_chat_completion_openai_v1",
+        "create_completion",
+        "__call__",
+    ):
+        if _patch_llama_method(method_name):
+            patched_any = True
+
+    if not patched_any:
+        print("[BOOTSTRAP] Skipping llama_cpp present_penalty compat, no patchable methods found")
+        return
+
     print("[BOOTSTRAP] Applied llama_cpp compat patch: present_penalty -> presence_penalty")
 
 
@@ -3904,6 +3930,96 @@ def _normalize_prompt_payload_paths(payload):
     return _normalize_flux_prompt_value(payload)
 
 
+def _get_effective_input_directory(base_dir: str) -> str:
+    get_input_directory = getattr(folder_paths, "get_input_directory", None)
+    if callable(get_input_directory):
+        try:
+            return os.path.abspath(get_input_directory())
+        except Exception:
+            pass
+    return os.path.join(base_dir, "input")
+
+
+def _iter_workflow_loadimage_references(workflow_path: str):
+    try:
+        import json
+
+        with open(workflow_path, "r", encoding="utf-8") as handle:
+            workflow = json.load(handle)
+    except Exception as exc:
+        logging.warning(f"[WRAPPER] Unable to inspect workflow assets in {workflow_path}: {exc}")
+        return
+
+    nodes = workflow.get("nodes")
+    if not isinstance(nodes, list):
+        return
+
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        if node.get("type") != "LoadImage":
+            continue
+
+        widgets_values = node.get("widgets_values")
+        if not isinstance(widgets_values, list) or not widgets_values:
+            continue
+
+        image_name = widgets_values[0]
+        if isinstance(image_name, str) and image_name.strip():
+            yield image_name.strip()
+
+
+def _sync_workflow_input_assets(base_dir: str):
+    """
+    Se un workflow referenzia file `LoadImage` e il file esiste accanto al workflow,
+    lo rende disponibile automaticamente nella input directory di ComfyUI.
+    """
+    if os.environ.get("COMFYUI_SYNC_WORKFLOW_INPUT_ASSETS", "1") != "1":
+        return
+
+    input_dir = _get_effective_input_directory(base_dir)
+    os.makedirs(input_dir, exist_ok=True)
+
+    search_dirs = [
+        os.path.join(base_dir, "workflows"),
+        os.path.join(base_dir, "lab 4 workfolows"),
+        os.path.join(base_dir, "lab2 workflows"),
+        os.path.join(base_dir, "lab3 workflows"),
+        os.path.join(base_dir, "user"),
+    ]
+
+    synced_any = False
+    for search_dir in search_dirs:
+        if not os.path.isdir(search_dir):
+            continue
+
+        for root, _, files in os.walk(search_dir):
+            for name in files:
+                if not name.lower().endswith(".json"):
+                    continue
+
+                workflow_path = os.path.join(root, name)
+                for image_name in _iter_workflow_loadimage_references(workflow_path):
+                    src_path = os.path.join(root, image_name)
+                    dest_path = os.path.join(input_dir, os.path.basename(image_name))
+
+                    if not os.path.isfile(src_path):
+                        continue
+                    if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
+                        continue
+
+                    if _try_link_or_copy_file(src_path, dest_path):
+                        synced_any = True
+                        logging.info(
+                            "[WRAPPER] Prepared workflow input asset: %s -> %s",
+                            src_path,
+                            dest_path,
+                        )
+
+    if not synced_any:
+        logging.info("[WRAPPER] No workflow input assets were synced into %s", input_dir)
+
+
 _KNOWN_BOOTSTRAP_MODELS_BY_TYPE = None
 _KNOWN_BOOTSTRAP_MODEL_SOURCES = None
 
@@ -4129,6 +4245,7 @@ def _preflight_custom_logic():
     _normalize_flux_workflow_paths(base_dir)
     _install_prompt_path_normalization_patch()
     _install_known_model_selector_patch()
+    _sync_workflow_input_assets(base_dir)
     _bootstrap_trace("_preflight_custom_logic: workflow normalization and prompt patch completed")
 
     # 2b) Compat per custom nodes legacy (es. fluxtrainer).
