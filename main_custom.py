@@ -11,6 +11,7 @@ import venv
 import glob
 import types
 import colorsys
+import socket
 
 try:
     from importlib import metadata as importlib_metadata
@@ -1859,7 +1860,17 @@ def _create_local_venv(venv_dir, venv_python):
         venv.EnvBuilder(with_pip=True).create(venv_dir)
         return
     except Exception as exc:
-        print(f"[BOOTSTRAP] Standard venv creation failed, trying uv fallback: {exc}")
+        print(f"[BOOTSTRAP] Standard venv creation with pip failed: {exc}")
+
+    try:
+        print("[BOOTSTRAP] Retrying local virtualenv creation without pip/bootstrap tools")
+        venv.EnvBuilder(with_pip=False).create(venv_dir)
+        if os.path.isfile(venv_python):
+            return
+    except Exception as exc:
+        print(f"[BOOTSTRAP] Standard venv creation without pip failed: {exc}")
+
+    print("[BOOTSTRAP] Falling back to uv-based virtualenv creation")
 
     uv_commands = [
         [sys.executable, "-m", "uv", "venv", venv_dir],
@@ -1955,6 +1966,8 @@ def ensure_local_venv():
     host_python = os.path.realpath(sys.executable)
 
     try:
+        _delete_local_venv_if_present(base_dir)
+
         if not os.path.isfile(venv_python):
             print(f"[BOOTSTRAP] Creating local virtualenv: {venv_dir}")
             _create_local_venv(venv_dir, venv_python)
@@ -1976,6 +1989,10 @@ def ensure_local_venv():
 
 
 def ensure_comfyui_manager_installed():
+    if os.environ.get("COMFYUI_KEEP_CUSTOM_NODES_EMPTY", "1") == "1":
+        print("[BOOTSTRAP] Skipping ComfyUI Manager install because custom_nodes must stay empty")
+        return
+
     if os.environ.get("COMFYUI_MANAGER_AUTO_INSTALL", "1") != "1":
         return
 
@@ -2415,9 +2432,6 @@ def _ensure_transformers_encoderdecodercache_compat(transformers_module, log_pre
 
 
 # Install custom nodes PRIMA del bootstrap requirements, così i loro requirements vengono inclusi.
-_bootstrap_trace("startup: delete_local_venv_if_present begin")
-_delete_local_venv_if_present(os.path.dirname(os.path.realpath(__file__)))
-_bootstrap_trace("startup: delete_local_venv_if_present completed")
 _bootstrap_trace("startup: clear_custom_nodes_if_present begin")
 _clear_custom_nodes_if_present(os.path.dirname(os.path.realpath(__file__)))
 _bootstrap_trace("startup: clear_custom_nodes_if_present completed")
@@ -4269,6 +4283,46 @@ def _print_installed_packages_snapshot():
             print(f"[BOOTSTRAP] Unable to list installed packages via importlib.metadata: {fallback_exc}")
 
 
+def _find_available_tcp_port(host="127.0.0.1", start_port=8188):
+    """
+    Restituisce una porta TCP libera sullo stesso host usato da ComfyUI.
+    Prova prima la porta richiesta; se occupata chiede al sistema una porta effimera.
+    """
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((host, start_port))
+            return start_port
+    except OSError:
+        pass
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind((host, 0))
+        return sock.getsockname()[1]
+
+
+def _maybe_switch_to_free_port(error):
+    message = str(error)
+    if "address already in use" not in message.lower():
+        return False
+
+    listen_host = getattr(args, "listen", None) or "127.0.0.1"
+    current_port = int(getattr(args, "port", 8188) or 8188)
+    replacement_port = _find_available_tcp_port(host=listen_host, start_port=current_port)
+
+    if replacement_port == current_port:
+        return False
+
+    logging.warning(
+        "[WRAPPER] Port %s on %s is already in use, retrying on free port %s",
+        current_port,
+        listen_host,
+        replacement_port,
+    )
+    args.port = replacement_port
+    return True
+
+
 def _launch_official_comfyui_main():
     """
     Avvia il main.py UFFICIALE di ComfyUI.
@@ -4282,8 +4336,18 @@ def _launch_official_comfyui_main():
     logging.info(f"[WRAPPER] Launching official ComfyUI main: {comfy_main}")
     try:
         runpy.run_path(str(comfy_main), run_name="__main__")
+    except OSError as exc:
+        if _maybe_switch_to_free_port(exc):
+            _bootstrap_trace(f"_launch_official_comfyui_main: retry on alternate port {args.port}")
+            runpy.run_path(str(comfy_main), run_name="__main__")
+            return
+        raise
     except RuntimeError as exc:
         message = str(exc)
+        if _maybe_switch_to_free_port(exc):
+            _bootstrap_trace(f"_launch_official_comfyui_main: retry on alternate port {args.port}")
+            runpy.run_path(str(comfy_main), run_name="__main__")
+            return
         if "--cpu" not in sys.argv and _cuda_failure_requires_cpu_fallback(message):
             logging.warning(f"[WRAPPER] CUDA startup failed, retrying in CPU mode: {message}")
             _force_comfyui_cpu_mode(message)
