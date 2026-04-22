@@ -1899,6 +1899,38 @@ def _should_reexec_into_local_venv(base_dir):
     return os.path.realpath(sys.prefix).startswith("/usr")
 
 
+def _delete_local_venv_if_present(base_dir):
+    venv_dir = os.path.join(base_dir, LOCAL_VENV_DIRNAME)
+    if not os.path.exists(venv_dir):
+        return
+
+    real_venv_dir = os.path.realpath(venv_dir)
+    if os.path.basename(real_venv_dir) != LOCAL_VENV_DIRNAME:
+        raise RuntimeError(f"Refusing to delete unexpected virtualenv path: {real_venv_dir}")
+
+    print(f"[BOOTSTRAP] Removing existing local virtualenv: {real_venv_dir}")
+    shutil.rmtree(real_venv_dir)
+
+
+def _clear_custom_nodes_if_present(base_dir):
+    custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
+    if not os.path.isdir(custom_nodes_dir):
+        return
+
+    real_custom_nodes_dir = os.path.realpath(custom_nodes_dir)
+    if os.path.basename(real_custom_nodes_dir) != "custom_nodes":
+        raise RuntimeError(f"Refusing to clear unexpected custom_nodes path: {real_custom_nodes_dir}")
+
+    for entry_name in os.listdir(real_custom_nodes_dir):
+        entry_path = os.path.join(real_custom_nodes_dir, entry_name)
+        if os.path.isdir(entry_path) and not os.path.islink(entry_path):
+            print(f"[BOOTSTRAP] Removing custom node directory: {entry_path}")
+            shutil.rmtree(entry_path)
+        else:
+            print(f"[BOOTSTRAP] Removing custom node file: {entry_path}")
+            os.unlink(entry_path)
+
+
 def ensure_local_venv():
     if __name__ != "__main__":
         return
@@ -2383,6 +2415,12 @@ def _ensure_transformers_encoderdecodercache_compat(transformers_module, log_pre
 
 
 # Install custom nodes PRIMA del bootstrap requirements, così i loro requirements vengono inclusi.
+_bootstrap_trace("startup: delete_local_venv_if_present begin")
+_delete_local_venv_if_present(os.path.dirname(os.path.realpath(__file__)))
+_bootstrap_trace("startup: delete_local_venv_if_present completed")
+_bootstrap_trace("startup: clear_custom_nodes_if_present begin")
+_clear_custom_nodes_if_present(os.path.dirname(os.path.realpath(__file__)))
+_bootstrap_trace("startup: clear_custom_nodes_if_present completed")
 _bootstrap_trace("startup: ensure_local_venv begin")
 ensure_local_venv()
 _bootstrap_trace("startup: ensure_local_venv completed")
