@@ -2646,8 +2646,10 @@ def _resolve_model_roots():
         _append_root_candidate(candidate)
 
         nested_default_models = os.path.join(candidate, "default-models")
-        if os.path.isdir(nested_default_models):
-            _append_root_candidate(nested_default_models)
+        # Registra sempre anche la nested root, cosi' ComfyUI vede subito path
+        # come models-default/default-models/diffusers/... gia' al bootstrap,
+        # anche quando la cartella viene creata nello stesso avvio.
+        _append_root_candidate(nested_default_models)
 
     _bootstrap_trace(f"_resolve_model_roots: resolved {roots}")
     return roots
@@ -3075,6 +3077,62 @@ def _ensure_da3_large_layout(model_roots):
     _bootstrap_trace(f"_ensure_da3_large_layout: completed for {model_dir}")
 
 
+def _ensure_default_llama_layout(model_roots):
+    """
+    Prepara un layout repo-like dentro
+    models-default/default-models/diffusers/Llama-3-8B-Instruct per il modello
+    LLaMA di default.
+    """
+    repo_id = (
+        os.environ.get("COMFYUI_DEFAULT_LLM_REPO", "gradientai/Llama-3-8B-Instruct-262k").strip()
+        or "gradientai/Llama-3-8B-Instruct-262k"
+    )
+    revision = os.environ.get("COMFYUI_DEFAULT_LLM_REVISION", "main").strip() or "main"
+    model_dir_name = os.environ.get("COMFYUI_DEFAULT_LLM_DIRNAME", "").strip() or (
+        "Llama-3-8B-Instruct"
+    )
+
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    diffusers_root = os.path.join(base_dir, "models-default", "default-models", "diffusers")
+    model_dir = os.path.join(diffusers_root, model_dir_name)
+    _bootstrap_trace(f"_ensure_default_llama_layout: start for {repo_id} -> {model_dir}")
+
+    try:
+        os.makedirs(model_dir, exist_ok=True)
+    except Exception as exc:
+        logging.warning(f"Unable to create default LLaMA diffusers dir in {diffusers_root}: {exc}")
+        _bootstrap_trace(f"_ensure_default_llama_layout: failed creating model dir -> {exc}")
+        return
+
+    hf_token = (
+        os.environ.get("COMFYUI_DEFAULT_LLM_HF_TOKEN", "").strip()
+        or os.environ.get("COMFYUI_LLAMA_HF_TOKEN", "").strip()
+        or os.environ.get("HF_TOKEN", "").strip()
+        or None
+    )
+
+    downloaded = _try_hf_snapshot_download(
+        repo_id=repo_id,
+        local_dir=model_dir,
+        revision=revision,
+    )
+    if downloaded:
+        _bootstrap_trace(f"_ensure_default_llama_layout: snapshot completed for {model_dir}")
+    else:
+        try:
+            _snapshot_hf_repo_to_local_dir(
+                repo_id=repo_id,
+                local_dir=model_dir,
+                hf_token=hf_token,
+            )
+            _bootstrap_trace(f"_ensure_default_llama_layout: direct snapshot fallback completed for {model_dir}")
+        except Exception as exc:
+            logging.warning(f"Unable to download default LLaMA repo {repo_id} into {model_dir}: {exc}")
+            _bootstrap_trace(f"_ensure_default_llama_layout: snapshot skipped or failed for {model_dir} -> {exc}")
+
+    _bootstrap_trace(f"_ensure_default_llama_layout: completed for {model_dir}")
+
+
 def apply_shared_model_paths():
     """
     Registra più cartelle modelli condivise e scarica automaticamente i modelli mancanti
@@ -3102,6 +3160,9 @@ def apply_shared_model_paths():
     _bootstrap_trace(f"apply_shared_model_paths: ensure shared models begin on {model_roots[0]}")
     ensure_shared_models_downloaded(model_roots[0])
     _bootstrap_trace("apply_shared_model_paths: ensure shared models completed")
+    _bootstrap_trace("apply_shared_model_paths: default llama layout begin")
+    _ensure_default_llama_layout(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: default llama layout completed")
     _bootstrap_trace("apply_shared_model_paths: first LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: first LLM sync completed")
@@ -3410,6 +3471,7 @@ MODEL_DIRS_MAP = {
     "clip": "clip",
     "inpaint": "inpaint",
     "diffusion_models": "diffusion_models",
+    "diffusers": "diffusers",
     "transformer": "diffusion_models",
     "embeddings": "embeddings",
     "controlnet": "controlnet",
@@ -4132,6 +4194,9 @@ def _preflight_custom_logic():
         _bootstrap_trace(f"_preflight_custom_logic: shared model bootstrap begin on {model_roots[0]}")
         ensure_shared_models_downloaded(model_roots[0])
         _bootstrap_trace("_preflight_custom_logic: shared model downloads completed")
+        _bootstrap_trace("_preflight_custom_logic: default llama layout begin")
+        _ensure_default_llama_layout(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: default llama layout completed")
         _bootstrap_trace("_preflight_custom_logic: llama gguf bootstrap begin")
         _ensure_llama_gguf_available(model_roots)
         _bootstrap_trace("_preflight_custom_logic: llama gguf bootstrap completed")
