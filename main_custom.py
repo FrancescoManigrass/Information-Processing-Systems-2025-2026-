@@ -90,8 +90,7 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
-        # URL firmato Civitai: se scade, va aggiornato con un nuovo download URL.
-        {"url": "https://civitai-delivery-worker-prod.5ac0637cfd0766c97916cefa3764fbdf.r2.cloudflarestorage.com/model/764940/juggernautxlRagnarok.k3mq.safetensors?X-Amz-Expires=86400&response-content-disposition=attachment%3B%20filename%3D%22juggernautXL_ragnarokBy.safetensors%22&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=e01358d793ad6966166af8b3064953ad/20260413/us-east-1/s3/aws4_request&X-Amz-Date=20260413T224358Z&X-Amz-SignedHeaders=host&X-Amz-Signature=735a7f9a95c3a6645f9b5fa5efb4af97916b552ad1ee0308f5029fc040af4976", "filename": "juggernautXL_ragnarokBy.safetensors"},
+        {"url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67bd26c86faf9f04b210a09f/46713bf09072876b32ff8bd97c0f4228a024ccb20010dae8fa83111e0ad5471f?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260428%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260428T215619Z&X-Amz-Expires=3600&X-Amz-Signature=d96d08b53a0556459c274f7f3c9b2987a541fe6c0864e33f3afcc2ed124a854f&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=67531ac54751e5eb835c8a39&response-content-disposition=attachment%3B+filename*%3DUTF-8%27%27juggernautXL_ragnarokBy.safetensors%3B+filename%3D%22juggernautXL_ragnarokBy.safetensors%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1777416979&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NzQxNjk3OX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2JkMjZjODZmYWY5ZjA0YjIxMGEwOWYvNDY3MTNiZjA5MDcyODc2YjMyZmY4YmQ5N2MwZjQyMjhhMDI0Y2NiMjAwMTBkYWU4ZmE4MzExMWUwYWQ1NDcxZioifV19&Signature=swb8FXyfOK13T7qLpwfWjlwz5vZE8zXOjyjbsvOR0j1-Z21Y7YZ%7EAPFKAQ9rnZ3kQ5%7EcXVM1nURmLWGN%7EeeV53Z1I%7Ek8eXgo%7EmQj4vq0uhDNDCbHveQxfM7jOiozobOlzb8fyksBvfrCLAvPtOh03xnBzIpCWHyR%7E2iL-Y-ZtJD9xwV9O%7EJC1yHWu9%7EmEuK%7EKsz49ko0PSf4pYx-fNX4BHDnN5mincKhvKy5uAI8qC5Ts9yvgmjasy8qV5dFdk9dlweeJdhi3ypFyvtk4LNjeOVpPiL5Venc4EzJ2RWgd5ixlmji8wA7n1b14ySddU%7EKDNV8ItVyx96Zvm-qpzun9Q__&Key-Pair-Id=K2L8F4GPSG1IFC", "filename": "juggernautXL_ragnarokBy.safetensors"},
 
    ],
 
@@ -100,17 +99,18 @@ SHARED_MODELS_URLS = {
     # =========================
     "diffusion_models": [
         # FLUX Trainer (set richiesto)
-        {"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
-{"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
+        #{"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
+        {"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
 
 
 
 
+
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2511_bf16.safetensors", "filename": "qwen_image_edit_2511_bf16.safetensors"},
 
         # >10GB circa (Qwen Image fp8)
         # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors", "filename": "qwen_image_fp8_e4m3fn.safetensors"},
         # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors", "filename": "qwen_image_distill_full_fp8_e4m3fn.safetensors"},
-        # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_fp8_e4m3fn.safetensors", "filename": "qwen_image_edit_fp8_e4m3fn.safetensors"},
 
         # Wan 2.1
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors", "filename": "wan2.1_t2v_1.3B_fp16.safetensors"},
@@ -130,7 +130,7 @@ SHARED_MODELS_URLS = {
 
         # FLUX full (gated/opzionali, pesanti)
       # >10GB circa (FP8 FLUX)
-        {"url": "https://huggingface.co/lllyasviel/flux1_dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
+       # {"url": "https://huggingface.co/lllyasviel/flux1_dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
    
         # >10GB circa
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev/resolve/main/flux1-fill-dev.safetensors", "filename": "flux1-fill-dev.safetensors"},
@@ -150,7 +150,7 @@ SHARED_MODELS_URLS = {
         #{"url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors", "filename": "t5/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors"},
 
 
-        #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "filename": "qwen_2.5_vl_7b_fp8_scaled.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "filename": "qwen_2.5_vl_7b_fp8_scaled.safetensors"},
 
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors?download=true", "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors"},
 
@@ -166,7 +166,7 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/comfyanonymous/flux_vae/resolve/main/flux-vae-bf16.safetensors", "filename": "flux-vae-bf16.safetensors"},
 
         {"url": "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/vae/ae.safetensors", "filename": "ae.safetensors"},
-        #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors?download=true", "filename": "wan_2.1_vae.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors?download=true", "filename": "hunyuan_video_vae_bf16.safetensors"},
          #{"url": "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors", "filename": "flux2-vae.safetensors"},
@@ -179,8 +179,8 @@ SHARED_MODELS_URLS = {
     # CLIP VISION
     # =========================
     "LLM": [
-        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
-        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
+        #{"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
+        #{"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
@@ -191,8 +191,10 @@ SHARED_MODELS_URLS = {
     # =========================
     "loras": [
         #{"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-8steps-V1.0.safetensors"},
+        {"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Edit-Lightning-4steps-V1.0-bf16.safetensors", "filename": "Qwen-Image-Edit-Lightning-4steps-V1.0-bf16.safetensors"},
         #{"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-4steps-V1.0.safetensors"},
 
+        {"url": "https://huggingface.co/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA/resolve/main/qwen-image-edit-2511-multiple-angles-lora.safetensors", "filename": "loras/qwen-image-edit-2511-multiple-angles-lora.safetensors"},
         #{"url": "https://huggingface.co/black-forest-labs/FLUX.1-Canny-dev-lora/resolve/main/flux1-canny-dev-lora.safetensors", "filename": "flux1-canny-dev-lora.safetensors"},
         #{"url": "https://huggingface.co/black-forest-labs/FLUX.1-Depth-dev-lora/resolve/main/flux1-depth-dev-lora.safetensors", "filename": "flux1-depth-dev-lora.safetensors"},
     ],
@@ -2605,28 +2607,24 @@ def _resolve_model_roots():
     Risolve le root modelli in modo portabile:
     - COMFYUI_MODEL_ROOTS (path separati da os.pathsep) se definita
     - COMFYUI_MODELS_DEFAULT_ROOT forza sempre la root primaria
-    - /mnt/default-models viene usata solo se gia' presente
-    - altrimenti usa una root locale al progetto per evitare mount non presenti/lenti
+    - altrimenti usa models-default/default-models come unica root locale
     """
     env_primary_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    local_primary_root = os.path.join(base_dir, "models-default")
-    mnt_primary_root = "/mnt/default-models"
+    local_primary_root = os.path.join(base_dir, "models-default", "default-models")
 
     if env_primary_root:
         primary_root = env_primary_root
-    elif os.path.isdir(mnt_primary_root):
-        primary_root = mnt_primary_root
     else:
         primary_root = local_primary_root
 
-    secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip() or os.path.join(base_dir, "models")
+    candidates = [primary_root]
 
-    candidates = [primary_root, secondary_root]
-    legacy_model_roots = globals().get("MODEL_ROOTS", ("/mnt/default-models", "/vscode/workspace/models"))
-    for legacy_root in legacy_model_roots:
-        if legacy_root and os.path.isdir(legacy_root):
-            candidates.append(legacy_root)
+    # Aggiungi root secondarie solo se richieste esplicitamente: il bootstrap
+    # deve scaricare e registrare i modelli locali in models-default/default-models.
+    secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip()
+    if secondary_root:
+        candidates.append(secondary_root)
 
     env_value = os.environ.get("COMFYUI_MODEL_ROOTS", "").strip()
     if env_value:
@@ -2644,12 +2642,6 @@ def _resolve_model_roots():
 
     for candidate in candidates:
         _append_root_candidate(candidate)
-
-        nested_default_models = os.path.join(candidate, "default-models")
-        # Registra sempre anche la nested root, cosi' ComfyUI vede subito path
-        # come models-default/default-models/diffusers/... gia' al bootstrap,
-        # anche quando la cartella viene creata nello stesso avvio.
-        _append_root_candidate(nested_default_models)
 
     _bootstrap_trace(f"_resolve_model_roots: resolved {roots}")
     return roots
@@ -3092,8 +3084,11 @@ def _ensure_default_llama_layout(model_roots):
         "Llama-3-8B-Instruct"
     )
 
-    base_dir = os.path.dirname(os.path.realpath(__file__))
-    diffusers_root = os.path.join(base_dir, "models-default", "default-models", "diffusers")
+    if not model_roots:
+        _bootstrap_trace("_ensure_default_llama_layout: skipped because model_roots is empty")
+        return
+
+    diffusers_root = os.path.join(model_roots[0], "diffusers")
     model_dir = os.path.join(diffusers_root, model_dir_name)
     _bootstrap_trace(f"_ensure_default_llama_layout: start for {repo_id} -> {model_dir}")
 
