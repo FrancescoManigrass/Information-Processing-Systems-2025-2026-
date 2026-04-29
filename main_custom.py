@@ -86,6 +86,7 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
         {"url": "https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors", "filename": "dreamshaper_8.safetensors"},
+        {"url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/6529c4a4f0e232695d9e9bb5/cf13666adceb951c7b5380e10a31a7233d160fd401e27240ae8253ef29ede15b?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260429%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260429T112701Z&X-Amz-Expires=3600&X-Amz-Signature=7e7680a6d04224a003064fd0eeaaae6ba11a5270872c6affd49271872b620aae&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=67531ac54751e5eb835c8a39&response-content-disposition=attachment%3B+filename*%3DUTF-8%27%27realisticVisionV51_v51VAE.safetensors%3B+filename%3D%22realisticVisionV51_v51VAE.safetensors%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1777465621&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NzQ2NTYyMX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NTI5YzRhNGYwZTIzMjY5NWQ5ZTliYjUvY2YxMzY2NmFkY2ViOTUxYzdiNTM4MGUxMGEzMWE3MjMzZDE2MGZkNDAxZTI3MjQwYWU4MjUzZWYyOWVkZTE1YioifV19&Signature=BlC4XkvmG0LaLl8oNi1ygihW0buK%7EUWI15y9m4pu%7EphSkm9ocw4xsLuJWMHqgHcgIDtI2p8iV-HQGEZS9tv2WPTVcprUj3AtncTeX%7EPeHsqVd9dHHUnNnmaOO5BYI6VF6x8bMg-C71hzADMVdFqoeHjeALfGMB8GKTrFFIVeRYkt88MRxQ44DqgdWRo4YkXoTdQms9P26oIbOGuHXMcnIC7Ei0PVh8NSJ9ELtkwW17yeEz4bpNcGHtGqArr7ZEKwGRNvwGyEVh4me9kI0Y4QBJq%7EPFJ9gBTJ6OdTP2oFlVlmf1yngaURHUubqRi-k29JQgYsCYr843Yp8Vw1%7E9TgyQ__&Key-Pair-Id=K2L8F4GPSG1IFC", "filename": "realisticVisionV51_v51VAE.safetensors"},
 
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
@@ -4087,7 +4088,66 @@ def _get_bootstrap_model_index():
 
 def _get_known_bootstrap_model_filenames(model_type):
     known_by_type, _ = _get_bootstrap_model_index()
-    return sorted(known_by_type.get(model_type, set()))
+    filenames = set(known_by_type.get(model_type, set()))
+    filenames.update(_iter_existing_model_filenames(model_type))
+    return sorted(filenames)
+
+
+def _iter_existing_model_filenames(model_type):
+    seen = set()
+
+    for root in _resolve_model_roots():
+        for registered_model_type, subdir in _iter_model_dir_bindings():
+            if registered_model_type != model_type:
+                continue
+
+            model_dir = os.path.join(root, subdir)
+            if not os.path.isdir(model_dir):
+                continue
+
+            for current_root, dir_names, file_names in os.walk(model_dir):
+                dir_names[:] = [name for name in dir_names if not name.startswith(".")]
+                for file_name in file_names:
+                    if file_name.startswith("."):
+                        continue
+
+                    file_path = os.path.join(current_root, file_name)
+                    try:
+                        rel_path = os.path.relpath(file_path, model_dir).replace("\\", "/")
+                    except ValueError:
+                        continue
+
+                    if rel_path in seen:
+                        continue
+                    seen.add(rel_path)
+                    yield rel_path
+
+
+def _resolve_existing_model_file(model_type, filename):
+    filename = _normalize_known_model_alias(filename)
+    if not isinstance(filename, str) or os.path.isabs(filename):
+        return None
+
+    normalized_filename = filename.replace("\\", "/")
+
+    for root in _resolve_model_roots():
+        for registered_model_type, subdir in _iter_model_dir_bindings():
+            if registered_model_type != model_type:
+                continue
+
+            model_dir = os.path.abspath(os.path.join(root, subdir))
+            candidate = os.path.abspath(os.path.join(model_dir, normalized_filename))
+
+            try:
+                if os.path.commonpath([candidate, model_dir]) != model_dir:
+                    continue
+            except ValueError:
+                continue
+
+            if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+                return candidate
+
+    return None
 
 
 def _invalidate_folder_paths_filename_cache(folder_paths_module, model_type):
@@ -4104,6 +4164,10 @@ def _invalidate_folder_paths_filename_cache(folder_paths_module, model_type):
 
 
 def _ensure_known_bootstrap_model_available(model_type, filename):
+    existing_path = _resolve_existing_model_file(model_type, filename)
+    if existing_path:
+        return existing_path
+
     _, sources = _get_bootstrap_model_index()
     source = sources.get((model_type, filename))
     if not source:
