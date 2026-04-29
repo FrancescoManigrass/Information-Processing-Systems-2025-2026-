@@ -841,7 +841,7 @@ def _ensure_llama_gguf_available(model_roots):
     repo_id = os.environ.get("COMFYUI_LLAMA_HF_REPO", "meta-llama/Llama-3.2-3B-Instruct").strip()
     quant_type = os.environ.get("COMFYUI_LLAMA_QUANT", "Q4_K_M").strip() or "Q4_K_M"
     if not repo_id:
-        logging.warning("COMFYUI_LLAMA_GGUF_MODE=convert requires COMFYUI_LLAMA_HF_REPO")
+        logging.warning("COMFYUI_LLAMA_GGUF_MODE=convert qrequires COMFYUI_LLAMA_HF_REPO")
         return None
 
     model_name = repo_id.rstrip("/").split("/")[-1].strip() or "llama-model"
@@ -2649,9 +2649,8 @@ def _resolve_model_roots():
 
 def _ensure_llm_subdirs(model_roots):
     """
-    Alcuni nodi (es. Florence2ModelLoader) cercano esplicitamente models/LLM.
-    Garantisce che LLM esista nella root primaria e, nelle root secondarie,
-    sia solo un link verso models-default.
+    Garantisce che LLM esista nella root primaria e come directory reale
+    nelle root secondarie. I file vengono poi linkati da _link_primary_models_to_secondary.
     """
     if not model_roots:
         return
@@ -2672,13 +2671,12 @@ def _ensure_llm_subdirs(model_roots):
             os.makedirs(root, exist_ok=True)
             if os.path.realpath(primary_llm) == os.path.realpath(secondary_llm):
                 continue
-            if _ensure_secondary_dir_link(primary_llm, secondary_llm):
-                continue
-            rel_target = os.path.relpath(primary_llm, root)
-            os.symlink(rel_target, secondary_llm, target_is_directory=True)
-            _bootstrap_trace(f"_ensure_llm_subdirs: linked {secondary_llm} -> {rel_target}")
+            if os.path.islink(secondary_llm):
+                os.remove(secondary_llm)
+            os.makedirs(secondary_llm, exist_ok=True)
+            _bootstrap_trace(f"_ensure_llm_subdirs: ensured real dir {secondary_llm}")
         except Exception as exc:
-            logging.warning(f"Unable to link LLM folder in {root}: {exc}")
+            logging.warning(f"Unable to create LLM folder in {root}: {exc}")
             _bootstrap_trace(f"_ensure_llm_subdirs: failed for {root} -> {exc}")
 
 
@@ -2910,11 +2908,136 @@ def _ensure_secondary_dir_link(primary_dir: str, secondary_dir: str) -> bool:
     return True
 
 
+def _sync_dir_as_file_symlinks(primary_dir: str, secondary_dir: str):
+    """
+    Ricorre ricorsivamente su primary_dir e secondary_dir garantendo che:
+    - Le directory in secondary_dir siano REALI (non symlink di directory)
+    - Ogni FILE in secondary_dir sia un symlink al file corrispondente in primary_dir
+    - File reali in secondary_dir vengano migrati in primary_dir e sostituiti con symlink
+    - Directory symlink in secondary_dir vengano sostituite con directory reali
+    """
+    try:
+        os.makedirs(secondary_dir, exist_ok=True)
+    except Exception as exc:
+        logging.warning(f"Unable to create secondary dir {secondary_dir}: {exc}")
+        _bootstrap_trace(f"_sync_dir_as_file_symlinks: failed creating {secondary_dir} -> {exc}")
+        return
+
+    primary_entries = set()
+    secondary_entries = set()
+
+    try:
+        primary_entries = set(os.listdir(primary_dir))
+    except Exception as exc:
+        logging.warning(f"Unable to list primary dir {primary_dir}: {exc}")
+        _bootstrap_trace(f"_sync_dir_as_file_symlinks: failed listing {primary_dir} -> {exc}")
+        return
+
+    try:
+        secondary_entries = set(os.listdir(secondary_dir))
+    except Exception:
+        pass
+
+    for entry_name in sorted(primary_entries | secondary_entries):
+        if entry_name.startswith("."):
+            continue
+
+        src_path = os.path.join(primary_dir, entry_name)
+        dst_path = os.path.join(secondary_dir, entry_name)
+
+        if os.path.abspath(src_path) == os.path.abspath(dst_path):
+            continue
+
+        src_is_real_dir = os.path.isdir(src_path) and not os.path.islink(src_path)
+        dst_is_real_dir = os.path.isdir(dst_path) and not os.path.islink(dst_path)
+        dst_is_dir_symlink = os.path.islink(dst_path) and os.path.isdir(dst_path)
+
+        # --- DIRECTORY ---
+        # Se src è una directory reale, o se dst è una directory (reale o symlink)
+        # senza src corrispondente in primary (solo in secondary)
+        if src_is_real_dir or (entry_name not in primary_entries and (dst_is_real_dir or dst_is_dir_symlink)):
+            # Rimuovi eventuale dir symlink: serve directory reale
+            if dst_is_dir_symlink:
+                try:
+                    os.remove(dst_path)
+                    _bootstrap_trace(f"_sync_dir_as_file_symlinks: removed dir symlink {dst_path}")
+                except Exception as exc:
+                    logging.warning(f"Unable to remove dir symlink {dst_path}: {exc}")
+                    continue
+            # Crea directory reale in primary se assente (entry solo in secondary)
+            if not src_is_real_dir:
+                try:
+                    os.makedirs(src_path, exist_ok=True)
+                except Exception as exc:
+                    logging.warning(f"Unable to create primary dir {src_path}: {exc}")
+                    continue
+            # Crea directory reale in secondary se assente
+            if not dst_is_real_dir:
+                try:
+                    os.makedirs(dst_path, exist_ok=True)
+                except Exception as exc:
+                    logging.warning(f"Unable to create secondary dir {dst_path}: {exc}")
+                    continue
+            _sync_dir_as_file_symlinks(src_path, dst_path)
+            continue
+
+        # --- FILE ---
+        # Rimuovi dir symlink al posto di un file (non dovrebbe accadere)
+        if dst_is_dir_symlink:
+            try:
+                os.remove(dst_path)
+            except Exception:
+                continue
+
+        # Symlink file già presente: verifica che punti al src corretto
+        if os.path.islink(dst_path) and not os.path.isdir(dst_path):
+            if os.path.isfile(src_path):
+                if os.path.realpath(dst_path) == os.path.realpath(src_path):
+                    continue  # symlink corretto, skip
+                # punta a target sbagliato: rimuovi e ricrea
+                try:
+                    os.remove(dst_path)
+                except Exception:
+                    continue
+            else:
+                continue  # src non esiste, lascia il symlink
+
+        # File reale in secondary: migra in primary, sostituisci con symlink
+        if os.path.isfile(dst_path) and not os.path.islink(dst_path):
+            if not os.path.lexists(src_path):
+                try:
+                    os.makedirs(primary_dir, exist_ok=True)
+                    shutil.move(dst_path, src_path)
+                    _bootstrap_trace(f"_sync_dir_as_file_symlinks: migrated {dst_path} -> {src_path}")
+                except Exception as exc:
+                    logging.warning(f"Unable to migrate file {dst_path} -> {src_path}: {exc}")
+                    continue
+            else:
+                # primary ha già il file: rimuovi il duplicato in secondary
+                try:
+                    os.remove(dst_path)
+                    _bootstrap_trace(f"_sync_dir_as_file_symlinks: removed duplicate {dst_path}")
+                except Exception as exc:
+                    logging.warning(f"Unable to remove duplicate {dst_path}: {exc}")
+                    continue
+
+        # Crea symlink file dst -> src
+        if os.path.isfile(src_path) and not os.path.lexists(dst_path):
+            try:
+                rel_target = os.path.relpath(src_path, secondary_dir)
+                os.symlink(rel_target, dst_path)
+                _bootstrap_trace(f"_sync_dir_as_file_symlinks: linked {dst_path} -> {rel_target}")
+            except Exception as exc:
+                logging.warning(f"Unable to create file symlink {dst_path} -> {src_path}: {exc}")
+                _bootstrap_trace(f"_sync_dir_as_file_symlinks: failed file symlink -> {exc}")
+
+
 def _link_primary_models_to_secondary(model_roots):
     """
-    Crea in models/ link alle entry presenti nella root primaria
-    models-default/default-models, cosi' anche i nodi che leggono hardcoded
-    da models/ vedono gli stessi modelli senza duplicare spazio disco.
+    Garantisce che models/ abbia la stessa struttura di directory di
+    models-default/default-models/, con ogni singolo file come symlink
+    al file corrispondente in primary (file-level symlinks).
+    Le directory in models/ sono REALI; i file dentro sono SYMLINK.
     """
     if os.environ.get("COMFYUI_LINK_DEFAULT_MODELS_TO_MODELS", "1") != "1":
         _bootstrap_trace("_link_primary_models_to_secondary: disabled by env")
@@ -2942,54 +3065,10 @@ def _link_primary_models_to_secondary(model_roots):
         _bootstrap_trace(f"_link_primary_models_to_secondary: failed preparing secondary -> {exc}")
         return
 
-    try:
-        entry_names = os.listdir(primary_root)
-    except Exception as exc:
-        logging.warning(f"Unable to list primary models root {primary_root}: {exc}")
-        _bootstrap_trace(f"_link_primary_models_to_secondary: failed listing primary -> {exc}")
-        return
-
-    linked = 0
-    skipped = 0
-
-    for entry_name in entry_names:
-        if entry_name in {".", ".."}:
-            continue
-
-        src_path = os.path.join(primary_root, entry_name)
-        dst_path = os.path.join(secondary_root, entry_name)
-
-        if os.path.abspath(src_path) == os.path.abspath(dst_path):
-            skipped += 1
-            continue
-
-        if os.path.lexists(dst_path):
-            if os.path.isdir(src_path) and os.path.isdir(dst_path) and not os.path.islink(dst_path):
-                if _ensure_secondary_dir_link(src_path, dst_path):
-                    linked += 1
-                else:
-                    child_linked, child_skipped = _link_directory_entries(src_path, dst_path)
-                    linked += child_linked
-                    skipped += child_skipped
-            else:
-                skipped += 1
-            continue
-
-        try:
-            rel_target = os.path.relpath(src_path, secondary_root)
-            os.symlink(rel_target, dst_path, target_is_directory=os.path.isdir(src_path))
-            linked += 1
-            _bootstrap_trace(f"_link_primary_models_to_secondary: linked {dst_path} -> {rel_target}")
-        except Exception as exc:
-            logging.warning(f"Unable to link model entry {dst_path} -> {src_path}: {exc}")
-            _bootstrap_trace(f"_link_primary_models_to_secondary: failed linking {dst_path} -> {src_path}: {exc}")
-
-    if linked:
-        logging.info(f"Linked {linked} models-default entr{'y' if linked == 1 else 'ies'} into {secondary_root}")
-
-    _bootstrap_trace(
-        f"_link_primary_models_to_secondary: completed linked={linked} skipped={skipped}"
-    )
+    _bootstrap_trace(f"_link_primary_models_to_secondary: syncing file-level symlinks {secondary_root} -> {primary_root}")
+    _sync_dir_as_file_symlinks(primary_root, secondary_root)
+    logging.info(f"[WRAPPER] File-level symlinks synchronized in {secondary_root}")
+    _bootstrap_trace("_link_primary_models_to_secondary: completed")
 
 
 def _sync_model_alias_directories(model_roots):
