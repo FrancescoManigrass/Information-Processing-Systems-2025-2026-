@@ -2649,14 +2649,35 @@ def _resolve_model_roots():
 def _ensure_llm_subdirs(model_roots):
     """
     Alcuni nodi (es. Florence2ModelLoader) cercano esplicitamente models/LLM.
-    Garantisce che la cartella esista in ogni root registrata.
+    Garantisce che LLM esista nella root primaria e, nelle root secondarie,
+    sia solo un link verso models-default.
     """
-    for root in model_roots:
+    if not model_roots:
+        return
+
+    primary_llm = os.path.join(model_roots[0], "LLM")
+
+    try:
+        _bootstrap_trace(f"_ensure_llm_subdirs: ensuring primary {primary_llm}")
+        os.makedirs(primary_llm, exist_ok=True)
+    except Exception as exc:
+        logging.warning(f"Unable to create primary LLM folder in {model_roots[0]}: {exc}")
+        _bootstrap_trace(f"_ensure_llm_subdirs: failed primary -> {exc}")
+        return
+
+    for root in model_roots[1:]:
+        secondary_llm = os.path.join(root, "LLM")
         try:
-            _bootstrap_trace(f"_ensure_llm_subdirs: ensuring {os.path.join(root, 'LLM')}")
-            os.makedirs(os.path.join(root, "LLM"), exist_ok=True)
+            os.makedirs(root, exist_ok=True)
+            if os.path.realpath(primary_llm) == os.path.realpath(secondary_llm):
+                continue
+            if os.path.lexists(secondary_llm):
+                continue
+            rel_target = os.path.relpath(primary_llm, root)
+            os.symlink(rel_target, secondary_llm, target_is_directory=True)
+            _bootstrap_trace(f"_ensure_llm_subdirs: linked {secondary_llm} -> {rel_target}")
         except Exception as exc:
-            logging.warning(f"Unable to create LLM folder in {root}: {exc}")
+            logging.warning(f"Unable to link LLM folder in {root}: {exc}")
             _bootstrap_trace(f"_ensure_llm_subdirs: failed for {root} -> {exc}")
 
 
@@ -2690,30 +2711,21 @@ def _sync_llm_primary_to_secondary(model_roots):
 
     if not os.path.exists(secondary_llm):
         try:
-            os.symlink(primary_llm, secondary_llm, target_is_directory=True)
+            rel_target = os.path.relpath(primary_llm, os.path.dirname(secondary_llm))
+            os.symlink(rel_target, secondary_llm, target_is_directory=True)
             logging.info(f"Linked LLM folder: {secondary_llm} -> {primary_llm}")
-            _bootstrap_trace(f"_sync_llm_primary_to_secondary: linked {secondary_llm} -> {primary_llm}")
+            _bootstrap_trace(f"_sync_llm_primary_to_secondary: linked {secondary_llm} -> {rel_target}")
             return
-        except Exception:
-            pass
+        except Exception as exc:
+            logging.warning(f"Unable to link LLM folder {secondary_llm} -> {primary_llm}: {exc}")
+            _bootstrap_trace(f"_sync_llm_primary_to_secondary: link failed -> {exc}")
+            return
 
-    try:
-        _bootstrap_trace(f"_sync_llm_primary_to_secondary: copying contents {primary_llm} -> {secondary_llm}")
-        os.makedirs(secondary_llm, exist_ok=True)
-        for entry_name in os.listdir(primary_llm):
-            src = os.path.join(primary_llm, entry_name)
-            dst = os.path.join(secondary_llm, entry_name)
-            if os.path.exists(dst):
-                continue
-            if os.path.isdir(src):
-                shutil.copytree(src, dst, dirs_exist_ok=True)
-            else:
-                shutil.copy2(src, dst)
-        logging.info(f"Synced LLM files from {primary_llm} to {secondary_llm}")
-        _bootstrap_trace(f"_sync_llm_primary_to_secondary: sync completed {primary_llm} -> {secondary_llm}")
-    except Exception as exc:
-        logging.warning(f"Unable to sync LLM folders {primary_llm} -> {secondary_llm}: {exc}")
-        _bootstrap_trace(f"_sync_llm_primary_to_secondary: sync failed -> {exc}")
+    if os.path.isdir(secondary_llm) and not os.path.islink(secondary_llm):
+        linked, skipped = _link_directory_entries(primary_llm, secondary_llm)
+        _bootstrap_trace(
+            f"_sync_llm_primary_to_secondary: linked entries into existing dir linked={linked} skipped={skipped}"
+        )
 
 def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
     """
@@ -2896,14 +2908,12 @@ def _sync_model_alias_directories(model_roots):
         ("controlnet", "xlabs/controlnets"),
     ]
 
-    normalized_roots = []
-    seen_roots = set()
-    for root in model_roots:
-        normalized = os.path.abspath(root)
-        if normalized in seen_roots:
-            continue
-        seen_roots.add(normalized)
-        normalized_roots.append(normalized)
+    if not model_roots:
+        return
+
+    # Gli alias vengono creati solo nella root primaria. Le root secondarie
+    # (models/) ricevono poi solo symlink tramite _link_primary_models_to_secondary.
+    normalized_roots = [os.path.abspath(model_roots[0])]
 
     for canonical_subdir, alias_subdir in alias_pairs:
         discovered_files = {}
@@ -3298,12 +3308,12 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: second LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: second LLM sync completed")
-    _bootstrap_trace("apply_shared_model_paths: default-to-models link begin")
-    _link_primary_models_to_secondary(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: default-to-models link completed")
     _bootstrap_trace("apply_shared_model_paths: model alias sync begin")
     _sync_model_alias_directories(model_roots)
     _bootstrap_trace("apply_shared_model_paths: model alias sync completed")
+    _bootstrap_trace("apply_shared_model_paths: default-to-models link begin")
+    _link_primary_models_to_secondary(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: default-to-models link completed")
 
     iter_model_dir_bindings = globals().get("_iter_model_dir_bindings")
     if callable(iter_model_dir_bindings):
@@ -4334,10 +4344,10 @@ def _preflight_custom_logic():
         _bootstrap_trace("_preflight_custom_logic: DA3 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
-        _link_primary_models_to_secondary(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: default-to-models link completed")
         _sync_model_alias_directories(model_roots)
         _bootstrap_trace("_preflight_custom_logic: model alias sync completed")
+        _link_primary_models_to_secondary(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: default-to-models link completed")
 
     # 5) genera config path nativo ComfyUI per le shared folders
     auto_cfg = os.path.join(
