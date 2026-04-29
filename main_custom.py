@@ -2672,7 +2672,7 @@ def _ensure_llm_subdirs(model_roots):
             os.makedirs(root, exist_ok=True)
             if os.path.realpath(primary_llm) == os.path.realpath(secondary_llm):
                 continue
-            if os.path.lexists(secondary_llm):
+            if _ensure_secondary_dir_link(primary_llm, secondary_llm):
                 continue
             rel_target = os.path.relpath(primary_llm, root)
             os.symlink(rel_target, secondary_llm, target_is_directory=True)
@@ -2723,10 +2723,11 @@ def _sync_llm_primary_to_secondary(model_roots):
             return
 
     if os.path.isdir(secondary_llm) and not os.path.islink(secondary_llm):
-        linked, skipped = _link_directory_entries(primary_llm, secondary_llm)
-        _bootstrap_trace(
-            f"_sync_llm_primary_to_secondary: linked entries into existing dir linked={linked} skipped={skipped}"
-        )
+        if not _ensure_secondary_dir_link(primary_llm, secondary_llm):
+            linked, skipped = _link_directory_entries(primary_llm, secondary_llm)
+            _bootstrap_trace(
+                f"_sync_llm_primary_to_secondary: linked entries into existing dir linked={linked} skipped={skipped}"
+            )
 
 def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
     """
@@ -2819,6 +2820,96 @@ def _link_directory_entries(src_dir: str, dst_dir: str):
     return linked, skipped
 
 
+def _merge_secondary_dir_into_primary(primary_dir: str, secondary_dir: str):
+    moved = 0
+    removed = 0
+    skipped = 0
+
+    if not os.path.isdir(secondary_dir) or os.path.islink(secondary_dir):
+        return moved, removed, skipped
+
+    os.makedirs(primary_dir, exist_ok=True)
+
+    for current_root, dir_names, file_names in os.walk(secondary_dir, topdown=False):
+        rel_root = os.path.relpath(current_root, secondary_dir)
+        primary_root = primary_dir if rel_root == "." else os.path.join(primary_dir, rel_root)
+        os.makedirs(primary_root, exist_ok=True)
+
+        for file_name in file_names:
+            src_path = os.path.join(current_root, file_name)
+            dst_path = os.path.join(primary_root, file_name)
+
+            if os.path.islink(src_path):
+                try:
+                    os.remove(src_path)
+                    removed += 1
+                    _bootstrap_trace(f"_merge_secondary_dir_into_primary: removed secondary link {src_path}")
+                except Exception as exc:
+                    skipped += 1
+                    logging.warning(f"Unable to remove secondary model link {src_path}: {exc}")
+                continue
+
+            if os.path.lexists(dst_path):
+                try:
+                    os.remove(src_path)
+                    removed += 1
+                    _bootstrap_trace(f"_merge_secondary_dir_into_primary: removed duplicate secondary file {src_path}")
+                except Exception as exc:
+                    skipped += 1
+                    logging.warning(f"Unable to remove duplicate secondary model file {src_path}: {exc}")
+                continue
+
+            try:
+                shutil.move(src_path, dst_path)
+                moved += 1
+                _bootstrap_trace(f"_merge_secondary_dir_into_primary: moved {src_path} -> {dst_path}")
+            except Exception as exc:
+                skipped += 1
+                logging.warning(f"Unable to move secondary model file {src_path} -> {dst_path}: {exc}")
+
+        for dir_name in dir_names:
+            src_path = os.path.join(current_root, dir_name)
+            if os.path.islink(src_path):
+                try:
+                    os.remove(src_path)
+                    removed += 1
+                    _bootstrap_trace(f"_merge_secondary_dir_into_primary: removed secondary dir link {src_path}")
+                except Exception as exc:
+                    skipped += 1
+                    logging.warning(f"Unable to remove secondary model dir link {src_path}: {exc}")
+                continue
+            try:
+                os.rmdir(src_path)
+            except OSError:
+                pass
+
+    return moved, removed, skipped
+
+
+def _ensure_secondary_dir_link(primary_dir: str, secondary_dir: str) -> bool:
+    if os.path.islink(secondary_dir):
+        return True
+
+    if os.path.lexists(secondary_dir):
+        if not os.path.isdir(secondary_dir):
+            return False
+
+        moved, removed, skipped = _merge_secondary_dir_into_primary(primary_dir, secondary_dir)
+        try:
+            shutil.rmtree(secondary_dir)
+        except OSError as exc:
+            _bootstrap_trace(
+                f"_ensure_secondary_dir_link: kept existing dir {secondary_dir} moved={moved} removed={removed} skipped={skipped} error={exc}"
+            )
+            return False
+
+    os.makedirs(os.path.dirname(secondary_dir), exist_ok=True)
+    rel_target = os.path.relpath(primary_dir, os.path.dirname(secondary_dir))
+    os.symlink(rel_target, secondary_dir, target_is_directory=True)
+    _bootstrap_trace(f"_ensure_secondary_dir_link: linked {secondary_dir} -> {rel_target}")
+    return True
+
+
 def _link_primary_models_to_secondary(model_roots):
     """
     Crea in models/ link alle entry presenti nella root primaria
@@ -2874,9 +2965,12 @@ def _link_primary_models_to_secondary(model_roots):
 
         if os.path.lexists(dst_path):
             if os.path.isdir(src_path) and os.path.isdir(dst_path) and not os.path.islink(dst_path):
-                child_linked, child_skipped = _link_directory_entries(src_path, dst_path)
-                linked += child_linked
-                skipped += child_skipped
+                if _ensure_secondary_dir_link(src_path, dst_path):
+                    linked += 1
+                else:
+                    child_linked, child_skipped = _link_directory_entries(src_path, dst_path)
+                    linked += child_linked
+                    skipped += child_skipped
             else:
                 skipped += 1
             continue

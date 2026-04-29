@@ -56,160 +56,6 @@
       "widgets_values": []
     },
     {
-      "id": 11,
-      "type": "LoadImage",
-      "pos": [
-        -900,
-        70
-      ],
-      "size": [
-        274.080078125,
-        314.00006103515625
-      ],
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            53,
-            60
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.52",
-        "Node name for S&R": "LoadImage",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.1",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        "uomo_controlli_urologo_movember.jpeg",
-        "image"
-      ]
-    },
-    {
-      "id": 12,
-      "type": "LoadImage",
-      "pos": [
-        -900,
-        440
-      ],
-      "size": [
-        274.080078125,
-        314.00006103515625
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            55,
-            61
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.52",
-        "Node name for S&R": "LoadImage",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.1",
-          "input_ue_unconnectable": {}
-        }
-      },
-      "widgets_values": [
-        "camicia.jpg",
-        "image"
-      ]
-    },
-    {
-      "id": 37,
-      "type": "GeminiImageGenerate",
-      "pos": [
-        -331.2978933736356,
-        140.54790351185062
-      ],
-      "size": [
-        400,
-        370
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "shape": 7,
-          "type": "IMAGE",
-          "link": 57
-        }
-      ],
-      "outputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "links": [
-            58,
-            59
-          ]
-        },
-        {
-          "name": "text",
-          "type": "STRING",
-          "links": null
-        },
-        {
-          "name": "cost_info",
-          "type": "STRING",
-          "links": null
-        },
-        {
-          "name": "cache_key",
-          "type": "STRING",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfyui-gemini-direct",
-        "ver": "1.2.0",
-        "Node name for S&R": "GeminiImageGenerate"
-      },
-      "widgets_values": [
-        "Edit the first image using the second image as a style and clothing reference. Replace the man's athletic gray T-shirt and dark shorts with an unbuttoned cream-colored linen button-down shirt and white linen shorts. Change the background to a sunny beach with warm golden sand and the ocean in the distance. Preserve the man's identity, smile, leaning pose, arm placement, and overall composition from the original image. Keep the final result realistic, natural, and photorealistic.",
-        "gemini-2.5-flash-image",
-        2147483001,
-        "increment",
-        "auto",
-        "512",
-        "IMAGE",
-        "You are an expert photorealistic image-editing engine. Always use the first input image as the main source image. Preserve the main subject's identity, face, expression, body shape, pose, hand placement, camera angle, and overall composition unless the user explicitly requests otherwise. Use any additional input images only as visual references for clothing, style, lighting, environment, texture, or mood. Apply the requested edits naturally and realistically, matching perspective, lighting, shadows, skin tones, fabric texture, and photographic quality. Do not invent extra people, animals, objects, or text unless requested. The final output must be a realistic edited image, not an explanation.",
-        "AIzaSyDAUEY7tsGrTM1RWy7dwG6dMG_SMX_W_5E"
-      ]
-    },
-    {
       "id": 39,
       "type": "PreviewImage",
       "pos": [
@@ -268,6 +114,125 @@
       "widgets_values": []
     },
     {
+      "id": 38,
+      "type": "PreviewImage",
+      "pos": [
+        144.62175846936955,
+        674.852860142655
+      ],
+      "size": [
+        140,
+        26
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 59
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.17.0",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 11,
+      "type": "LoadImage",
+      "pos": [
+        -900,
+        70
+      ],
+      "size": [
+        274.080078125,
+        314.00006103515625
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            53,
+            60
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.52",
+        "Node name for S&R": "LoadImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.1",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "ComfyUI_temp_dxjoa_00002_.png",
+        "image"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "LoadImage",
+      "pos": [
+        -900,
+        440
+      ],
+      "size": [
+        274.080078125,
+        314.00006103515625
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            55,
+            61
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.52",
+        "Node name for S&R": "LoadImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.1",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "camicia.jpg",
+        "image"
+      ]
+    },
+    {
       "id": 30,
       "type": "SaveImage",
       "pos": [
@@ -304,33 +269,69 @@
       ]
     },
     {
-      "id": 38,
-      "type": "PreviewImage",
+      "id": 37,
+      "type": "GeminiImageGenerate",
       "pos": [
-        144.62175846936955,
-        674.852860142655
+        -331.2978933736356,
+        140.54790351185062
       ],
       "size": [
-        140,
-        26
+        400,
+        370
       ],
       "flags": {},
-      "order": 7,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
           "name": "images",
+          "shape": 7,
           "type": "IMAGE",
-          "link": 59
+          "link": 57
         }
       ],
-      "outputs": [],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            58,
+            59
+          ]
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "cost_info",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "cache_key",
+          "type": "STRING",
+          "links": null
+        }
+      ],
       "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.17.0",
-        "Node name for S&R": "PreviewImage"
+        "aux_id": "jeremieLouvaert/ComfyUI-Gemini-Direct",
+        "ver": "1.2.0",
+        "Node name for S&R": "GeminiImageGenerate",
+        "cnr_id": "comfyui-gemini-direct"
       },
-      "widgets_values": []
+      "widgets_values": [
+        "Edit the first image using the second image as a style and clothing reference. Replace the man's athletic gray T-shirt and dark shorts with an unbuttoned cream-colored linen button-down shirt and white linen shorts. Change the background to a sunny beach with warm golden sand and the ocean in the distance. Preserve the man's identity, smile, leaning pose, arm placement, and overall composition from the original image. Keep the final result realistic, natural, and photorealistic.",
+        "gemini-2.5-flash-image",
+        2147483003,
+        "increment",
+        "auto",
+        "512",
+        "IMAGE",
+        "You are an expert photorealistic image-editing engine. Always use the first input image as the main source image. Preserve the main subject's identity, face, expression, body shape, pose, hand placement, camera angle, and overall composition unless the user explicitly requests otherwise. Use any additional input images only as visual references for clothing, style, lighting, environment, texture, or mood. Apply the requested edits naturally and realistically, matching perspective, lighting, shadows, skin tones, fabric texture, and photographic quality. Do not invent extra people, animals, objects, or text unless requested. The final output must be a realistic edited image, not an explanation.",
+        "AIzaSyBX2lTOwQkB7n8EB95qwA7bzqxAHrbxN8I"
+      ]
     }
   ],
   "links": [
@@ -411,8 +412,8 @@
     "ds": {
       "scale": 0.8020986559668689,
       "offset": [
-        1176.6850140244937,
-        154.83595383022453
+        1117.0934931398504,
+        107.05202748826807
       ]
     },
     "frontendVersion": "1.41.20",
