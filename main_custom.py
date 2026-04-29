@@ -2607,7 +2607,8 @@ def _resolve_model_roots():
     Risolve le root modelli in modo portabile:
     - COMFYUI_MODEL_ROOTS (path separati da os.pathsep) se definita
     - COMFYUI_MODELS_DEFAULT_ROOT forza sempre la root primaria
-    - altrimenti usa models-default/default-models come unica root locale
+    - altrimenti usa models-default/default-models come root primaria
+    - models viene usata come root secondaria/link farm locale
     """
     env_primary_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
     base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -2618,13 +2619,11 @@ def _resolve_model_roots():
     else:
         primary_root = local_primary_root
 
-    candidates = [primary_root]
-
-    # Aggiungi root secondarie solo se richieste esplicitamente: il bootstrap
-    # deve scaricare e registrare i modelli locali in models-default/default-models.
-    secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip()
-    if secondary_root:
-        candidates.append(secondary_root)
+    secondary_root = (
+        os.environ.get("COMFYUI_MODELS_ROOT", "").strip()
+        or os.path.join(base_dir, "models")
+    )
+    candidates = [primary_root, secondary_root]
 
     env_value = os.environ.get("COMFYUI_MODEL_ROOTS", "").strip()
     if env_value:
@@ -2755,6 +2754,135 @@ def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def _link_directory_entries(src_dir: str, dst_dir: str):
+    """
+    Linka il contenuto di src_dir dentro dst_dir.
+    Serve quando dst_dir esiste gia' (es. models/LLM creato dal bootstrap):
+    in quel caso non possiamo sostituirla con un symlink alla directory intera.
+    """
+    linked = 0
+    skipped = 0
+
+    try:
+        os.makedirs(dst_dir, exist_ok=True)
+        entry_names = os.listdir(src_dir)
+    except Exception as exc:
+        logging.warning(f"Unable to prepare model directory links {dst_dir}: {exc}")
+        _bootstrap_trace(f"_link_directory_entries: failed preparing {src_dir} -> {dst_dir}: {exc}")
+        return linked, skipped
+
+    for entry_name in entry_names:
+        if entry_name in {".", ".."}:
+            continue
+
+        src_path = os.path.join(src_dir, entry_name)
+        dst_path = os.path.join(dst_dir, entry_name)
+
+        if os.path.abspath(src_path) == os.path.abspath(dst_path):
+            skipped += 1
+            continue
+
+        if os.path.lexists(dst_path):
+            if os.path.isdir(src_path) and os.path.isdir(dst_path) and not os.path.islink(dst_path):
+                child_linked, child_skipped = _link_directory_entries(src_path, dst_path)
+                linked += child_linked
+                skipped += child_skipped
+            else:
+                skipped += 1
+            continue
+
+        try:
+            rel_target = os.path.relpath(src_path, os.path.dirname(dst_path))
+            os.symlink(rel_target, dst_path, target_is_directory=os.path.isdir(src_path))
+            linked += 1
+            _bootstrap_trace(f"_link_directory_entries: linked {dst_path} -> {rel_target}")
+        except Exception as exc:
+            skipped += 1
+            logging.warning(f"Unable to link model entry {dst_path} -> {src_path}: {exc}")
+            _bootstrap_trace(f"_link_directory_entries: failed linking {dst_path} -> {src_path}: {exc}")
+
+    return linked, skipped
+
+
+def _link_primary_models_to_secondary(model_roots):
+    """
+    Crea in models/ link alle entry presenti nella root primaria
+    models-default/default-models, cosi' anche i nodi che leggono hardcoded
+    da models/ vedono gli stessi modelli senza duplicare spazio disco.
+    """
+    if os.environ.get("COMFYUI_LINK_DEFAULT_MODELS_TO_MODELS", "1") != "1":
+        _bootstrap_trace("_link_primary_models_to_secondary: disabled by env")
+        return
+
+    if len(model_roots) < 2:
+        _bootstrap_trace("_link_primary_models_to_secondary: skipped because fewer than 2 model roots")
+        return
+
+    primary_root = os.path.abspath(model_roots[0])
+    secondary_root = os.path.abspath(model_roots[1])
+
+    if os.path.realpath(primary_root) == os.path.realpath(secondary_root):
+        _bootstrap_trace("_link_primary_models_to_secondary: primary and secondary already match")
+        return
+
+    if not os.path.isdir(primary_root):
+        _bootstrap_trace(f"_link_primary_models_to_secondary: primary root missing {primary_root}")
+        return
+
+    try:
+        os.makedirs(secondary_root, exist_ok=True)
+    except Exception as exc:
+        logging.warning(f"Unable to prepare secondary models root {secondary_root}: {exc}")
+        _bootstrap_trace(f"_link_primary_models_to_secondary: failed preparing secondary -> {exc}")
+        return
+
+    try:
+        entry_names = os.listdir(primary_root)
+    except Exception as exc:
+        logging.warning(f"Unable to list primary models root {primary_root}: {exc}")
+        _bootstrap_trace(f"_link_primary_models_to_secondary: failed listing primary -> {exc}")
+        return
+
+    linked = 0
+    skipped = 0
+
+    for entry_name in entry_names:
+        if entry_name in {".", ".."}:
+            continue
+
+        src_path = os.path.join(primary_root, entry_name)
+        dst_path = os.path.join(secondary_root, entry_name)
+
+        if os.path.abspath(src_path) == os.path.abspath(dst_path):
+            skipped += 1
+            continue
+
+        if os.path.lexists(dst_path):
+            if os.path.isdir(src_path) and os.path.isdir(dst_path) and not os.path.islink(dst_path):
+                child_linked, child_skipped = _link_directory_entries(src_path, dst_path)
+                linked += child_linked
+                skipped += child_skipped
+            else:
+                skipped += 1
+            continue
+
+        try:
+            rel_target = os.path.relpath(src_path, secondary_root)
+            os.symlink(rel_target, dst_path, target_is_directory=os.path.isdir(src_path))
+            linked += 1
+            _bootstrap_trace(f"_link_primary_models_to_secondary: linked {dst_path} -> {rel_target}")
+        except Exception as exc:
+            logging.warning(f"Unable to link model entry {dst_path} -> {src_path}: {exc}")
+            _bootstrap_trace(f"_link_primary_models_to_secondary: failed linking {dst_path} -> {src_path}: {exc}")
+
+    if linked:
+        logging.info(f"Linked {linked} models-default entr{'y' if linked == 1 else 'ies'} into {secondary_root}")
+
+    _bootstrap_trace(
+        f"_link_primary_models_to_secondary: completed linked={linked} skipped={skipped}"
+    )
 
 
 def _sync_model_alias_directories(model_roots):
@@ -3170,6 +3298,9 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: second LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: second LLM sync completed")
+    _bootstrap_trace("apply_shared_model_paths: default-to-models link begin")
+    _link_primary_models_to_secondary(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: default-to-models link completed")
     _bootstrap_trace("apply_shared_model_paths: model alias sync begin")
     _sync_model_alias_directories(model_roots)
     _bootstrap_trace("apply_shared_model_paths: model alias sync completed")
@@ -4203,6 +4334,8 @@ def _preflight_custom_logic():
         _bootstrap_trace("_preflight_custom_logic: DA3 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
+        _link_primary_models_to_secondary(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: default-to-models link completed")
         _sync_model_alias_directories(model_roots)
         _bootstrap_trace("_preflight_custom_logic: model alias sync completed")
 
