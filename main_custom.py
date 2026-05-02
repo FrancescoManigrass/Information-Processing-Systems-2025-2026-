@@ -11,8 +11,6 @@ import venv
 import glob
 import types
 import colorsys
-import json
-import logging
 
 try:
     from importlib import metadata as importlib_metadata
@@ -31,31 +29,6 @@ os.environ.setdefault("PIP_NO_INPUT", "1")
 COMFYUI_MANAGER_REPO_URL = "https://github.com/Comfy-Org/ComfyUI-Manager.git"
 COMFYUI_MANAGER_DIRNAME = "comfyui-manager"
 COMFYUI_MANAGER_LEGACY_DIRNAME = "ComfyUI-Manager"
-COMFYUI_MANAGER_DIRNAMES = {
-    COMFYUI_MANAGER_DIRNAME.lower(),
-    COMFYUI_MANAGER_LEGACY_DIRNAME.lower(),
-}
-DEFAULT_CUSTOM_NODE_REQUIREMENTS_ALLOWLIST = {
-    COMFYUI_MANAGER_DIRNAME.lower(),
-    COMFYUI_MANAGER_LEGACY_DIRNAME.lower(),
-    "comfyui-depthanythingv3",
-    "comfyui_llama3_8b",
-    "comfyui_searge_llm",
-    "x-flux-comfyui",
-}
-CUSTOM_NODE_REPO_OVERRIDES = {
-    "comfyui_essentials": "cubiq/ComfyUI_essentials",
-    "comfyui-custom-scripts": "pythongosssss/ComfyUI-Custom-Scripts",
-    "comfyui-depthanythingv3": "PozzettiAndrea/ComfyUI-DepthAnythingV3",
-    "comfyui_llama3_8b": "smthemex/ComfyUI_Llama3_8B",
-    "comfyui_searge_llm": "SeargeDP/ComfyUI_Searge_LLM",
-    "comfyui-searge-llm": "SeargeDP/ComfyUI_Searge_LLM",
-    "comfyui_tinyterranodes": "TinyTerra/ComfyUI_tinyterraNodes",
-    "x-flux-comfyui": "XLabs-AI/x-flux-comfyui",
-}
-DEFAULT_WORKFLOW_CUSTOM_NODE_REPOS = {
-    "SeargeDP/ComfyUI_Searge_LLM": "ComfyUI_Searge_LLM",
-}
 LOCAL_VENV_DIRNAME = ".venv"
 OPENCV_GUI_PACKAGES = (
     "opencv-python",
@@ -87,15 +60,13 @@ FLUXTRAINER_FORCE_PACKAGES = [
 
 
 extra_packages = [
-    "requests",
+     "requests",
     "PyYAML",  # <-- il pacchetto pip corretto per import yaml
     "tqdm",
-    "ninja",  # necessario per build pyproject come llama-cpp-python
-    f"accelerate=={ACCELERATE_TARGET_VERSION}",
-    # "comfy_aimdo",  # custom node/package disabilitato: install automatico solo per Manager
-    # "diffusers>=0.25.0",  # pesante: installare solo se richiesto da workflow/custom node attivo
-    # f"transformers=={TRANSFORMERS_TARGET_VERSION}",  # pesante: installare solo se richiesto
-    # "transformers==4.4.1.2"
+    "comfy_aimdo",
+          "diffusers>=0.25.0",
+    f"transformers=={TRANSFORMERS_TARGET_VERSION}"
+        #        "transformers==4.4.1.2"
 
 ]
 
@@ -115,13 +86,11 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
         {"url": "https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors", "filename": "dreamshaper_8.safetensors"},
-        {"url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/6529c4a4f0e232695d9e9bb5/cf13666adceb951c7b5380e10a31a7233d160fd401e27240ae8253ef29ede15b?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260429%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260429T112701Z&X-Amz-Expires=3600&X-Amz-Signature=7e7680a6d04224a003064fd0eeaaae6ba11a5270872c6affd49271872b620aae&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=67531ac54751e5eb835c8a39&response-content-disposition=attachment%3B+filename*%3DUTF-8%27%27realisticVisionV51_v51VAE.safetensors%3B+filename%3D%22realisticVisionV51_v51VAE.safetensors%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1777465621&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NzQ2NTYyMX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NTI5YzRhNGYwZTIzMjY5NWQ5ZTliYjUvY2YxMzY2NmFkY2ViOTUxYzdiNTM4MGUxMGEzMWE3MjMzZDE2MGZkNDAxZTI3MjQwYWU4MjUzZWYyOWVkZTE1YioifV19&Signature=BlC4XkvmG0LaLl8oNi1ygihW0buK%7EUWI15y9m4pu%7EphSkm9ocw4xsLuJWMHqgHcgIDtI2p8iV-HQGEZS9tv2WPTVcprUj3AtncTeX%7EPeHsqVd9dHHUnNnmaOO5BYI6VF6x8bMg-C71hzADMVdFqoeHjeALfGMB8GKTrFFIVeRYkt88MRxQ44DqgdWRo4YkXoTdQms9P26oIbOGuHXMcnIC7Ei0PVh8NSJ9ELtkwW17yeEz4bpNcGHtGqArr7ZEKwGRNvwGyEVh4me9kI0Y4QBJq%7EPFJ9gBTJ6OdTP2oFlVlmf1yngaURHUubqRi-k29JQgYsCYr843Yp8Vw1%7E9TgyQ__&Key-Pair-Id=K2L8F4GPSG1IFC", "filename": "realisticVisionV51_v51VAE.safetensors"},
 
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
         {"url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67bd26c86faf9f04b210a09f/46713bf09072876b32ff8bd97c0f4228a024ccb20010dae8fa83111e0ad5471f?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260428%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260428T215619Z&X-Amz-Expires=3600&X-Amz-Signature=d96d08b53a0556459c274f7f3c9b2987a541fe6c0864e33f3afcc2ed124a854f&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=67531ac54751e5eb835c8a39&response-content-disposition=attachment%3B+filename*%3DUTF-8%27%27juggernautXL_ragnarokBy.safetensors%3B+filename%3D%22juggernautXL_ragnarokBy.safetensors%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1777416979&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NzQxNjk3OX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2JkMjZjODZmYWY5ZjA0YjIxMGEwOWYvNDY3MTNiZjA5MDcyODc2YjMyZmY4YmQ5N2MwZjQyMjhhMDI0Y2NiMjAwMTBkYWU4ZmE4MzExMWUwYWQ1NDcxZioifV19&Signature=swb8FXyfOK13T7qLpwfWjlwz5vZE8zXOjyjbsvOR0j1-Z21Y7YZ%7EAPFKAQ9rnZ3kQ5%7EcXVM1nURmLWGN%7EeeV53Z1I%7Ek8eXgo%7EmQj4vq0uhDNDCbHveQxfM7jOiozobOlzb8fyksBvfrCLAvPtOh03xnBzIpCWHyR%7E2iL-Y-ZtJD9xwV9O%7EJC1yHWu9%7EmEuK%7EKsz49ko0PSf4pYx-fNX4BHDnN5mincKhvKy5uAI8qC5Ts9yvgmjasy8qV5dFdk9dlweeJdhi3ypFyvtk4LNjeOVpPiL5Venc4EzJ2RWgd5ixlmji8wA7n1b14ySddU%7EKDNV8ItVyx96Zvm-qpzun9Q__&Key-Pair-Id=K2L8F4GPSG1IFC", "filename": "juggernautXL_ragnarokBy.safetensors"},
-        {"url": "https://huggingface.co/voxiliummusic/cyberrealistic_V4.0/resolve/main/cyberrealistic_v40.safetensors", "filename": "cyberrealistic_v40.safetensors"},
 
    ],
 
@@ -130,7 +99,7 @@ SHARED_MODELS_URLS = {
     # =========================
     "diffusion_models": [
         # FLUX Trainer (set richiesto)
-        {"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
+        #{"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
         {"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
 
 
@@ -198,7 +167,6 @@ SHARED_MODELS_URLS = {
 
         {"url": "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/vae/ae.safetensors", "filename": "ae.safetensors"},
         {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
-        {"url": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors", "filename": "vae-ft-mse-840000-ema-pruned.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors?download=true", "filename": "wan_2.1_vae.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors?download=true", "filename": "hunyuan_video_vae_bf16.safetensors"},
          #{"url": "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors", "filename": "flux2-vae.safetensors"},
@@ -216,20 +184,6 @@ SHARED_MODELS_URLS = {
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
-    ],
-
-    # =========================
-    # LLM GGUF (Searge LLM / llama-cpp-python)
-    # =========================
-    "llm_gguf": [
-        {
-            "url": "https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
-            "filename": "Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
-        },
-        {
-            "url": "https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf",
-            "filename": "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
-        },
     ],
 
     # =========================
@@ -454,6 +408,176 @@ def _run_cmd_quiet(command):
         return False
 
 
+def _get_ollama_base_url():
+    base_url = (
+        os.environ.get("COMFYUI_OLLAMA_BASE_URL", "").strip()
+        or os.environ.get("OLLAMA_HOST", "").strip()
+        or "http://127.0.0.1:11434"
+    )
+    if "://" not in base_url:
+        base_url = f"http://{base_url}"
+    return base_url.rstrip("/")
+
+
+def _get_bootstrap_ollama_models():
+    raw_models = os.environ.get("COMFYUI_OLLAMA_MODELS", "llama3.2:latest")
+    normalized = raw_models.replace("\n", ",").replace(";", ",")
+    models = []
+    seen = set()
+    for item in normalized.split(","):
+        model = item.strip()
+        if not model or model in seen:
+            continue
+        seen.add(model)
+        models.append(model)
+    return models
+
+
+def _ollama_api_request(path, payload=None, timeout=10):
+    import json
+
+    url = f"{_get_ollama_base_url()}{path}"
+    data = None
+    headers = {}
+    method = "GET"
+
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+        method = "POST"
+
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        content = response.read()
+
+    if not content:
+        return {}
+
+    return json.loads(content.decode("utf-8"))
+
+
+def _is_ollama_server_reachable(timeout=3):
+    try:
+        _ollama_api_request("/api/tags", timeout=timeout)
+        return True
+    except Exception:
+        return False
+
+
+def _is_local_ollama_base_url():
+    from urllib.parse import urlparse
+
+    parsed = urlparse(_get_ollama_base_url())
+    hostname = (parsed.hostname or "").strip().lower()
+    return hostname in {"127.0.0.1", "localhost", "0.0.0.0", "::1"}
+
+
+def _ensure_ollama_server_running():
+    if _is_ollama_server_reachable():
+        return True
+
+    if not shutil.which("ollama"):
+        return False
+
+    if not _is_local_ollama_base_url():
+        print(f"[BOOTSTRAP] Ollama server not reachable at {_get_ollama_base_url()}, skip local auto-start")
+        return False
+
+    try:
+        print(f"[BOOTSTRAP] Starting Ollama server in background on {_get_ollama_base_url()}")
+        subprocess.Popen(
+            ["ollama", "serve"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception as exc:
+        print(f"[BOOTSTRAP] Unable to start Ollama server: {exc}")
+        return False
+
+    deadline = time.time() + 20
+    while time.time() < deadline:
+        if _is_ollama_server_reachable(timeout=2):
+            print("[BOOTSTRAP] Ollama server is reachable")
+            return True
+        time.sleep(1)
+
+    print(f"[BOOTSTRAP] Ollama server did not become reachable at {_get_ollama_base_url()}")
+    return False
+
+
+def _get_installed_ollama_models():
+    payload = _ollama_api_request("/api/tags", timeout=10)
+    models = set()
+    for item in payload.get("models", []):
+        if not isinstance(item, dict):
+            continue
+        name = (item.get("name") or item.get("model") or "").strip()
+        if name:
+            models.add(name)
+    return models
+
+
+def _ensure_ollama_models_available():
+    if os.environ.get("COMFYUI_OLLAMA_AUTO_PULL", "1") != "1":
+        return
+
+    models = _get_bootstrap_ollama_models()
+    if not models:
+        return
+
+    if not _ensure_ollama_server_running():
+        print("[BOOTSTRAP] Ollama model pull skipped: server is not reachable")
+        return
+
+    try:
+        installed_models = _get_installed_ollama_models()
+    except Exception as exc:
+        print(f"[BOOTSTRAP] Unable to list Ollama models: {exc}")
+        return
+
+    for model in models:
+        if model in installed_models:
+            print(f"[BOOTSTRAP] Ollama model already available: {model}")
+            continue
+
+        try:
+            print(f"[BOOTSTRAP] Pulling Ollama model: {model}")
+            _ollama_api_request(
+                "/api/pull",
+                payload={"model": model, "stream": False},
+                timeout=3600,
+            )
+            print(f"[BOOTSTRAP] Ollama model ready: {model}")
+        except Exception as exc:
+            print(f"[BOOTSTRAP] Ollama model pull failed for {model}: {exc}")
+
+
+def _ensure_ollama_installed():
+    if os.environ.get("COMFYUI_AUTO_INSTALL_OLLAMA", "1") != "1":
+        return
+
+    if shutil.which("ollama"):
+        print("[BOOTSTRAP] Ollama already installed, skip")
+        _ensure_ollama_models_available()
+        return
+
+    geteuid = getattr(os, "geteuid", None)
+    if callable(geteuid) and geteuid() != 0:
+        print("[BOOTSTRAP] Ollama auto-install skipped: root privileges are required")
+        return
+
+    try:
+        print("[BOOTSTRAP] Installing Ollama via official script")
+        subprocess.check_call([
+            "/bin/sh",
+            "-c",
+            "curl -fsSL https://ollama.com/install.sh | sh",
+        ])
+        print("[BOOTSTRAP] Ollama installation completed")
+        _ensure_ollama_models_available()
+    except Exception as exc:
+        print(f"[BOOTSTRAP] Ollama installation failed: {exc}")
 
 
 def _ensure_bootstrap_python_package(pkg_spec, import_name=None):
@@ -716,7 +840,7 @@ def _ensure_llama_gguf_available(model_roots):
     repo_id = os.environ.get("COMFYUI_LLAMA_HF_REPO", "meta-llama/Llama-3.2-3B-Instruct").strip()
     quant_type = os.environ.get("COMFYUI_LLAMA_QUANT", "Q4_K_M").strip() or "Q4_K_M"
     if not repo_id:
-        logging.warning("COMFYUI_LLAMA_GGUF_MODE=convert qrequires COMFYUI_LLAMA_HF_REPO")
+        logging.warning("COMFYUI_LLAMA_GGUF_MODE=convert requires COMFYUI_LLAMA_HF_REPO")
         return None
 
     model_name = repo_id.rstrip("/").split("/")[-1].strip() or "llama-model"
@@ -880,9 +1004,6 @@ def _force_comfyui_cpu_mode(reason):
 
     if "--cpu" not in sys.argv:
         sys.argv.append("--cpu")
-
-    while "--lowvram" in sys.argv:
-        sys.argv.remove("--lowvram")
 
     print(f"[BOOTSTRAP] Forcing ComfyUI CPU mode: {reason}")
 
@@ -1113,8 +1234,6 @@ def _maybe_force_cpu_mode_from_torch_probe():
 
 
 def _should_force_headless_opencv():
-    if os.environ.get("COMFYUI_AUTO_INSTALL_OPENCV_HEADLESS", "1") != "1":
-        return False
     return sys.platform.startswith("linux") and ctypes.util.find_library("GL") is None
 
 
@@ -1571,7 +1690,7 @@ def _ensure_onnxruntime_importable_or_fallback():
     Garantisce che `import onnxruntime` non fallisca per mismatch ABI con NumPy.
     Questo evita che nodi come comfyui_controlnet_aux/DWPose saltino durante il load.
     """
-    if os.environ.get("COMFYUI_ENSURE_ONNXRUNTIME", "0") != "1":
+    if os.environ.get("COMFYUI_ENSURE_ONNXRUNTIME", "1") != "1":
         return True
 
     ok, info = _check_onnxruntime_import_subprocess()
@@ -1762,7 +1881,7 @@ def _create_local_venv(venv_dir, venv_python):
 
 
 def _should_reexec_into_local_venv(base_dir):
-    if os.environ.get("COMFYUI_AUTO_VENV", "0") != "1":
+    if os.environ.get("COMFYUI_AUTO_VENV", "1") != "1":
         return False
 
     if os.environ.get("_COMFYUI_AUTO_VENV_ACTIVE") == "1":
@@ -1894,423 +2013,6 @@ def ensure_comfyui_manager_installed():
     except Exception as exc:
         print(f"[BOOTSTRAP] Failed installing ComfyUI Manager: {exc}")
 
-
-def _get_shared_custom_nodes_dir(base_dir=None):
-    base_dir = base_dir or os.path.dirname(os.path.realpath(__file__))
-    shared_custom_nodes_dir = os.environ.get(
-        "COMFYUI_SHARED_CUSTOM_NODES_DIR",
-        os.path.join(base_dir, "models-default", "default-models", "custom_nodes"),
-    ).strip()
-
-    if not shared_custom_nodes_dir:
-        return ""
-
-    return os.path.abspath(shared_custom_nodes_dir)
-
-
-def _ensure_shared_custom_nodes_dir(base_dir=None):
-    shared_custom_nodes_dir = _get_shared_custom_nodes_dir(base_dir)
-    if not shared_custom_nodes_dir:
-        return ""
-
-    try:
-        os.makedirs(shared_custom_nodes_dir, exist_ok=True)
-    except Exception as exc:
-        _bootstrap_trace(f"_ensure_shared_custom_nodes_dir: unable to create {shared_custom_nodes_dir} -> {exc}")
-
-    return shared_custom_nodes_dir
-
-
-def _is_writable_directory(path: str) -> bool:
-    """
-    Verifica best-effort se la directory è scrivibile senza creare file di test.
-    Non scrive nulla su disco.
-    """
-    try:
-        if not path:
-            return False
-
-        if not os.path.isdir(path):
-            logging.warning(f"Directory inesistente, skip scrittura: {path}")
-            return False
-
-        if not os.access(path, os.W_OK | os.X_OK):
-            logging.warning(f"Directory non scrivibile, skip scrittura: {path}")
-            return False
-
-        return True
-
-    except Exception as e:
-        logging.warning(f"Impossibile verificare permessi directory, skip scrittura: {path} -> {e}")
-        return False
-
-def _resolve_custom_node_install_root(base_dir=None):
-    base_dir = base_dir or os.path.dirname(os.path.realpath(__file__))
-    shared_custom_nodes_dir = _ensure_shared_custom_nodes_dir(base_dir)
-    local_custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
-    os.makedirs(local_custom_nodes_dir, exist_ok=True)
-
-    if shared_custom_nodes_dir and _is_writable_directory(shared_custom_nodes_dir):
-        _bootstrap_trace(f"_resolve_custom_node_install_root: using shared root {shared_custom_nodes_dir}")
-        return shared_custom_nodes_dir
-
-    _bootstrap_trace(f"_resolve_custom_node_install_root: using local fallback {local_custom_nodes_dir}")
-    return local_custom_nodes_dir
-
-
-def _iter_workflow_json_files(base_dir):
-    search_dirs = [
-        base_dir,
-        os.path.join(base_dir, "workflows"),
-        os.path.join(base_dir, "lab3 workflows"),
-        os.path.join(base_dir, "lab 4 workfolows"),
-        os.path.join(base_dir, "lab 5 workflow"),
-    ]
-
-    seen = set()
-    for search_dir in search_dirs:
-        if not os.path.isdir(search_dir):
-            continue
-
-        for root, dir_names, file_names in os.walk(search_dir):
-            dir_names[:] = [
-                name for name in dir_names
-                if name not in {".git", ".venv", "custom_nodes", "models", "models-default", "__pycache__"}
-            ]
-            for file_name in file_names:
-                if not file_name.lower().endswith(".json"):
-                    continue
-                path = os.path.abspath(os.path.join(root, file_name))
-                if path in seen:
-                    continue
-                seen.add(path)
-                yield path
-
-
-def _iter_workflow_custom_node_repos(base_dir):
-    if os.environ.get("COMFYUI_AUTO_INSTALL_WORKFLOW_CUSTOM_NODES", "1") != "1":
-        return
-
-    repo_pattern = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
-    discovered = {}
-    if os.environ.get("COMFYUI_INSTALL_DEFAULT_CUSTOM_NODES", "1") == "1":
-        discovered.update(DEFAULT_WORKFLOW_CUSTOM_NODE_REPOS)
-
-    def _walk(value):
-        if isinstance(value, dict):
-            aux_id = value.get("aux_id")
-            cnr_id = value.get("cnr_id")
-            if isinstance(aux_id, str) and repo_pattern.match(aux_id) and cnr_id != "comfy-core":
-                discovered.setdefault(aux_id, cnr_id or aux_id.rsplit("/", 1)[-1])
-
-            if isinstance(cnr_id, str):
-                override = CUSTOM_NODE_REPO_OVERRIDES.get(cnr_id.strip().lower())
-                if override:
-                    discovered.setdefault(override, cnr_id)
-
-            for child in value.values():
-                _walk(child)
-        elif isinstance(value, list):
-            for child in value:
-                _walk(child)
-
-    for workflow_path in _iter_workflow_json_files(base_dir):
-        try:
-            with open(workflow_path, "r", encoding="utf-8") as workflow_file:
-                data = json.load(workflow_file)
-            _walk(data)
-        except Exception as exc:
-            _bootstrap_trace(f"_iter_workflow_custom_node_repos: skipped {workflow_path} -> {exc}")
-
-    for repo_id, preferred_name in sorted(discovered.items()):
-        yield repo_id, preferred_name
-
-
-def _install_workflow_custom_nodes():
-    base_dir = os.path.dirname(os.path.realpath(__file__))
-    shared_custom_nodes_dir = _ensure_shared_custom_nodes_dir(base_dir)
-    local_custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
-    os.makedirs(local_custom_nodes_dir, exist_ok=True)
-    install_root = _resolve_custom_node_install_root(base_dir)
-
-    installed = 0
-    skipped = 0
-    for repo_id, preferred_name in _iter_workflow_custom_node_repos(base_dir) or []:
-        normalized_name = (preferred_name or repo_id.rsplit("/", 1)[-1]).strip()
-        if not normalized_name or normalized_name.lower() == "comfy-core":
-            skipped += 1
-            continue
-
-        if normalized_name.lower() in COMFYUI_MANAGER_DIRNAMES:
-            skipped += 1
-            continue
-
-        repo_name = repo_id.rsplit("/", 1)[-1]
-        candidate_names = [normalized_name, repo_name]
-        if normalized_name.lower() in CUSTOM_NODE_REPO_OVERRIDES:
-            candidate_names.append(CUSTOM_NODE_REPO_OVERRIDES[normalized_name.lower()].rsplit("/", 1)[-1])
-
-        candidate_roots = []
-        if shared_custom_nodes_dir:
-            candidate_roots.append(shared_custom_nodes_dir)
-        candidate_roots.append(local_custom_nodes_dir)
-
-        if any(os.path.lexists(os.path.join(root, name)) for root in candidate_roots for name in candidate_names):
-            skipped += 1
-            continue
-
-        target_dir = os.path.join(install_root, repo_name)
-        repo_url = f"https://github.com/{repo_id}.git"
-        print(f"[BOOTSTRAP] Installing workflow custom node: {repo_url} -> {target_dir}")
-        if _run_cmd_quiet(["git", "clone", "--depth", "1", repo_url, target_dir]):
-            installed += 1
-        else:
-            skipped += 1
-
-    _bootstrap_trace(f"_install_workflow_custom_nodes: installed={installed} skipped={skipped}")
-
-
-def _sync_shared_custom_nodes():
-    """
-    Permette di tenere custom nodes condivisi in models-default/default-models/custom_nodes.
-    ComfyUI continua a vederli nella cartella locale custom_nodes tramite symlink,
-    evitando copie e mantenendo il Manager locale separato.
-    """
-    if os.environ.get("COMFYUI_LINK_SHARED_CUSTOM_NODES", "1") != "1":
-        return
-
-    base_dir = os.path.dirname(os.path.realpath(__file__))
-    shared_custom_nodes_dir = _get_shared_custom_nodes_dir(base_dir)
-    local_custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
-
-    if not os.path.isdir(shared_custom_nodes_dir):
-        return
-
-    os.makedirs(local_custom_nodes_dir, exist_ok=True)
-
-    try:
-        entry_names = os.listdir(shared_custom_nodes_dir)
-    except Exception as exc:
-        print(f"[BOOTSTRAP] Unable to list shared custom nodes {shared_custom_nodes_dir}: {exc}")
-        return
-
-    linked = 0
-    skipped = 0
-    for entry_name in entry_names:
-        if entry_name.startswith(".") or entry_name == "__pycache__":
-            continue
-
-        normalized = entry_name.rstrip(os.sep).lower()
-        if normalized in COMFYUI_MANAGER_DIRNAMES:
-            skipped += 1
-            continue
-
-        src_path = os.path.join(shared_custom_nodes_dir, entry_name)
-        dst_path = os.path.join(local_custom_nodes_dir, entry_name)
-
-        if not os.path.isdir(src_path) and not entry_name.endswith(".py"):
-            skipped += 1
-            continue
-
-        if os.path.lexists(dst_path):
-            skipped += 1
-            continue
-
-        try:
-            rel_target = os.path.relpath(src_path, local_custom_nodes_dir)
-            os.symlink(rel_target, dst_path, target_is_directory=os.path.isdir(src_path))
-            linked += 1
-            print(f"[BOOTSTRAP] Linked shared custom node: {dst_path} -> {rel_target}")
-        except Exception as exc:
-            skipped += 1
-            print(f"[BOOTSTRAP] Unable to link shared custom node {dst_path} -> {src_path}: {exc}")
-
-    if linked:
-        print(
-            f"[BOOTSTRAP] Linked {linked} shared custom node"
-            f"{'' if linked == 1 else 's'} from {shared_custom_nodes_dir}"
-        )
-    _bootstrap_trace(f"_sync_shared_custom_nodes: linked={linked} skipped={skipped}")
-
-
-def _link_local_custom_node_to_shared(shared_path, local_path):
-    if os.path.lexists(local_path):
-        return False
-
-    rel_target = os.path.relpath(shared_path, os.path.dirname(local_path))
-    os.symlink(rel_target, local_path, target_is_directory=os.path.isdir(shared_path))
-    return True
-
-
-def _migrate_local_custom_nodes_to_shared():
-    """
-    Se la root condivisa è scrivibile, sposta i custom nodes installati localmente
-    in models-default/default-models/custom_nodes. Il Manager resta locale.
-    """
-    if os.environ.get("COMFYUI_MIGRATE_CUSTOM_NODES_TO_SHARED", "1") != "1":
-        return
-
-    base_dir = os.path.dirname(os.path.realpath(__file__))
-    shared_custom_nodes_dir = _ensure_shared_custom_nodes_dir(base_dir)
-    local_custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
-
-    if not shared_custom_nodes_dir or not os.path.isdir(local_custom_nodes_dir):
-        return
-
-    if os.path.realpath(shared_custom_nodes_dir) == os.path.realpath(local_custom_nodes_dir):
-        return
-
-    if not _is_writable_directory(shared_custom_nodes_dir):
-        _bootstrap_trace(f"_migrate_local_custom_nodes_to_shared: shared root not writable {shared_custom_nodes_dir}")
-        return
-
-    moved = 0
-    linked = 0
-    removed = 0
-    skipped = 0
-
-    try:
-        entry_names = os.listdir(local_custom_nodes_dir)
-    except Exception as exc:
-        _bootstrap_trace(f"_migrate_local_custom_nodes_to_shared: unable to list {local_custom_nodes_dir} -> {exc}")
-        return
-
-    for entry_name in entry_names:
-        if entry_name.startswith(".") or entry_name == "__pycache__":
-            skipped += 1
-            continue
-
-        normalized = entry_name.rstrip(os.sep).lower()
-        if normalized in COMFYUI_MANAGER_DIRNAMES:
-            skipped += 1
-            continue
-
-        src_path = os.path.join(local_custom_nodes_dir, entry_name)
-        dst_path = os.path.join(shared_custom_nodes_dir, entry_name)
-
-        if os.path.islink(src_path):
-            skipped += 1
-            continue
-
-        if not os.path.isdir(src_path) and not entry_name.endswith(".py"):
-            skipped += 1
-            continue
-
-        if os.path.lexists(dst_path):
-            try:
-                if os.path.isdir(src_path) and not os.path.islink(src_path):
-                    shutil.rmtree(src_path)
-                else:
-                    os.remove(src_path)
-                removed += 1
-                print(f"[BOOTSTRAP] Removed duplicate local custom node: {src_path}")
-                if _link_local_custom_node_to_shared(dst_path, src_path):
-                    linked += 1
-                    print(f"[BOOTSTRAP] Linked local custom node to shared root: {src_path} -> {dst_path}")
-            except Exception as exc:
-                skipped += 1
-                print(f"[BOOTSTRAP] Unable to replace duplicate local custom node {src_path}: {exc}")
-            continue
-
-        try:
-            shutil.move(src_path, dst_path)
-            moved += 1
-            print(f"[BOOTSTRAP] Moved custom node to shared root: {src_path} -> {dst_path}")
-            if _link_local_custom_node_to_shared(dst_path, src_path):
-                linked += 1
-                print(f"[BOOTSTRAP] Linked local custom node to shared root: {src_path} -> {dst_path}")
-        except Exception as exc:
-            skipped += 1
-            print(f"[BOOTSTRAP] Unable to move custom node {src_path} -> {dst_path}: {exc}")
-
-    _bootstrap_trace(
-        f"_migrate_local_custom_nodes_to_shared: moved={moved} linked={linked} removed={removed} skipped={skipped}"
-    )
-
-
-def _cleanup_bootstrap_package_caches():
-    """
-    Libera cache usate durante install/env bootstrap. Non rimuove pacchetti
-    installati, modelli, o cache runtime del Manager.
-    """
-    if os.environ.get("COMFYUI_CLEAN_BOOTSTRAP_CACHES", "1") != "1":
-        return
-
-    commands = [
-        _get_bootstrap_pip_cmd() + ["cache", "purge"],
-    ]
-
-    if shutil.which("uv"):
-        commands.append(["uv", "cache", "clean"])
-
-    for command in commands:
-        try:
-            subprocess.run(
-                command,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=120,
-                check=False,
-            )
-            _bootstrap_trace(f"cleanup bootstrap caches: ran {' '.join(command)}")
-        except Exception as exc:
-            _bootstrap_trace(f"cleanup bootstrap caches: failed {' '.join(command)} -> {exc}")
-
-    cleanup_dirs = [
-        os.environ.get("PIP_CACHE_DIR", "").strip(),
-        os.environ.get("UV_CACHE_DIR", "").strip(),
-        os.path.join(os.path.expanduser("~"), ".cache", "pip"),
-        os.path.join(os.path.expanduser("~"), ".cache", "uv"),
-        os.path.join(tempfile.gettempdir(), "pip-build-env-*"),
-        os.path.join(tempfile.gettempdir(), "pip-install-*"),
-        os.path.join(tempfile.gettempdir(), "pip-unpack-*"),
-        os.path.join(tempfile.gettempdir(), "tmp*-get-pip.py"),
-    ]
-
-    for pattern in cleanup_dirs:
-        if not pattern:
-            continue
-
-        for path in glob.glob(pattern):
-            try:
-                if os.path.isdir(path) and not os.path.islink(path):
-                    shutil.rmtree(path, ignore_errors=True)
-                    _bootstrap_trace(f"cleanup bootstrap caches: removed dir {path}")
-                elif os.path.exists(path):
-                    os.remove(path)
-                    _bootstrap_trace(f"cleanup bootstrap caches: removed file {path}")
-            except Exception as exc:
-                _bootstrap_trace(f"cleanup bootstrap caches: failed removing {path} -> {exc}")
-
-
-def _get_custom_node_requirements_allowlist():
-    raw_value = os.environ.get("COMFYUI_CUSTOM_NODE_REQUIREMENTS_ALLOWLIST", "all").strip()
-    if raw_value.lower() in {"*", "all"}:
-        return None
-
-    allowlist = set(DEFAULT_CUSTOM_NODE_REQUIREMENTS_ALLOWLIST)
-    if raw_value:
-        allowlist.update(
-            item.strip().lower()
-            for item in raw_value.split(",")
-            if item.strip()
-        )
-
-    return allowlist
-
-
-def _custom_node_requirements_allowed(node_dir_name):
-    allowlist = _get_custom_node_requirements_allowlist()
-    if allowlist is None:
-        return True
-
-    normalized = node_dir_name.rstrip(os.sep).lower()
-    if normalized.endswith(".disabled"):
-        normalized = normalized[: -len(".disabled")]
-
-    return normalized in allowlist
-
-
 def auto_install_requirements():
     global _AUTO_REQUIREMENTS_ALREADY_RAN
 
@@ -2333,13 +2035,15 @@ def auto_install_requirements():
     if _ensure_compatible_pytorch_runtime():
         installed_any = True
         _bootstrap_trace("auto_install_requirements: PyTorch compatibility install completed")
+    _ensure_ollama_installed()
+    _bootstrap_trace("auto_install_requirements: ollama check completed")
+
     if _ensure_headless_opencv():
         installed_any = True
     _bootstrap_trace(f"auto_install_requirements: OpenCV normalization completed (installed_any={installed_any})")
 
     base_dir = os.path.dirname(os.path.realpath(__file__))
     custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
-    shared_custom_nodes_dir = _get_shared_custom_nodes_dir(base_dir)
     req_files = []
 
     main_req = os.path.join(base_dir, "requirements.txt")
@@ -2347,23 +2051,9 @@ def auto_install_requirements():
         req_files.append(main_req)
 
     if os.environ.get("COMFYUI_AUTO_INSTALL_CUSTOM_NODE_REQUIREMENTS", "1") == "1":
-        custom_node_roots = [custom_nodes_dir]
-        if os.path.isdir(shared_custom_nodes_dir):
-            custom_node_roots.append(shared_custom_nodes_dir)
-
-        seen_custom_node_roots = set()
-        for custom_node_root in custom_node_roots:
-            root_realpath = os.path.realpath(custom_node_root)
-            if root_realpath in seen_custom_node_roots or not os.path.isdir(custom_node_root):
-                continue
-            seen_custom_node_roots.add(root_realpath)
-
-            for name in os.listdir(custom_node_root):
-                if not _custom_node_requirements_allowed(name):
-                    print(f"[BOOTSTRAP] Custom node requirements disabled, skip: {name}")
-                    continue
-
-                req = os.path.join(custom_node_root, name, "requirements.txt")
+        if os.path.isdir(custom_nodes_dir):
+            for name in os.listdir(custom_nodes_dir):
+                req = os.path.join(custom_nodes_dir, name, "requirements.txt")
                 if os.path.isfile(req):
                     req_files.append(req)
 
@@ -2402,12 +2092,7 @@ def auto_install_requirements():
             installed_any = True
             _bootstrap_trace(f"auto_install_requirements: requirements install completed for {req}")
         except subprocess.CalledProcessError as exc:
-            req_realpath = os.path.realpath(req)
-            is_custom_node_req = req_realpath.startswith(os.path.realpath(custom_nodes_dir) + os.sep)
-            if shared_custom_nodes_dir:
-                is_custom_node_req = is_custom_node_req or req_realpath.startswith(
-                    os.path.realpath(shared_custom_nodes_dir) + os.sep
-                )
+            is_custom_node_req = os.path.realpath(req).startswith(os.path.realpath(custom_nodes_dir) + os.sep)
             strict_custom_req = os.environ.get("COMFYUI_STRICT_CUSTOM_NODE_REQUIREMENTS", "0") == "1"
 
             if is_custom_node_req and not strict_custom_req:
@@ -2420,7 +2105,7 @@ def auto_install_requirements():
 
     # IMPORTANT: riallinea FluxTrainer alla fine, dopo TUTTI gli altri requirements,
     # così eventuali installazioni precedenti non lasciano l'ambiente in stato incoerente.
-    if os.environ.get("COMFYUI_FORCE_TRANSFORMERS_FLUXTRAINER_COMPAT", "0") == "1":
+    if os.environ.get("COMFYUI_FORCE_TRANSFORMERS_FLUXTRAINER_COMPAT", "1") == "1":
         if _install_fluxtrainer_runtime_stack(custom_nodes_dir):
             installed_any = True
         _bootstrap_trace("auto_install_requirements: FluxTrainer final reconciliation completed")
@@ -2437,8 +2122,6 @@ def auto_install_requirements():
     _bootstrap_trace("auto_install_requirements: checking onnxruntime importability")
     _ensure_onnxruntime_importable_or_fallback()
     _bootstrap_trace("auto_install_requirements: onnxruntime importability check completed")
-    _cleanup_bootstrap_package_caches()
-    _bootstrap_trace("auto_install_requirements: bootstrap cache cleanup completed")
 
     if installed_any:
         import importlib, site
@@ -2466,7 +2149,7 @@ def _apply_early_transformers_fluxtrainer_compat():
     Applica la compat transformers il prima possibile, prima degli import ComfyUI.
     Serve a evitare errori di import dei custom nodes FluxTrainer.
     """
-    compat_mode = os.environ.get("COMFYUI_EAGER_TRANSFORMERS_COMPAT", "0").strip().lower()
+    compat_mode = os.environ.get("COMFYUI_EAGER_TRANSFORMERS_COMPAT", "1").strip().lower()
     if compat_mode not in {"0", "1", "auto"}:
         compat_mode = "1"
 
@@ -2708,18 +2391,6 @@ _bootstrap_trace("startup: ensure_local_venv completed")
 _bootstrap_trace("startup: ensure_comfyui_manager_installed begin")
 ensure_comfyui_manager_installed()
 _bootstrap_trace("startup: ensure_comfyui_manager_installed completed")
-_bootstrap_trace("startup: migrate local custom nodes before install begin")
-_migrate_local_custom_nodes_to_shared()
-_bootstrap_trace("startup: migrate local custom nodes before install completed")
-_bootstrap_trace("startup: install workflow custom nodes begin")
-_install_workflow_custom_nodes()
-_bootstrap_trace("startup: install workflow custom nodes completed")
-_bootstrap_trace("startup: migrate local custom nodes after install begin")
-_migrate_local_custom_nodes_to_shared()
-_bootstrap_trace("startup: migrate local custom nodes after install completed")
-_bootstrap_trace("startup: sync shared custom nodes begin")
-_sync_shared_custom_nodes()
-_bootstrap_trace("startup: sync shared custom nodes completed")
 
 # Bootstrap PRIMA degli import ComfyUI
 _bootstrap_trace("startup: initial auto_install_requirements begin")
@@ -2733,10 +2404,6 @@ _bootstrap_trace("startup: cuda probe completed")
 # Evita mismatch: runtime cudaMallocAsync vs load-time native.
 if "--disable-cuda-malloc" not in sys.argv and os.environ.get("COMFYUI_FORCE_CUDA_MALLOC", "0") != "1":
     sys.argv.append("--disable-cuda-malloc")
-if os.environ.get("COMFYUI_LOWVRAM", "1") == "1" and not any(
-    arg in sys.argv for arg in ("--cpu", "--lowvram", "--novram", "--highvram")
-):
-    sys.argv.append("--lowvram")
 _legacy_pytorch_alloc_conf = os.environ.pop("PYTORCH_CUDA_ALLOC_CONF", "").strip()
 _current_pytorch_alloc_conf = os.environ.get("PYTORCH_ALLOC_CONF", "").strip()
 if not _current_pytorch_alloc_conf:
@@ -2855,59 +2522,6 @@ def _download_if_missing(url: str, dest_path: str, timeout: int = 120, ignore_ht
         except Exception:
             pass
         logging.error(f"Failed downloading model from {url} -> {dest_path}: {e}")
-
-def _ensure_flux1_dev_checkpoint_symlink(shared_root: str):
-    """
-    Rende disponibile flux1-dev.safetensors anche dentro checkpoints tramite symlink:
-      checkpoints/flux1-dev.safetensors -> ../diffusion_models/flux1-dev.safetensors
-
-    Non copia il file e non scrive nulla se la cartella checkpoints non è scrivibile.
-    """
-    if not shared_root:
-        return
-
-    shared_root = os.path.abspath(shared_root)
-
-    source_path = os.path.join(
-        shared_root,
-        "diffusion_models",
-        "flux1-dev.safetensors",
-    )
-    checkpoints_dir = os.path.join(shared_root, "checkpoints")
-    target_path = os.path.join(checkpoints_dir, "flux1-dev.safetensors")
-
-    if not os.path.isfile(source_path) or os.path.getsize(source_path) <= 0:
-        _bootstrap_trace(f"_ensure_flux1_dev_checkpoint_symlink: source missing, skip {source_path}")
-        return
-
-    if not os.path.isdir(checkpoints_dir):
-        _bootstrap_trace(f"_ensure_flux1_dev_checkpoint_symlink: checkpoints dir missing, skip {checkpoints_dir}")
-        return
-
-    if not _is_writable_directory(checkpoints_dir):
-        _bootstrap_trace(f"_ensure_flux1_dev_checkpoint_symlink: checkpoints dir not writable, skip {checkpoints_dir}")
-        return
-
-    if os.path.lexists(target_path):
-        if os.path.islink(target_path) and not os.path.exists(target_path):
-            try:
-                os.remove(target_path)
-            except Exception as exc:
-                logging.warning(f"Unable to remove broken checkpoint symlink {target_path}: {exc}")
-                return
-        else:
-            _bootstrap_trace(f"_ensure_flux1_dev_checkpoint_symlink: target already exists, skip {target_path}")
-            return
-
-    try:
-        rel_target = os.path.relpath(source_path, checkpoints_dir)
-        os.symlink(rel_target, target_path)
-        logging.info(f"Linked Flux checkpoint alias: {target_path} -> {rel_target}")
-        _bootstrap_trace(f"_ensure_flux1_dev_checkpoint_symlink: linked {target_path} -> {rel_target}")
-    except Exception as exc:
-        logging.warning(f"Unable to create Flux checkpoint symlink {target_path} -> {source_path}: {exc}")
-
-
 def _normalize_model_entries(entries):
     """
     Normalizza elementi del tipo:
@@ -2931,6 +2545,22 @@ def _normalize_model_entries(entries):
         else:
             logging.warning(f"Unsupported model entry type, skipping: {item}")
     return normalized
+
+
+def _is_writable_directory(path: str) -> bool:
+    """
+    Verifica se la directory è realmente scrivibile provando a creare un file temporaneo.
+    """
+    try:
+        os.makedirs(path, exist_ok=True)
+        test_file = os.path.join(path, ".comfyui_write_test.tmp")
+        with open(test_file, "wb") as f:
+            f.write(b"ok")
+        os.remove(test_file)
+        return True
+    except Exception as e:
+        logging.warning(f"Directory non scrivibile (skip download): {path} -> {e}")
+        return False
 
 
 def ensure_shared_models_downloaded(shared_root: str):
@@ -2969,9 +2599,7 @@ def ensure_shared_models_downloaded(shared_root: str):
             _download_if_missing(url, dest_path)
             _bootstrap_trace(f"ensure_shared_models_downloaded: file ready {dest_path}")
 
-    _ensure_flux1_dev_checkpoint_symlink(shared_root)
     _bootstrap_trace(f"ensure_shared_models_downloaded: completed for root {shared_root}")
-    
 
 
 def _resolve_model_roots():
@@ -2979,23 +2607,24 @@ def _resolve_model_roots():
     Risolve le root modelli in modo portabile:
     - COMFYUI_MODEL_ROOTS (path separati da os.pathsep) se definita
     - COMFYUI_MODELS_DEFAULT_ROOT forza sempre la root primaria
-    - altrimenti usa models-default/default-models come root primaria
-    - models viene usata come root secondaria/link farm locale
+    - altrimenti usa shared/default-models come unica root locale
     """
     env_primary_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    local_primary_root = os.path.join(base_dir, "models-default", "default-models")
+    local_primary_root = os.path.join(base_dir, "shared", "default-models")
 
     if env_primary_root:
         primary_root = env_primary_root
     else:
         primary_root = local_primary_root
 
-    secondary_root = (
-        os.environ.get("COMFYUI_MODELS_ROOT", "").strip()
-        or os.path.join(base_dir, "models")
-    )
-    candidates = [primary_root, secondary_root]
+    candidates = [primary_root]
+
+    # Aggiungi root secondarie solo se richieste esplicitamente: il bootstrap
+    # deve scaricare e registrare i modelli locali in shared/default-models.
+    secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip()
+    if secondary_root:
+        candidates.append(secondary_root)
 
     env_value = os.environ.get("COMFYUI_MODEL_ROOTS", "").strip()
     if env_value:
@@ -3014,44 +2643,19 @@ def _resolve_model_roots():
     for candidate in candidates:
         _append_root_candidate(candidate)
 
-    trace_key = tuple(roots)
-    if (
-        os.environ.get("COMFYUI_TRACE_MODEL_ROOTS_EVERY_CALL", "0") == "1"
-        or getattr(_resolve_model_roots, "_last_trace_key", None) != trace_key
-    ):
-        _bootstrap_trace(f"_resolve_model_roots: resolved {roots}")
-        _resolve_model_roots._last_trace_key = trace_key
+    _bootstrap_trace(f"_resolve_model_roots: resolved {roots}")
     return roots
 
 
 def _ensure_llm_subdirs(model_roots):
     """
-    Garantisce che LLM esista nella root primaria e come directory reale
-    nelle root secondarie. I file vengono poi linkati da _link_primary_models_to_secondary.
+    Alcuni nodi (es. Florence2ModelLoader) cercano esplicitamente models/LLM.
+    Garantisce che la cartella esista in ogni root registrata.
     """
-    if not model_roots:
-        return
-
-    primary_llm = os.path.join(model_roots[0], "LLM")
-
-    try:
-        _bootstrap_trace(f"_ensure_llm_subdirs: ensuring primary {primary_llm}")
-        os.makedirs(primary_llm, exist_ok=True)
-    except Exception as exc:
-        logging.warning(f"Unable to create primary LLM folder in {model_roots[0]}: {exc}")
-        _bootstrap_trace(f"_ensure_llm_subdirs: failed primary -> {exc}")
-        return
-
-    for root in model_roots[1:]:
-        secondary_llm = os.path.join(root, "LLM")
+    for root in model_roots:
         try:
-            os.makedirs(root, exist_ok=True)
-            if os.path.realpath(primary_llm) == os.path.realpath(secondary_llm):
-                continue
-            if os.path.islink(secondary_llm):
-                os.remove(secondary_llm)
-            os.makedirs(secondary_llm, exist_ok=True)
-            _bootstrap_trace(f"_ensure_llm_subdirs: ensured real dir {secondary_llm}")
+            _bootstrap_trace(f"_ensure_llm_subdirs: ensuring {os.path.join(root, 'LLM')}")
+            os.makedirs(os.path.join(root, "LLM"), exist_ok=True)
         except Exception as exc:
             logging.warning(f"Unable to create LLM folder in {root}: {exc}")
             _bootstrap_trace(f"_ensure_llm_subdirs: failed for {root} -> {exc}")
@@ -3059,7 +2663,7 @@ def _ensure_llm_subdirs(model_roots):
 
 def _sync_llm_primary_to_secondary(model_roots):
     """
-    Mantiene download su root primaria (models-default) ma rende disponibili i file
+    Mantiene download su root primaria (shared) ma rende disponibili i file
     anche in root secondaria (models) per nodi che usano path hardcoded models/LLM.
     """
     if os.environ.get("COMFYUI_SYNC_LLM_TO_SECONDARY", "0") != "1":
@@ -3087,22 +2691,30 @@ def _sync_llm_primary_to_secondary(model_roots):
 
     if not os.path.exists(secondary_llm):
         try:
-            rel_target = os.path.relpath(primary_llm, os.path.dirname(secondary_llm))
-            os.symlink(rel_target, secondary_llm, target_is_directory=True)
+            os.symlink(primary_llm, secondary_llm, target_is_directory=True)
             logging.info(f"Linked LLM folder: {secondary_llm} -> {primary_llm}")
-            _bootstrap_trace(f"_sync_llm_primary_to_secondary: linked {secondary_llm} -> {rel_target}")
+            _bootstrap_trace(f"_sync_llm_primary_to_secondary: linked {secondary_llm} -> {primary_llm}")
             return
-        except Exception as exc:
-            logging.warning(f"Unable to link LLM folder {secondary_llm} -> {primary_llm}: {exc}")
-            _bootstrap_trace(f"_sync_llm_primary_to_secondary: link failed -> {exc}")
-            return
+        except Exception:
+            pass
 
-    if os.path.isdir(secondary_llm) and not os.path.islink(secondary_llm):
-        if not _ensure_secondary_dir_link(primary_llm, secondary_llm):
-            linked, skipped = _link_directory_entries(primary_llm, secondary_llm)
-            _bootstrap_trace(
-                f"_sync_llm_primary_to_secondary: linked entries into existing dir linked={linked} skipped={skipped}"
-            )
+    try:
+        _bootstrap_trace(f"_sync_llm_primary_to_secondary: copying contents {primary_llm} -> {secondary_llm}")
+        os.makedirs(secondary_llm, exist_ok=True)
+        for entry_name in os.listdir(primary_llm):
+            src = os.path.join(primary_llm, entry_name)
+            dst = os.path.join(secondary_llm, entry_name)
+            if os.path.exists(dst):
+                continue
+            if os.path.isdir(src):
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+            else:
+                shutil.copy2(src, dst)
+        logging.info(f"Synced LLM files from {primary_llm} to {secondary_llm}")
+        _bootstrap_trace(f"_sync_llm_primary_to_secondary: sync completed {primary_llm} -> {secondary_llm}")
+    except Exception as exc:
+        logging.warning(f"Unable to sync LLM folders {primary_llm} -> {secondary_llm}: {exc}")
+        _bootstrap_trace(f"_sync_llm_primary_to_secondary: sync failed -> {exc}")
 
 def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
     """
@@ -3145,309 +2757,6 @@ def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
         return False
 
 
-def _link_directory_entries(src_dir: str, dst_dir: str):
-    """
-    Linka il contenuto di src_dir dentro dst_dir.
-    Serve quando dst_dir esiste gia' (es. models/LLM creato dal bootstrap):
-    in quel caso non possiamo sostituirla con un symlink alla directory intera.
-    """
-    linked = 0
-    skipped = 0
-
-    try:
-        os.makedirs(dst_dir, exist_ok=True)
-        entry_names = os.listdir(src_dir)
-    except Exception as exc:
-        logging.warning(f"Unable to prepare model directory links {dst_dir}: {exc}")
-        _bootstrap_trace(f"_link_directory_entries: failed preparing {src_dir} -> {dst_dir}: {exc}")
-        return linked, skipped
-
-    for entry_name in entry_names:
-        if entry_name in {".", ".."}:
-            continue
-
-        src_path = os.path.join(src_dir, entry_name)
-        dst_path = os.path.join(dst_dir, entry_name)
-
-        if os.path.abspath(src_path) == os.path.abspath(dst_path):
-            skipped += 1
-            continue
-
-        if os.path.lexists(dst_path):
-            if os.path.isdir(src_path) and os.path.isdir(dst_path) and not os.path.islink(dst_path):
-                child_linked, child_skipped = _link_directory_entries(src_path, dst_path)
-                linked += child_linked
-                skipped += child_skipped
-            else:
-                skipped += 1
-            continue
-
-        try:
-            rel_target = os.path.relpath(src_path, os.path.dirname(dst_path))
-            os.symlink(rel_target, dst_path, target_is_directory=os.path.isdir(src_path))
-            linked += 1
-            _bootstrap_trace(f"_link_directory_entries: linked {dst_path} -> {rel_target}")
-        except Exception as exc:
-            skipped += 1
-            logging.warning(f"Unable to link model entry {dst_path} -> {src_path}: {exc}")
-            _bootstrap_trace(f"_link_directory_entries: failed linking {dst_path} -> {src_path}: {exc}")
-
-    return linked, skipped
-
-
-def _merge_secondary_dir_into_primary(primary_dir: str, secondary_dir: str):
-    moved = 0
-    removed = 0
-    skipped = 0
-
-    if not os.path.isdir(secondary_dir) or os.path.islink(secondary_dir):
-        return moved, removed, skipped
-
-    os.makedirs(primary_dir, exist_ok=True)
-
-    for current_root, dir_names, file_names in os.walk(secondary_dir, topdown=False):
-        rel_root = os.path.relpath(current_root, secondary_dir)
-        primary_root = primary_dir if rel_root == "." else os.path.join(primary_dir, rel_root)
-        os.makedirs(primary_root, exist_ok=True)
-
-        for file_name in file_names:
-            src_path = os.path.join(current_root, file_name)
-            dst_path = os.path.join(primary_root, file_name)
-
-            if os.path.islink(src_path):
-                try:
-                    os.remove(src_path)
-                    removed += 1
-                    _bootstrap_trace(f"_merge_secondary_dir_into_primary: removed secondary link {src_path}")
-                except Exception as exc:
-                    skipped += 1
-                    logging.warning(f"Unable to remove secondary model link {src_path}: {exc}")
-                continue
-
-            if os.path.lexists(dst_path):
-                try:
-                    os.remove(src_path)
-                    removed += 1
-                    _bootstrap_trace(f"_merge_secondary_dir_into_primary: removed duplicate secondary file {src_path}")
-                except Exception as exc:
-                    skipped += 1
-                    logging.warning(f"Unable to remove duplicate secondary model file {src_path}: {exc}")
-                continue
-
-            try:
-                shutil.move(src_path, dst_path)
-                moved += 1
-                _bootstrap_trace(f"_merge_secondary_dir_into_primary: moved {src_path} -> {dst_path}")
-            except Exception as exc:
-                skipped += 1
-                logging.warning(f"Unable to move secondary model file {src_path} -> {dst_path}: {exc}")
-
-        for dir_name in dir_names:
-            src_path = os.path.join(current_root, dir_name)
-            if os.path.islink(src_path):
-                try:
-                    os.remove(src_path)
-                    removed += 1
-                    _bootstrap_trace(f"_merge_secondary_dir_into_primary: removed secondary dir link {src_path}")
-                except Exception as exc:
-                    skipped += 1
-                    logging.warning(f"Unable to remove secondary model dir link {src_path}: {exc}")
-                continue
-            try:
-                os.rmdir(src_path)
-            except OSError:
-                pass
-
-    return moved, removed, skipped
-
-
-def _ensure_secondary_dir_link(primary_dir: str, secondary_dir: str) -> bool:
-    if os.path.islink(secondary_dir):
-        return True
-
-    if os.path.lexists(secondary_dir):
-        if not os.path.isdir(secondary_dir):
-            return False
-
-        moved, removed, skipped = _merge_secondary_dir_into_primary(primary_dir, secondary_dir)
-        try:
-            shutil.rmtree(secondary_dir)
-        except OSError as exc:
-            _bootstrap_trace(
-                f"_ensure_secondary_dir_link: kept existing dir {secondary_dir} moved={moved} removed={removed} skipped={skipped} error={exc}"
-            )
-            return False
-
-    os.makedirs(os.path.dirname(secondary_dir), exist_ok=True)
-    rel_target = os.path.relpath(primary_dir, os.path.dirname(secondary_dir))
-    os.symlink(rel_target, secondary_dir, target_is_directory=True)
-    _bootstrap_trace(f"_ensure_secondary_dir_link: linked {secondary_dir} -> {rel_target}")
-    return True
-
-
-def _sync_dir_as_file_symlinks(primary_dir: str, secondary_dir: str):
-    """
-    Ricorre ricorsivamente su primary_dir e secondary_dir garantendo che:
-    - Le directory in secondary_dir siano REALI (non symlink di directory)
-    - Ogni FILE in secondary_dir sia un symlink al file corrispondente in primary_dir
-    - File reali in secondary_dir vengano migrati in primary_dir e sostituiti con symlink
-    - Directory symlink in secondary_dir vengano sostituite con directory reali
-    """
-    try:
-        os.makedirs(secondary_dir, exist_ok=True)
-    except Exception as exc:
-        logging.warning(f"Unable to create secondary dir {secondary_dir}: {exc}")
-        _bootstrap_trace(f"_sync_dir_as_file_symlinks: failed creating {secondary_dir} -> {exc}")
-        return
-
-    primary_entries = set()
-    secondary_entries = set()
-
-    try:
-        primary_entries = set(os.listdir(primary_dir))
-    except Exception as exc:
-        logging.warning(f"Unable to list primary dir {primary_dir}: {exc}")
-        _bootstrap_trace(f"_sync_dir_as_file_symlinks: failed listing {primary_dir} -> {exc}")
-        return
-
-    try:
-        secondary_entries = set(os.listdir(secondary_dir))
-    except Exception:
-        pass
-
-    for entry_name in sorted(primary_entries | secondary_entries):
-        if entry_name.startswith("."):
-            continue
-
-        src_path = os.path.join(primary_dir, entry_name)
-        dst_path = os.path.join(secondary_dir, entry_name)
-
-        if os.path.abspath(src_path) == os.path.abspath(dst_path):
-            continue
-
-        src_is_real_dir = os.path.isdir(src_path) and not os.path.islink(src_path)
-        dst_is_real_dir = os.path.isdir(dst_path) and not os.path.islink(dst_path)
-        dst_is_dir_symlink = os.path.islink(dst_path) and os.path.isdir(dst_path)
-
-        # --- DIRECTORY ---
-        # Se src è una directory reale, o se dst è una directory (reale o symlink)
-        # senza src corrispondente in primary (solo in secondary)
-        if src_is_real_dir or (entry_name not in primary_entries and (dst_is_real_dir or dst_is_dir_symlink)):
-            # Rimuovi eventuale dir symlink: serve directory reale
-            if dst_is_dir_symlink:
-                try:
-                    os.remove(dst_path)
-                    _bootstrap_trace(f"_sync_dir_as_file_symlinks: removed dir symlink {dst_path}")
-                except Exception as exc:
-                    logging.warning(f"Unable to remove dir symlink {dst_path}: {exc}")
-                    continue
-            # Crea directory reale in primary se assente (entry solo in secondary)
-            if not src_is_real_dir:
-                try:
-                    os.makedirs(src_path, exist_ok=True)
-                except Exception as exc:
-                    logging.warning(f"Unable to create primary dir {src_path}: {exc}")
-                    continue
-            # Crea directory reale in secondary se assente
-            if not dst_is_real_dir:
-                try:
-                    os.makedirs(dst_path, exist_ok=True)
-                except Exception as exc:
-                    logging.warning(f"Unable to create secondary dir {dst_path}: {exc}")
-                    continue
-            _sync_dir_as_file_symlinks(src_path, dst_path)
-            continue
-
-        # --- FILE ---
-        # Rimuovi dir symlink al posto di un file (non dovrebbe accadere)
-        if dst_is_dir_symlink:
-            try:
-                os.remove(dst_path)
-            except Exception:
-                continue
-
-        # Symlink file già presente: verifica che punti al src corretto
-        if os.path.islink(dst_path) and not os.path.isdir(dst_path):
-            if os.path.isfile(src_path):
-                if os.path.realpath(dst_path) == os.path.realpath(src_path):
-                    continue  # symlink corretto, skip
-                # punta a target sbagliato: rimuovi e ricrea
-                try:
-                    os.remove(dst_path)
-                except Exception:
-                    continue
-            else:
-                continue  # src non esiste, lascia il symlink
-
-        # File reale in secondary: migra in primary, sostituisci con symlink
-        if os.path.isfile(dst_path) and not os.path.islink(dst_path):
-            if not os.path.lexists(src_path):
-                try:
-                    os.makedirs(primary_dir, exist_ok=True)
-                    shutil.move(dst_path, src_path)
-                    _bootstrap_trace(f"_sync_dir_as_file_symlinks: migrated {dst_path} -> {src_path}")
-                except Exception as exc:
-                    logging.warning(f"Unable to migrate file {dst_path} -> {src_path}: {exc}")
-                    continue
-            else:
-                # primary ha già il file: rimuovi il duplicato in secondary
-                try:
-                    os.remove(dst_path)
-                    _bootstrap_trace(f"_sync_dir_as_file_symlinks: removed duplicate {dst_path}")
-                except Exception as exc:
-                    logging.warning(f"Unable to remove duplicate {dst_path}: {exc}")
-                    continue
-
-        # Crea symlink file dst -> src
-        if os.path.isfile(src_path) and not os.path.lexists(dst_path):
-            try:
-                rel_target = os.path.relpath(src_path, secondary_dir)
-                os.symlink(rel_target, dst_path)
-                _bootstrap_trace(f"_sync_dir_as_file_symlinks: linked {dst_path} -> {rel_target}")
-            except Exception as exc:
-                logging.warning(f"Unable to create file symlink {dst_path} -> {src_path}: {exc}")
-                _bootstrap_trace(f"_sync_dir_as_file_symlinks: failed file symlink -> {exc}")
-
-
-def _link_primary_models_to_secondary(model_roots):
-    """
-    Garantisce che models/ abbia la stessa struttura di directory di
-    models-default/default-models/, con ogni singolo file come symlink
-    al file corrispondente in primary (file-level symlinks).
-    Le directory in models/ sono REALI; i file dentro sono SYMLINK.
-    """
-    if os.environ.get("COMFYUI_LINK_DEFAULT_MODELS_TO_MODELS", "1") != "1":
-        _bootstrap_trace("_link_primary_models_to_secondary: disabled by env")
-        return
-
-    if len(model_roots) < 2:
-        _bootstrap_trace("_link_primary_models_to_secondary: skipped because fewer than 2 model roots")
-        return
-
-    primary_root = os.path.abspath(model_roots[0])
-    secondary_root = os.path.abspath(model_roots[1])
-
-    if os.path.realpath(primary_root) == os.path.realpath(secondary_root):
-        _bootstrap_trace("_link_primary_models_to_secondary: primary and secondary already match")
-        return
-
-    if not os.path.isdir(primary_root):
-        _bootstrap_trace(f"_link_primary_models_to_secondary: primary root missing {primary_root}")
-        return
-
-    try:
-        os.makedirs(secondary_root, exist_ok=True)
-    except Exception as exc:
-        logging.warning(f"Unable to prepare secondary models root {secondary_root}: {exc}")
-        _bootstrap_trace(f"_link_primary_models_to_secondary: failed preparing secondary -> {exc}")
-        return
-
-    _bootstrap_trace(f"_link_primary_models_to_secondary: syncing file-level symlinks {secondary_root} -> {primary_root}")
-    _sync_dir_as_file_symlinks(primary_root, secondary_root)
-    logging.info(f"[WRAPPER] File-level symlinks synchronized in {secondary_root}")
-    _bootstrap_trace("_link_primary_models_to_secondary: completed")
-
-
 def _sync_model_alias_directories(model_roots):
     """
     Alcuni selector/nodi continuano a leggere solo le cartelle canoniche ComfyUI
@@ -3459,12 +2768,14 @@ def _sync_model_alias_directories(model_roots):
         ("controlnet", "xlabs/controlnets"),
     ]
 
-    if not model_roots:
-        return
-
-    # Gli alias vengono creati solo nella root primaria. Le root secondarie
-    # (models/) ricevono poi solo symlink tramite _link_primary_models_to_secondary.
-    normalized_roots = [os.path.abspath(model_roots[0])]
+    normalized_roots = []
+    seen_roots = set()
+    for root in model_roots:
+        normalized = os.path.abspath(root)
+        if normalized in seen_roots:
+            continue
+        seen_roots.add(normalized)
+        normalized_roots.append(normalized)
 
     for canonical_subdir, alias_subdir in alias_pairs:
         discovered_files = {}
@@ -3587,7 +2898,7 @@ def _ensure_florence2_layout(model_roots):
         _bootstrap_trace("_ensure_florence2_layout: skipped because model_roots is empty")
         return
 
-    # Scarica SOLO nella root primaria (models-default).
+    # Scarica SOLO nella root primaria (shared).
     root = model_roots[0]
     llm_root = os.path.join(root, "LLM")
     model_dir = os.path.join(llm_root, "Florence-2-large")
@@ -3761,7 +3072,7 @@ def _ensure_da3_large_layout(model_roots):
 def _ensure_default_llama_layout(model_roots):
     """
     Prepara un layout repo-like dentro
-    models-default/default-models/diffusers/Llama-3-8B-Instruct per il modello
+    shared/default-models/diffusers/Llama-3-8B-Instruct per il modello
     LLaMA di default.
     """
     repo_id = (
@@ -3850,7 +3161,9 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: first LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: first LLM sync completed")
-    # _ensure_florence2_layout(model_roots)  # disabilitato
+    _bootstrap_trace("apply_shared_model_paths: Florence2 layout begin")
+    _ensure_florence2_layout(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: Florence2 layout completed")
     _bootstrap_trace("apply_shared_model_paths: DA3 layout begin")
     _ensure_da3_large_layout(model_roots)
     _bootstrap_trace("apply_shared_model_paths: DA3 layout completed")
@@ -3860,9 +3173,6 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: model alias sync begin")
     _sync_model_alias_directories(model_roots)
     _bootstrap_trace("apply_shared_model_paths: model alias sync completed")
-    _bootstrap_trace("apply_shared_model_paths: default-to-models link begin")
-    _link_primary_models_to_secondary(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: default-to-models link completed")
 
     iter_model_dir_bindings = globals().get("_iter_model_dir_bindings")
     if callable(iter_model_dir_bindings):
@@ -3892,7 +3202,6 @@ def apply_shared_model_paths():
             "clip_l": "text_encoders",
             "LLM": "LLM",
             "llm": "LLM",
-            "llm_gguf": "llm_gguf",
         }
         alias_model_dirs = {
             "controlnet": [
@@ -3928,48 +3237,6 @@ def apply_shared_model_paths():
 
     _bootstrap_trace("apply_shared_model_paths: completed")
 
-
-def _register_shared_custom_nodes_path():
-    if os.environ.get("COMFYUI_REGISTER_SHARED_CUSTOM_NODES", "1") != "1":
-        return
-
-    base_dir = os.path.dirname(os.path.realpath(__file__))
-    shared_custom_nodes_dir = _get_shared_custom_nodes_dir(base_dir)
-    local_custom_nodes_dir = os.path.abspath(os.path.join(base_dir, "custom_nodes"))
-
-    if not shared_custom_nodes_dir or not os.path.isdir(shared_custom_nodes_dir):
-        return
-
-    if os.path.realpath(shared_custom_nodes_dir) == os.path.realpath(local_custom_nodes_dir):
-        return
-
-    try:
-        current_paths = [
-            os.path.realpath(path)
-            for path in folder_paths.get_folder_paths("custom_nodes")
-        ]
-    except Exception:
-        current_paths = []
-
-    if os.path.realpath(shared_custom_nodes_dir) in current_paths:
-        _bootstrap_trace(f"_register_shared_custom_nodes_path: already registered {shared_custom_nodes_dir}")
-        return
-
-    try:
-        folder_paths.add_model_folder_path("custom_nodes", shared_custom_nodes_dir)
-        logging.info(f"Added shared custom_nodes path -> {shared_custom_nodes_dir}")
-        _bootstrap_trace(f"_register_shared_custom_nodes_path: registered {shared_custom_nodes_dir}")
-        try:
-            _bootstrap_trace(
-                f"_register_shared_custom_nodes_path: active paths {folder_paths.get_folder_paths('custom_nodes')}"
-            )
-        except Exception:
-            pass
-    except Exception as exc:
-        logging.warning(f"Unable to register shared custom_nodes path {shared_custom_nodes_dir}: {exc}")
-        _bootstrap_trace(f"_register_shared_custom_nodes_path: failed {shared_custom_nodes_dir} -> {exc}")
-
-
 def apply_custom_paths():
     # extra model paths
     _bootstrap_trace("apply_custom_paths: begin")
@@ -3997,9 +3264,6 @@ def apply_custom_paths():
     _bootstrap_trace("apply_custom_paths: apply_shared_model_paths begin")
     apply_shared_model_paths()
     _bootstrap_trace("apply_custom_paths: apply_shared_model_paths completed")
-    _bootstrap_trace("apply_custom_paths: register shared custom nodes begin")
-    _register_shared_custom_nodes_path()
-    _bootstrap_trace("apply_custom_paths: register shared custom nodes completed")
 
     # These are the default folders that checkpoints, clip and vae models will be saved to when using CheckpointSave, etc.. nodes
     _bootstrap_trace("apply_custom_paths: registering output subdirectories")
@@ -4219,7 +3483,6 @@ MODEL_DIRS_MAP = {
     "clip_l": "text_encoders",
     "LLM": "LLM",
     "llm": "LLM",
-    "llm_gguf": "llm_gguf",
 }
 
 MODEL_DIR_ALIASES_MAP = {
@@ -4500,7 +3763,7 @@ def _ensure_comfyui_manager_network_mode():
         config["default"] = {}
 
     current_mode = (config["default"].get("network_mode") or "public").strip().lower() or "public"
-    requested_mode = os.environ.get("COMFYUI_MANAGER_NETWORK_MODE", "public").strip().lower()
+    requested_mode = os.environ.get("COMFYUI_MANAGER_NETWORK_MODE", "").strip().lower()
     valid_modes = {"public", "private", "offline"}
 
     if requested_mode and requested_mode not in valid_modes:
@@ -4562,17 +3825,6 @@ def _append_disable_cuda_malloc_arg():
 
     sys.argv.append("--disable-cuda-malloc")
     logging.info("[WRAPPER] Added CLI arg --disable-cuda-malloc to keep allocator stable")
-
-
-def _append_lowvram_arg():
-    if os.environ.get("COMFYUI_LOWVRAM", "1") != "1":
-        return
-
-    if any(arg in sys.argv for arg in ("--cpu", "--lowvram", "--novram", "--highvram")):
-        return
-
-    sys.argv.append("--lowvram")
-    logging.info("[WRAPPER] Added CLI arg --lowvram")
 
 
 def _normalize_flux_workflow_paths(base_dir: str):
@@ -4694,66 +3946,7 @@ def _get_bootstrap_model_index():
 
 def _get_known_bootstrap_model_filenames(model_type):
     known_by_type, _ = _get_bootstrap_model_index()
-    filenames = set(known_by_type.get(model_type, set()))
-    filenames.update(_iter_existing_model_filenames(model_type))
-    return sorted(filenames)
-
-
-def _iter_existing_model_filenames(model_type):
-    seen = set()
-
-    for root in _resolve_model_roots():
-        for registered_model_type, subdir in _iter_model_dir_bindings():
-            if registered_model_type != model_type:
-                continue
-
-            model_dir = os.path.join(root, subdir)
-            if not os.path.isdir(model_dir):
-                continue
-
-            for current_root, dir_names, file_names in os.walk(model_dir):
-                dir_names[:] = [name for name in dir_names if not name.startswith(".")]
-                for file_name in file_names:
-                    if file_name.startswith("."):
-                        continue
-
-                    file_path = os.path.join(current_root, file_name)
-                    try:
-                        rel_path = os.path.relpath(file_path, model_dir).replace("\\", "/")
-                    except ValueError:
-                        continue
-
-                    if rel_path in seen:
-                        continue
-                    seen.add(rel_path)
-                    yield rel_path
-
-
-def _resolve_existing_model_file(model_type, filename):
-    filename = _normalize_known_model_alias(filename)
-    if not isinstance(filename, str) or os.path.isabs(filename):
-        return None
-
-    normalized_filename = filename.replace("\\", "/")
-
-    for root in _resolve_model_roots():
-        for registered_model_type, subdir in _iter_model_dir_bindings():
-            if registered_model_type != model_type:
-                continue
-
-            model_dir = os.path.abspath(os.path.join(root, subdir))
-            candidate = os.path.abspath(os.path.join(model_dir, normalized_filename))
-
-            try:
-                if os.path.commonpath([candidate, model_dir]) != model_dir:
-                    continue
-            except ValueError:
-                continue
-
-            if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
-                return candidate
-
-    return None
+    return sorted(known_by_type.get(model_type, set()))
 
 
 def _invalidate_folder_paths_filename_cache(folder_paths_module, model_type):
@@ -4770,10 +3963,6 @@ def _invalidate_folder_paths_filename_cache(folder_paths_module, model_type):
 
 
 def _ensure_known_bootstrap_model_available(model_type, filename):
-    existing_path = _resolve_existing_model_file(model_type, filename)
-    if existing_path:
-        return existing_path
-
     _, sources = _get_bootstrap_model_index()
     source = sources.get((model_type, filename))
     if not source:
@@ -4909,192 +4098,6 @@ def _install_prompt_path_normalization_patch():
     logging.info("[WRAPPER] Installed prompt path normalization patch")
 
 
-def _install_json_exception_serialization_patch():
-    """
-    Alcuni custom worker mettono eccezioni Python (es. ValueError) nei payload
-    websocket. Il json stdlib non le serializza e ComfyUI puo' cadere durante
-    send_json; convertiamo solo le eccezioni in un payload JSON-safe.
-    """
-    if os.environ.get("COMFYUI_PATCH_JSON_EXCEPTIONS", "1") != "1":
-        logging.info("[WRAPPER] JSON exception serialization patch disabled by env")
-        return
-
-    import json
-
-    original_default = json.JSONEncoder.default
-    if getattr(original_default, "_comfyui_exception_json_patch", False):
-        return
-
-    def _json_default_with_exceptions(self, obj):
-        if isinstance(obj, BaseException):
-            return {
-                "error_type": obj.__class__.__name__,
-                "error": str(obj),
-            }
-
-        return original_default(self, obj)
-
-    _json_default_with_exceptions._comfyui_exception_json_patch = True
-    json.JSONEncoder.default = _json_default_with_exceptions
-    logging.info("[WRAPPER] Installed JSON exception serialization patch")
-
-
-def _install_text_encoder_safe_text_patch():
-    """
-    Alcuni nodi LLM/custom possono restituire un'eccezione invece di una stringa.
-    I text encoder Flux/CLIP chiamano .replace() sul prompt e crashano se ricevono
-    un ValueError. Normalizziamo il testo appena prima dell'escape.
-    """
-    if os.environ.get("COMFYUI_PATCH_TEXT_ENCODER_INPUTS", "1") != "1":
-        logging.info("[WRAPPER] Text encoder input patch disabled by env")
-        return
-
-    try:
-        import comfy.sd1_clip as sd1_clip
-    except Exception as exc:
-        logging.warning(f"[WRAPPER] Unable to import comfy.sd1_clip for text encoder patch: {exc}")
-        return
-
-    original_escape_important = getattr(sd1_clip, "escape_important", None)
-    if not callable(original_escape_important):
-        logging.warning("[WRAPPER] comfy.sd1_clip.escape_important not found, text patch skipped")
-        return
-
-    if getattr(original_escape_important, "_comfyui_safe_text_patch", False):
-        return
-
-    def _safe_escape_important(text):
-        if isinstance(text, BaseException):
-            text = f"{text.__class__.__name__}: {text}"
-        elif not isinstance(text, str):
-            text = str(text)
-
-        return original_escape_important(text)
-
-    _safe_escape_important._comfyui_safe_text_patch = True
-    sd1_clip.escape_important = _safe_escape_important
-    logging.info("[WRAPPER] Installed text encoder safe text patch")
-
-
-def _install_comfy_aimdo_safe_vbar_patch():
-    """
-    comfy_aimdo / ModelVBAR può fallire su vGPU/cloud o driver dove la Virtual
-    Address Reservation non è supportata correttamente. In quel caso facciamo
-    fallback a gestione standard senza VBAR, invece di far crashare ComfyUI.
-    """
-    if os.environ.get("COMFYUI_PATCH_AIMDO_VBAR", "1") != "1":
-        logging.info("[WRAPPER] comfy_aimdo vbar patch disabled by env")
-        return
-
-    try:
-        import comfy_aimdo.model_vbar as model_vbar
-    except Exception as exc:
-        logging.info(f"[WRAPPER] comfy_aimdo vbar patch skipped: {exc}")
-        return
-
-    # 1) Patch critica: se ModelPatcherDynamic._vbar_get() fallisce durante
-    #    ModelVBAR(...), ritorna None. Il codice ComfyUI gestisce già vbar=None.
-    try:
-        import comfy.model_patcher as model_patcher
-
-        model_patcher_dynamic = getattr(model_patcher, "ModelPatcherDynamic", None)
-        original_vbar_get = getattr(model_patcher_dynamic, "_vbar_get", None)
-
-        if callable(original_vbar_get) and not getattr(original_vbar_get, "_comfyui_safe_aimdo_vbar_patch", False):
-            def _safe_vbar_get(self, create=False):
-                try:
-                    return original_vbar_get(self, create=create)
-                except Exception as exc:
-                    message = str(exc)
-                    if (
-                        "VBAR allocation failed" in message
-                        or "vbar_allocate" in message
-                        or "Virtual Address" in message
-                        or exc.__class__.__name__ in {"MemoryError", "OSError", "RuntimeError"}
-                    ):
-                        logging.warning(
-                            "[WRAPPER] Disabling comfy_aimdo VBAR for this model/device; "
-                            f"falling back to standard loading: {exc}"
-                        )
-                        try:
-                            if hasattr(self.model, "dynamic_vbars"):
-                                self.model.dynamic_vbars[self.load_device] = None
-                        except Exception:
-                            pass
-                        return None
-                    raise
-
-            _safe_vbar_get._comfyui_safe_aimdo_vbar_patch = True
-            model_patcher_dynamic._vbar_get = _safe_vbar_get
-            logging.info("[WRAPPER] Installed comfy_aimdo safe ModelVBAR allocation patch")
-    except Exception as exc:
-        logging.warning(f"[WRAPPER] Unable to patch ModelPatcherDynamic._vbar_get: {exc}")
-
-    # 2) Patch secondaria: se vbars_analyze fallisce, ritorna 0 invece di crashare.
-    original_vbars_analyze = getattr(model_vbar, "vbars_analyze", None)
-    if callable(original_vbars_analyze) and not getattr(original_vbars_analyze, "_comfyui_safe_aimdo_vbar_patch", False):
-        def _safe_vbars_analyze(*args, **kwargs):
-            try:
-                return original_vbars_analyze(*args, **kwargs)
-            except Exception as exc:
-                logging.warning(f"[WRAPPER] Suppressed comfy_aimdo vbars_analyze error: {exc}")
-                return 0
-
-        _safe_vbars_analyze._comfyui_safe_aimdo_vbar_patch = True
-        model_vbar.vbars_analyze = _safe_vbars_analyze
-        logging.info("[WRAPPER] Installed comfy_aimdo safe vbars_analyze patch")
-
-    # 3) Patch già presente: evita crash a fine esecuzione se devctx è None.
-    original_reset = getattr(model_vbar, "vbars_reset_watermark_limits", None)
-    if callable(original_reset) and not getattr(original_reset, "_comfyui_safe_aimdo_vbar_patch", False):
-        def _safe_vbars_reset_watermark_limits(*args, **kwargs):
-            devctx = getattr(model_vbar, "devctx", None)
-            if devctx is None:
-                logging.info("[WRAPPER] Skipping comfy_aimdo vbar reset because devctx is None")
-                return None
-
-            try:
-                return original_reset(*args, **kwargs)
-            except AttributeError as exc:
-                if "vbars_reset_watermark_limits" in str(exc) or "NoneType" in str(exc):
-                    logging.warning(f"[WRAPPER] Suppressed comfy_aimdo vbar reset error: {exc}")
-                    return None
-                raise
-
-        _safe_vbars_reset_watermark_limits._comfyui_safe_aimdo_vbar_patch = True
-        model_vbar.vbars_reset_watermark_limits = _safe_vbars_reset_watermark_limits
-        logging.info("[WRAPPER] Installed comfy_aimdo safe vbar reset patch")
-
-def _disable_comfy_env_isolation(base_dir: str):
-    """
-    comfy-env puo' creare env pixi separati sotto .ce/.pixi; questo duplica
-    pacchetti pesanti e puo' rompere nodi che si aspettano torch nell'env
-    principale. Per default lo disabilitiamo rinominando .ce prima del load.
-    """
-    if os.environ.get("COMFYUI_DISABLE_COMFY_ENV_ISOLATION", "1") != "1":
-        return
-
-    candidate_dirs = [
-        os.path.join(base_dir, ".ce"),
-        os.path.join(os.path.dirname(base_dir), ".ce"),
-    ]
-
-    for ce_dir in candidate_dirs:
-        if not os.path.isdir(ce_dir):
-            continue
-
-        disabled_dir = ce_dir + ".disabled"
-        try:
-            if os.path.exists(disabled_dir):
-                shutil.rmtree(disabled_dir, ignore_errors=True)
-            os.replace(ce_dir, disabled_dir)
-            logging.info(f"[WRAPPER] Disabled comfy-env isolation: {ce_dir} -> {disabled_dir}")
-            _bootstrap_trace(f"_disable_comfy_env_isolation: moved {ce_dir} -> {disabled_dir}")
-        except Exception as exc:
-            logging.warning(f"[WRAPPER] Unable to disable comfy-env isolation {ce_dir}: {exc}")
-            _bootstrap_trace(f"_disable_comfy_env_isolation: failed {ce_dir} -> {exc}")
-
-
 def _preflight_custom_logic():
     """
     Esegue SOLO la tua logica custom stabile:
@@ -5120,18 +4123,6 @@ def _preflight_custom_logic():
     _bootstrap_trace("_preflight_custom_logic: manager network mode check begin")
     _ensure_comfyui_manager_network_mode()
     _bootstrap_trace("_preflight_custom_logic: manager network mode check completed")
-    _bootstrap_trace("_preflight_custom_logic: migrate local custom nodes before install begin")
-    _migrate_local_custom_nodes_to_shared()
-    _bootstrap_trace("_preflight_custom_logic: migrate local custom nodes before install completed")
-    _bootstrap_trace("_preflight_custom_logic: install workflow custom nodes begin")
-    _install_workflow_custom_nodes()
-    _bootstrap_trace("_preflight_custom_logic: install workflow custom nodes completed")
-    _bootstrap_trace("_preflight_custom_logic: migrate local custom nodes after install begin")
-    _migrate_local_custom_nodes_to_shared()
-    _bootstrap_trace("_preflight_custom_logic: migrate local custom nodes after install completed")
-    _bootstrap_trace("_preflight_custom_logic: sync shared custom nodes begin")
-    _sync_shared_custom_nodes()
-    _bootstrap_trace("_preflight_custom_logic: sync shared custom nodes completed")
 
     # 2) env vars opzionali
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -5139,25 +4130,19 @@ def _preflight_custom_logic():
 
     # 2a) Normalizza i workflow salvati con separatori Windows.
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    _bootstrap_trace("_preflight_custom_logic: disable comfy-env isolation begin")
-    _disable_comfy_env_isolation(base_dir)
-    _bootstrap_trace("_preflight_custom_logic: disable comfy-env isolation completed")
     _bootstrap_trace("_preflight_custom_logic: workflow normalization begin")
     _normalize_flux_workflow_paths(base_dir)
     _install_prompt_path_normalization_patch()
     _install_known_model_selector_patch()
-    _install_json_exception_serialization_patch()
-    _install_text_encoder_safe_text_patch()
-    _install_comfy_aimdo_safe_vbar_patch()
-    _bootstrap_trace("_preflight_custom_logic: workflow normalization and runtime patches completed")
+    _bootstrap_trace("_preflight_custom_logic: workflow normalization and prompt patch completed")
 
     # 2b) Compat per custom nodes legacy (es. fluxtrainer).
     # Modalita':
     #   COMFYUI_EAGER_TRANSFORMERS_COMPAT=1    -> forza patch
     #   COMFYUI_EAGER_TRANSFORMERS_COMPAT=0    -> disabilita patch
     #   COMFYUI_EAGER_TRANSFORMERS_COMPAT=auto -> applica patch solo se trova FluxTrainer
-    # Default: "0" per non preparare compat di custom nodes disabilitati.
-    compat_mode = os.environ.get("COMFYUI_EAGER_TRANSFORMERS_COMPAT", "0").strip().lower()
+    # Default: "1" per evitare ImportError con nodi legacy che importano CLIPFeatureExtractor.
+    compat_mode = os.environ.get("COMFYUI_EAGER_TRANSFORMERS_COMPAT", "1").strip().lower()
     if compat_mode not in {"0", "1", "auto"}:
         compat_mode = "1"
 
@@ -5212,15 +4197,14 @@ def _preflight_custom_logic():
         _bootstrap_trace("_preflight_custom_logic: llama gguf bootstrap completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: first LLM sync completed")
-        # _ensure_florence2_layout(model_roots)  # disabilitato
+        _ensure_florence2_layout(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: Florence2 layout completed")
         _ensure_da3_large_layout(model_roots)
         _bootstrap_trace("_preflight_custom_logic: DA3 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
         _sync_model_alias_directories(model_roots)
         _bootstrap_trace("_preflight_custom_logic: model alias sync completed")
-        _link_primary_models_to_secondary(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: default-to-models link completed")
 
     # 5) genera config path nativo ComfyUI per le shared folders
     auto_cfg = os.path.join(
@@ -5240,9 +4224,6 @@ def _preflight_custom_logic():
     _bootstrap_trace("_preflight_custom_logic: disable cuda malloc arg begin")
     _append_disable_cuda_malloc_arg()
     _bootstrap_trace("_preflight_custom_logic: disable cuda malloc arg completed")
-    _bootstrap_trace("_preflight_custom_logic: lowvram arg begin")
-    _append_lowvram_arg()
-    _bootstrap_trace("_preflight_custom_logic: lowvram arg completed")
 
     # 8) stampa snapshot pacchetti installati prima del launch del main.
     _bootstrap_trace("_preflight_custom_logic: installed packages snapshot begin")
@@ -5294,20 +4275,8 @@ def _print_installed_packages_snapshot():
 
             items = []
             for dist in importlib_metadata.distributions():
-                try:
-                    metadata = dist.metadata or {}
-                except Exception:
-                    metadata = {}
-                name = metadata.get("Name") or metadata.get("Summary")
-                if not name:
-                    try:
-                        name = dist.name
-                    except Exception:
-                        name = ""
-                try:
-                    version = dist.version or ""
-                except Exception:
-                    version = ""
+                name = dist.metadata.get("Name") or dist.metadata.get("Summary") or dist.name
+                version = dist.version or ""
                 if name:
                     items.append((name, version))
             items.sort(key=lambda t: (t[0] or "").lower())
