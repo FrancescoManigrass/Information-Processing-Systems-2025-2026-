@@ -60,14 +60,13 @@ FLUXTRAINER_FORCE_PACKAGES = [
 
 
 extra_packages = [
-     "requests",
-    "PyYAML",  # <-- il pacchetto pip corretto per import yaml
+    "requests",
+    "PyYAML",
     "tqdm",
     "comfy_aimdo",
-          "diffusers>=0.25.0",
-    f"transformers=={TRANSFORMERS_TARGET_VERSION}"
-        #        "transformers==4.4.1.2"
-
+    "diffusers>=0.25.0",
+    f"transformers=={TRANSFORMERS_TARGET_VERSION}",
+    f"accelerate>={ACCELERATE_TARGET_VERSION}",
 ]
 
 
@@ -2142,6 +2141,23 @@ if __name__ == "__main__":
 setup_logger(log_level=args.verbose, use_stdout=args.log_stdout)
 _bootstrap_trace("startup: logger configured")
 
+# Patch JSON encoder per evitare che oggetti non serializzabili (es. eccezioni Python)
+# nel publish_loop di server.py causino TypeError → asyncio.gather crash → CUDA abort.
+import json as _json_module
+
+class _PermissiveJSONEncoder(_json_module.JSONEncoder):
+    def default(self, obj):
+        try:
+            return super().default(obj)
+        except TypeError:
+            return repr(obj)
+
+_json_module._default_encoder = _PermissiveJSONEncoder(
+    skipkeys=False, ensure_ascii=True, check_circular=True,
+    allow_nan=True, sort_keys=False, indent=None, separators=None,
+    default=None,
+)
+
 
 def _infer_filename_from_url(url: str) -> str:
     parsed = urllib.parse.urlparse(url)
@@ -2689,6 +2705,186 @@ def _ensure_florence2_layout(model_roots):
     _bootstrap_trace(f"_ensure_florence2_layout: completed for {model_dir}")
 
 
+def _ensure_llama3_layout(model_roots):
+    """
+    Rende disponibile Llama-3-8B-Instruct nella cartella LLM per i custom nodes.
+    Cerca il modello nei path noti (diffusers/, LLM/), crea symlink in LLM/<name>.
+    Se non trovato e COMFYUI_LLAMA3_AUTO_DOWNLOAD=1 con HF_TOKEN, scarica da HuggingFace.
+    """
+    if os.environ.get("COMFYUI_LLAMA3_LAYOUT", "1") != "1":
+        _bootstrap_trace("_ensure_llama3_layout: disabled by env")
+        return
+
+    if not model_roots:
+        _bootstrap_trace("_ensure_llama3_layout: skipped, no model roots")
+        return
+
+    repo_id = os.environ.get("COMFYUI_LLAMA3_REPO", "meta-llama/Meta-Llama-3-8B-Instruct").strip()
+    canonical_name = repo_id.split("/")[-1]
+    alias_names = [canonical_name, "Llama-3-8B-Instruct", "Meta-Llama-3-8B-Instruct"]
+
+    source_dir = None
+    for root in model_roots:
+        for subdir in ("diffusers", "LLM", "llm", ""):
+            for name in alias_names:
+                candidate = os.path.join(root, subdir, name) if subdir else os.path.join(root, name)
+                if not os.path.isdir(candidate):
+                    continue
+                try:
+                    files = os.listdir(candidate)
+                    if any(f.endswith((".safetensors", ".bin")) or f == "config.json" for f in files):
+                        source_dir = os.path.abspath(candidate)
+                        _bootstrap_trace(f"_ensure_llama3_layout: found at {source_dir}")
+                        break
+                except Exception:
+                    pass
+            if source_dir:
+                break
+        if source_dir:
+            break
+
+    if source_dir is None:
+        hf_token = (
+            os.environ.get("HF_TOKEN", "").strip()
+            or os.environ.get("HUGGINGFACE_TOKEN", "").strip()
+            or os.environ.get("HUGGING_FACE_HUB_TOKEN", "").strip()
+        )
+        if hf_token and os.environ.get("COMFYUI_LLAMA3_AUTO_DOWNLOAD", "0") == "1":
+            target_dir = os.path.join(model_roots[0], "LLM", canonical_name)
+            os.makedirs(target_dir, exist_ok=True)
+            _bootstrap_trace(f"_ensure_llama3_layout: downloading {repo_id} to {target_dir}")
+            try:
+                from huggingface_hub import snapshot_download
+                snapshot_download(repo_id=repo_id, local_dir=target_dir, token=hf_token)
+                logging.info(f"[BOOTSTRAP] Downloaded Llama-3: {repo_id} -> {target_dir}")
+                source_dir = target_dir
+            except Exception as exc:
+                logging.warning(f"[BOOTSTRAP] Llama-3 download failed: {exc}")
+        else:
+            _bootstrap_trace(
+                "_ensure_llama3_layout: model not found locally "
+                "(set COMFYUI_LLAMA3_AUTO_DOWNLOAD=1 + HF_TOKEN to auto-download)"
+            )
+            return
+
+    if source_dir is None:
+        return
+
+    for root in model_roots:
+        llm_root = os.path.join(root, "LLM")
+        try:
+            os.makedirs(llm_root, exist_ok=True)
+        except Exception:
+            continue
+
+        for link_name in alias_names:
+            dest = os.path.join(llm_root, link_name)
+            if os.path.realpath(source_dir) == os.path.realpath(os.path.abspath(dest)):
+                break
+            if os.path.exists(dest) or os.path.islink(dest):
+                break
+            try:
+                rel_target = os.path.relpath(source_dir, llm_root)
+                os.symlink(rel_target, dest, target_is_directory=True)
+                logging.info(f"[BOOTSTRAP] Linked Llama-3: {dest} -> {source_dir}")
+                _bootstrap_trace(f"_ensure_llama3_layout: linked {dest}")
+                break
+            except Exception as exc:
+                _bootstrap_trace(f"_ensure_llama3_layout: symlink {dest} failed: {exc}")
+
+    _bootstrap_trace("_ensure_llama3_layout: completed")
+
+
+def _ensure_llama32_1b_layout(model_roots):
+    """
+    Rende disponibile Llama-3.2-1B-Instruct (~2GB) nella cartella LLM.
+    Modello gated Meta: richiede HF_TOKEN e accesso approvato su HuggingFace.
+    Download automatico abilitato con COMFYUI_LLAMA32_1B_AUTO_DOWNLOAD=1 + HF_TOKEN.
+    """
+    if os.environ.get("COMFYUI_LLAMA32_1B_LAYOUT", "1") != "1":
+        _bootstrap_trace("_ensure_llama32_1b_layout: disabled by env")
+        return
+
+    if not model_roots:
+        _bootstrap_trace("_ensure_llama32_1b_layout: skipped, no model roots")
+        return
+
+    repo_id = os.environ.get("COMFYUI_LLAMA32_1B_REPO", "meta-llama/Llama-3.2-1B-Instruct").strip()
+    canonical_name = repo_id.split("/")[-1]
+    alias_names = [canonical_name, "Llama-3.2-1B-Instruct", "llama-3.2-1b-instruct"]
+
+    source_dir = None
+    for root in model_roots:
+        for subdir in ("diffusers", "LLM", "llm", ""):
+            for name in alias_names:
+                candidate = os.path.join(root, subdir, name) if subdir else os.path.join(root, name)
+                if not os.path.isdir(candidate):
+                    continue
+                try:
+                    files = os.listdir(candidate)
+                    if any(f.endswith((".safetensors", ".bin")) or f == "config.json" for f in files):
+                        source_dir = os.path.abspath(candidate)
+                        _bootstrap_trace(f"_ensure_llama32_1b_layout: found at {source_dir}")
+                        break
+                except Exception:
+                    pass
+            if source_dir:
+                break
+        if source_dir:
+            break
+
+    if source_dir is None:
+        hf_token = (
+            os.environ.get("HF_TOKEN", "").strip()
+            or os.environ.get("HUGGINGFACE_TOKEN", "").strip()
+            or os.environ.get("HUGGING_FACE_HUB_TOKEN", "").strip()
+        )
+        if hf_token and os.environ.get("COMFYUI_LLAMA32_1B_AUTO_DOWNLOAD", "0") == "1":
+            target_dir = os.path.join(model_roots[0], "LLM", canonical_name)
+            os.makedirs(target_dir, exist_ok=True)
+            _bootstrap_trace(f"_ensure_llama32_1b_layout: downloading {repo_id} to {target_dir}")
+            try:
+                from huggingface_hub import snapshot_download
+                snapshot_download(repo_id=repo_id, local_dir=target_dir, token=hf_token)
+                logging.info(f"[BOOTSTRAP] Downloaded Llama-3.2-1B: {repo_id} -> {target_dir}")
+                source_dir = target_dir
+            except Exception as exc:
+                logging.warning(f"[BOOTSTRAP] Llama-3.2-1B download failed: {exc}")
+        else:
+            _bootstrap_trace(
+                "_ensure_llama32_1b_layout: model not found locally "
+                "(set COMFYUI_LLAMA32_1B_AUTO_DOWNLOAD=1 + HF_TOKEN to auto-download)"
+            )
+            return
+
+    if source_dir is None:
+        return
+
+    for root in model_roots:
+        llm_root = os.path.join(root, "LLM")
+        try:
+            os.makedirs(llm_root, exist_ok=True)
+        except Exception:
+            continue
+
+        for link_name in alias_names:
+            dest = os.path.join(llm_root, link_name)
+            if os.path.realpath(source_dir) == os.path.realpath(os.path.abspath(dest)):
+                break
+            if os.path.exists(dest) or os.path.islink(dest):
+                break
+            try:
+                rel_target = os.path.relpath(source_dir, llm_root)
+                os.symlink(rel_target, dest, target_is_directory=True)
+                logging.info(f"[BOOTSTRAP] Linked Llama-3.2-1B: {dest} -> {source_dir}")
+                _bootstrap_trace(f"_ensure_llama32_1b_layout: linked {dest}")
+                break
+            except Exception as exc:
+                _bootstrap_trace(f"_ensure_llama32_1b_layout: symlink {dest} failed: {exc}")
+
+    _bootstrap_trace("_ensure_llama32_1b_layout: completed")
+
+
 def apply_shared_model_paths():
     """
     Registra più cartelle modelli condivise e scarica automaticamente i modelli mancanti
@@ -2727,6 +2923,10 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: second LLM sync completed")
     _ensure_xlabs_controlnet_layout(model_roots)
     _bootstrap_trace("apply_shared_model_paths: XLabs ControlNet layout completed")
+    _ensure_llama3_layout(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: Llama3 layout completed")
+    _ensure_llama32_1b_layout(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: Llama3.2-1B layout completed")
 
     model_dirs = {
         "checkpoints": "checkpoints",
@@ -2754,6 +2954,8 @@ def apply_shared_model_paths():
         # Compat Florence/LLM: alcuni nodi cercano "LLM", altri "llm".
         "LLM": "LLM",
         "llm": "LLM",
+        # HuggingFace-style models (es. Llama-3 in diffusers/).
+        "diffusers": "diffusers",
     }
 
     # Aggiunge TUTTE le cartelle per ogni tipo modello
@@ -3495,6 +3697,10 @@ def _preflight_custom_logic():
         _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
         _ensure_xlabs_controlnet_layout(model_roots)
         _bootstrap_trace("_preflight_custom_logic: XLabs ControlNet layout completed")
+        _ensure_llama3_layout(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: Llama3 layout completed")
+        _ensure_llama32_1b_layout(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: Llama3.2-1B layout completed")
 
     # 5) genera config path nativo ComfyUI per le shared folders
     auto_cfg = os.path.join(
