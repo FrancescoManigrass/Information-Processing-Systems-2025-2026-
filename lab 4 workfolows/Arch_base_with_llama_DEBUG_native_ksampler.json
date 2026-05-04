@@ -179,8 +179,8 @@
         }
       },
       "widgets_values": [
-        800,
-        800,
+        512,
+        512,
         1
       ]
     },
@@ -310,8 +310,8 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "flux1-dev.safetensors",
-        "default"
+        "flux1-dev-fp8.safetensors",
+        "fp8_e4m3fn"
       ]
     },
     {
@@ -327,7 +327,7 @@
       ],
       "flags": {},
       "order": 9,
-      "mode": 0,
+      "mode": 2,
       "inputs": [
         {
           "name": "image",
@@ -370,7 +370,7 @@
       ],
       "flags": {},
       "order": 17,
-      "mode": 0,
+      "mode": 2,
       "inputs": [
         {
           "name": "controlnet",
@@ -394,9 +394,7 @@
           "name": "controlnet_condition",
           "type": "ControlNetCondition",
           "slot_index": 0,
-          "links": [
-            256
-          ]
+          "links": []
         }
       ],
       "properties": {
@@ -471,7 +469,7 @@
       ],
       "flags": {},
       "order": 3,
-      "mode": 0,
+      "mode": 2,
       "inputs": [],
       "outputs": [
         {
@@ -495,7 +493,7 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "flux-dev",
+        "flux-dev-fp8",
         "flux-depth-controlnet-v3.safetensors"
       ]
     },
@@ -512,7 +510,7 @@
       ],
       "flags": {},
       "order": 16,
-      "mode": 0,
+      "mode": 2,
       "inputs": [
         {
           "name": "images",
@@ -547,7 +545,7 @@
       ],
       "flags": {},
       "order": 12,
-      "mode": 0,
+      "mode": 2,
       "inputs": [
         {
           "name": "image",
@@ -603,7 +601,7 @@
       ],
       "flags": {},
       "order": 13,
-      "mode": 0,
+      "mode": 2,
       "inputs": [
         {
           "name": "da3_model",
@@ -709,7 +707,7 @@
       ],
       "flags": {},
       "order": 4,
-      "mode": 0,
+      "mode": 2,
       "inputs": [],
       "outputs": [
         {
@@ -916,14 +914,14 @@
     },
     {
       "id": 45,
-      "type": "XlabsSampler",
+      "type": "KSampler",
       "pos": [
         941.8286607062648,
         2016.4964055144444
       ],
       "size": [
-        283.1074523925781,
-        359.1315612792969
+        280,
+        560
       ],
       "flags": {},
       "order": 19,
@@ -935,31 +933,24 @@
           "link": 129
         },
         {
-          "name": "conditioning",
+          "name": "positive",
           "type": "CONDITIONING",
           "link": 163
         },
         {
-          "name": "neg_conditioning",
+          "name": "negative",
           "type": "CONDITIONING",
           "link": 164
         },
         {
           "name": "latent_image",
-          "shape": 7,
           "type": "LATENT",
           "link": 71
-        },
-        {
-          "name": "controlnet_condition",
-          "shape": 7,
-          "type": "ControlNetCondition",
-          "link": 256
         }
       ],
       "outputs": [
         {
-          "name": "latent",
+          "name": "LATENT",
           "type": "LATENT",
           "slot_index": 0,
           "links": [
@@ -968,25 +959,18 @@
         }
       ],
       "properties": {
-        "cnr_id": "x-flux-comfyui",
-        "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
-        "Node name for S&R": "XlabsSampler",
-        "aux_id": "XLabs-AI/x-flux-comfyui",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
+        "cnr_id": "comfy-core",
+        "ver": "0.5.1",
+        "Node name for S&R": "KSampler"
       },
       "widgets_values": [
         566554611333292,
-        "increment",
-        20,
-        25,
-        3.5,
-        0,
-        1
+        "fixed",
+        4,
+        1.0,
+        "euler",
+        "simple",
+        1.0
       ]
     },
     {
@@ -1247,14 +1231,6 @@
       5,
       1,
       "INT"
-    ],
-    [
-      256,
-      61,
-      0,
-      45,
-      4,
-      "ControlNetCondition"
     ],
     [
       308,

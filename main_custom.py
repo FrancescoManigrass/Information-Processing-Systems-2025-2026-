@@ -43,7 +43,7 @@ ACCELERATE_TARGET_VERSION = os.environ.get("COMFYUI_ACCELERATE_VERSION", "1.6.0"
 TRANSFORMERS_TARGET_VERSION = os.environ.get("COMFYUI_TRANSFORMERS_VERSION", "4.54.1")
 DIFFUSERS_TARGET_VERSION = os.environ.get("COMFYUI_DIFFUSERS_VERSION", "0.32.1")
 HUGGINGFACE_HUB_TARGET_VERSION = os.environ.get("COMFYUI_HUGGINGFACE_HUB_VERSION", "0.34.3")
-SAFETENSORS_TARGET_VERSION = os.environ.get("COMFYUI_SAFETENSORS_VERSION", "0.4.5")
+SAFETENSORS_TARGET_VERSION = os.environ.get("COMFYUI_SAFETENSORS_VERSION", "0.7.0")
 PYTORCH_TARGET_VERSION = os.environ.get("COMFYUI_TORCH_VERSION", "2.9.1")
 TORCHVISION_TARGET_VERSION = os.environ.get("COMFYUI_TORCHVISION_VERSION", "0.24.1")
 TORCHAUDIO_TARGET_VERSION = os.environ.get("COMFYUI_TORCHAUDIO_VERSION", "2.9.1")
@@ -85,12 +85,10 @@ SHARED_MODELS_URLS = {
     "checkpoints": [
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
-        {"url": "https://huggingface.co/autismanon/modeldump/resolve/main/dreamshaper_8.safetensors", "filename": "dreamshaper_8.safetensors"},
 
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
-        {"url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67bd26c86faf9f04b210a09f/46713bf09072876b32ff8bd97c0f4228a024ccb20010dae8fa83111e0ad5471f?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260428%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260428T215619Z&X-Amz-Expires=3600&X-Amz-Signature=d96d08b53a0556459c274f7f3c9b2987a541fe6c0864e33f3afcc2ed124a854f&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=67531ac54751e5eb835c8a39&response-content-disposition=attachment%3B+filename*%3DUTF-8%27%27juggernautXL_ragnarokBy.safetensors%3B+filename%3D%22juggernautXL_ragnarokBy.safetensors%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1777416979&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NzQxNjk3OX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2JkMjZjODZmYWY5ZjA0YjIxMGEwOWYvNDY3MTNiZjA5MDcyODc2YjMyZmY4YmQ5N2MwZjQyMjhhMDI0Y2NiMjAwMTBkYWU4ZmE4MzExMWUwYWQ1NDcxZioifV19&Signature=swb8FXyfOK13T7qLpwfWjlwz5vZE8zXOjyjbsvOR0j1-Z21Y7YZ%7EAPFKAQ9rnZ3kQ5%7EcXVM1nURmLWGN%7EeeV53Z1I%7Ek8eXgo%7EmQj4vq0uhDNDCbHveQxfM7jOiozobOlzb8fyksBvfrCLAvPtOh03xnBzIpCWHyR%7E2iL-Y-ZtJD9xwV9O%7EJC1yHWu9%7EmEuK%7EKsz49ko0PSf4pYx-fNX4BHDnN5mincKhvKy5uAI8qC5Ts9yvgmjasy8qV5dFdk9dlweeJdhi3ypFyvtk4LNjeOVpPiL5Venc4EzJ2RWgd5ixlmji8wA7n1b14ySddU%7EKDNV8ItVyx96Zvm-qpzun9Q__&Key-Pair-Id=K2L8F4GPSG1IFC", "filename": "juggernautXL_ragnarokBy.safetensors"},
 
    ],
 
@@ -99,18 +97,17 @@ SHARED_MODELS_URLS = {
     # =========================
     "diffusion_models": [
         # FLUX Trainer (set richiesto)
-        #{"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
-        {"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
+        {"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
+{"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
 
 
 
 
-
-        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2511_bf16.safetensors", "filename": "qwen_image_edit_2511_bf16.safetensors"},
 
         # >10GB circa (Qwen Image fp8)
         # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors", "filename": "qwen_image_fp8_e4m3fn.safetensors"},
         # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors", "filename": "qwen_image_distill_full_fp8_e4m3fn.safetensors"},
+        # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_fp8_e4m3fn.safetensors", "filename": "qwen_image_edit_fp8_e4m3fn.safetensors"},
 
         # Wan 2.1
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors", "filename": "wan2.1_t2v_1.3B_fp16.safetensors"},
@@ -130,7 +127,7 @@ SHARED_MODELS_URLS = {
 
         # FLUX full (gated/opzionali, pesanti)
       # >10GB circa (FP8 FLUX)
-       # {"url": "https://huggingface.co/lllyasviel/flux1_dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
+        {"url": "https://huggingface.co/lllyasviel/flux1_dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
    
         # >10GB circa
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev/resolve/main/flux1-fill-dev.safetensors", "filename": "flux1-fill-dev.safetensors"},
@@ -150,7 +147,7 @@ SHARED_MODELS_URLS = {
         #{"url": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors", "filename": "t5/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors"},
 
 
-        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "filename": "qwen_2.5_vl_7b_fp8_scaled.safetensors"},
+        #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "filename": "qwen_2.5_vl_7b_fp8_scaled.safetensors"},
 
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors?download=true", "filename": "umt5_xxl_fp8_e4m3fn_scaled.safetensors"},
 
@@ -166,7 +163,7 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/comfyanonymous/flux_vae/resolve/main/flux-vae-bf16.safetensors", "filename": "flux-vae-bf16.safetensors"},
 
         {"url": "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/vae/ae.safetensors", "filename": "ae.safetensors"},
-        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
+        #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors?download=true", "filename": "wan_2.1_vae.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors?download=true", "filename": "hunyuan_video_vae_bf16.safetensors"},
          #{"url": "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors", "filename": "flux2-vae.safetensors"},
@@ -179,8 +176,8 @@ SHARED_MODELS_URLS = {
     # CLIP VISION
     # =========================
     "LLM": [
-        #{"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
-        #{"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
+        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
+        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
@@ -191,10 +188,8 @@ SHARED_MODELS_URLS = {
     # =========================
     "loras": [
         #{"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-8steps-V1.0.safetensors"},
-        {"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Edit-Lightning-4steps-V1.0-bf16.safetensors", "filename": "Qwen-Image-Edit-Lightning-4steps-V1.0-bf16.safetensors"},
         #{"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-4steps-V1.0.safetensors"},
 
-        {"url": "https://huggingface.co/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA/resolve/main/qwen-image-edit-2511-multiple-angles-lora.safetensors", "filename": "loras/qwen-image-edit-2511-multiple-angles-lora.safetensors"},
         #{"url": "https://huggingface.co/black-forest-labs/FLUX.1-Canny-dev-lora/resolve/main/flux1-canny-dev-lora.safetensors", "filename": "flux1-canny-dev-lora.safetensors"},
         #{"url": "https://huggingface.co/black-forest-labs/FLUX.1-Depth-dev-lora/resolve/main/flux1-depth-dev-lora.safetensors", "filename": "flux1-depth-dev-lora.safetensors"},
     ],
@@ -211,30 +206,14 @@ SHARED_MODELS_URLS = {
     # =========================
     "controlnet": [
         {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-depth-controlnet-v3.safetensors", "filename": "flux-depth-controlnet-v3.safetensors"},
-        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "controlV11pSd15_v10.safetensors"},
-        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11p_sd15_openpose_fp16.safetensors", "filename": "control_v11p_sd15_openpose_fp16.safetensors"},
-        {"url": "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11f1p_sd15_depth_fp16.safetensors", "filename": "control_v11f1p_sd15_depth_fp16.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
-    ],
-
-    # =========================
-    # INPAINT
-    # =========================
-    "inpaint": [
-        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/fooocus_inpaint_head.pth", "filename": "fooocus_inpaint_head.pth"},
-        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/fooocus_lama.safetensors", "filename": "fooocus_lama.safetensors"},
-        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint.fooocus.patch", "filename": "inpaint.fooocus.patch"},
-        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint_v25.fooocus.patch", "filename": "inpaint_v25.fooocus.patch"},
-        {"url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint_v26.fooocus.patch", "filename": "inpaint_v26.fooocus.patch"},
     ],
 
         "clip": [ 
             {"url": "https://huggingface.co/Madespace/clip/resolve/main/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors", "filename": "t5/google_t5-v1_1-xxl_encoderonly-fp8_e4m3fn.safetensors"},
        ],
     "embeddings": [],
-    "upscale_models": [
-        {"url": "https://huggingface.co/lokCX/4x-Ultrasharp/resolve/main/4x-UltraSharp.pth", "filename": "4x-UltraSharp.pth"},
-    ],
+    "upscale_models": [],
     "gligen": [],
     "hypernetworks": [],
     "vae_approx": [],
@@ -578,331 +557,6 @@ def _ensure_ollama_installed():
         _ensure_ollama_models_available()
     except Exception as exc:
         print(f"[BOOTSTRAP] Ollama installation failed: {exc}")
-
-
-def _ensure_bootstrap_python_package(pkg_spec, import_name=None):
-    import_name = import_name or pkg_spec.split("[")[0].split("=")[0].replace("-", "_")
-    try:
-        __import__(import_name)
-        return
-    except ImportError:
-        pass
-
-    print(f"[BOOTSTRAP] Installing Python package: {pkg_spec}")
-    subprocess.check_call(_get_bootstrap_install_cmd(
-        "--disable-pip-version-check",
-        "--upgrade",
-        pkg_spec,
-    ))
-
-
-def _run_bootstrap_command(command, cwd=None, env=None):
-    printable = " ".join(str(part) for part in command)
-    print(f"[BOOTSTRAP] Running command: {printable}")
-    subprocess.run(command, cwd=cwd, env=env, check=True)
-
-
-def _hf_hub_download_to_local_dir(repo_id, filename, out_dir, hf_token=None):
-    _ensure_bootstrap_python_package("huggingface_hub[cli]", "huggingface_hub")
-    from huggingface_hub import hf_hub_download
-
-    os.makedirs(out_dir, exist_ok=True)
-    base_kwargs = {
-        "repo_id": repo_id,
-        "filename": filename,
-        "repo_type": "model",
-        "token": hf_token,
-        "local_dir": out_dir,
-    }
-    attempts = [
-        {**base_kwargs, "local_dir_use_symlinks": False},
-        base_kwargs,
-    ]
-
-    last_exc = None
-    for kwargs in attempts:
-        try:
-            return hf_hub_download(**kwargs)
-        except TypeError as exc:
-            last_exc = exc
-            continue
-        except Exception:
-            raise
-
-    raise RuntimeError(f"hf_hub_download failed for {repo_id}/{filename}: {last_exc}")
-
-
-def _snapshot_hf_repo_to_local_dir(repo_id, local_dir, hf_token=None, ignore_patterns=None):
-    _ensure_bootstrap_python_package("huggingface_hub[cli]", "huggingface_hub")
-    from huggingface_hub import snapshot_download
-
-    os.makedirs(local_dir, exist_ok=True)
-    base_kwargs = {
-        "repo_id": repo_id,
-        "repo_type": "model",
-        "local_dir": local_dir,
-        "token": hf_token,
-    }
-    attempts = [
-        {**base_kwargs, "ignore_patterns": ignore_patterns or [], "local_dir_use_symlinks": False},
-        {**base_kwargs, "ignore_patterns": ignore_patterns or []},
-        base_kwargs,
-    ]
-
-    last_exc = None
-    for kwargs in attempts:
-        try:
-            snapshot_download(**kwargs)
-            return local_dir
-        except TypeError as exc:
-            last_exc = exc
-            continue
-        except Exception:
-            raise
-
-    raise RuntimeError(f"snapshot_download failed for {repo_id}: {last_exc}")
-
-
-def _find_first_existing_path(candidates):
-    for candidate in candidates:
-        if os.path.exists(candidate):
-            return candidate
-    return None
-
-
-def _clone_or_update_llama_cpp_repo(repo_dir):
-    if os.path.isdir(repo_dir):
-        if os.path.isdir(os.path.join(repo_dir, ".git")):
-            _run_bootstrap_command(["git", "pull", "--ff-only"], cwd=repo_dir)
-            return
-        raise RuntimeError(f"{repo_dir} exists but is not a git repository")
-
-    parent_dir = os.path.dirname(repo_dir)
-    if parent_dir:
-        os.makedirs(parent_dir, exist_ok=True)
-    _run_bootstrap_command(["git", "clone", "https://github.com/ggml-org/llama.cpp.git", repo_dir])
-
-
-def _build_llama_cpp_quantize_binary(repo_dir):
-    build_dir = os.path.join(repo_dir, "build")
-    os.makedirs(build_dir, exist_ok=True)
-
-    _run_bootstrap_command(["cmake", "-S", repo_dir, "-B", build_dir])
-    _run_bootstrap_command(["cmake", "--build", build_dir, "--config", "Release"])
-
-    is_windows = os.name == "nt"
-    binary_name = "llama-quantize.exe" if is_windows else "llama-quantize"
-    legacy_name = "quantize.exe" if is_windows else "quantize"
-    candidates = [
-        os.path.join(build_dir, "bin", binary_name),
-        os.path.join(build_dir, "bin", "Release", binary_name),
-        os.path.join(repo_dir, binary_name),
-        os.path.join(repo_dir, legacy_name),
-    ]
-    quantize_bin = _find_first_existing_path(candidates)
-    if quantize_bin:
-        return quantize_bin
-
-    raise FileNotFoundError(
-        "Unable to find llama.cpp quantize binary. Checked:\n  - "
-        + "\n  - ".join(candidates)
-    )
-
-
-def _convert_llama_hf_to_f16_gguf(llama_cpp_dir, model_dir, out_dir, output_stem=None):
-    required_python_packages = (
-        ("numpy", "numpy"),
-        ("sentencepiece", "sentencepiece"),
-        ("protobuf", "google.protobuf"),
-        ("transformers", "transformers"),
-        ("torch", "torch"),
-        ("safetensors", "safetensors"),
-    )
-    for pkg_spec, import_name in required_python_packages:
-        _ensure_bootstrap_python_package(pkg_spec, import_name)
-
-    req_file = os.path.join(llama_cpp_dir, "requirements.txt")
-    if os.path.isfile(req_file):
-        subprocess.check_call(_get_bootstrap_install_cmd(
-            "--disable-pip-version-check",
-            "--upgrade",
-            "-r",
-            req_file,
-        ))
-
-    converter = os.path.join(llama_cpp_dir, "convert_hf_to_gguf.py")
-    if not os.path.isfile(converter):
-        raise FileNotFoundError(f"llama.cpp converter not found: {converter}")
-
-    os.makedirs(out_dir, exist_ok=True)
-    model_name = output_stem or os.path.basename(os.path.normpath(model_dir))
-    out_file = os.path.join(out_dir, f"{model_name}-f16.gguf")
-
-    if os.path.isfile(out_file) and os.path.getsize(out_file) > 0:
-        return out_file
-
-    _run_bootstrap_command(
-        [
-            sys.executable,
-            converter,
-            model_dir,
-            "--outfile",
-            out_file,
-            "--outtype",
-            "f16",
-        ],
-        cwd=llama_cpp_dir,
-    )
-    return out_file
-
-
-def _quantize_llama_gguf(quantize_bin, input_gguf, quant_type, out_dir, output_stem=None):
-    os.makedirs(out_dir, exist_ok=True)
-    input_name = os.path.splitext(os.path.basename(input_gguf))[0]
-    output_name = output_stem or input_name.replace("-f16", "")
-    out_file = os.path.join(out_dir, f"{output_name}-{quant_type}.gguf")
-
-    if os.path.isfile(out_file) and os.path.getsize(out_file) > 0:
-        return out_file
-
-    _run_bootstrap_command([quantize_bin, input_gguf, out_file, quant_type])
-    return out_file
-
-
-def _copy_llama_artifact_to_output(src_path, out_dir):
-    os.makedirs(out_dir, exist_ok=True)
-    dst_path = os.path.join(out_dir, os.path.basename(src_path))
-
-    src_abs = os.path.abspath(src_path)
-    dst_abs = os.path.abspath(dst_path)
-    if src_abs != dst_abs:
-        shutil.copy2(src_path, dst_path)
-    return dst_path
-
-
-def _normalize_llama_bootstrap_mode():
-    raw_mode = os.environ.get("COMFYUI_LLAMA_GGUF_MODE", "direct").strip().lower()
-    if raw_mode in {"", "0", "false", "off", "none", "disable", "disabled"}:
-        return ""
-    if raw_mode in {"direct", "convert"}:
-        return raw_mode
-
-    logging.warning(f"Unsupported COMFYUI_LLAMA_GGUF_MODE '{raw_mode}', skipping LLaMA bootstrap")
-    return ""
-
-
-def _ensure_llama_gguf_available(model_roots):
-    mode = _normalize_llama_bootstrap_mode()
-    if not mode:
-        _bootstrap_trace("_ensure_llama_gguf_available: skipped because bootstrap is disabled")
-        return None
-
-    if not model_roots:
-        _bootstrap_trace("_ensure_llama_gguf_available: skipped because model_roots is empty")
-        return None
-
-    out_dir = os.environ.get("COMFYUI_LLAMA_GGUF_OUTDIR", "").strip() or os.path.join(model_roots[0], "text_encoders")
-    hf_token = (
-        os.environ.get("COMFYUI_LLAMA_HF_TOKEN", "").strip()
-        or os.environ.get("HF_TOKEN", "").strip()
-        or None
-    )
-
-    try:
-        os.makedirs(out_dir, exist_ok=True)
-    except Exception as exc:
-        logging.warning(f"Unable to prepare LLaMA GGUF output dir {out_dir}: {exc}")
-        _bootstrap_trace(f"_ensure_llama_gguf_available: failed creating out_dir -> {exc}")
-        return None
-
-    if mode == "direct":
-        repo_id = os.environ.get("COMFYUI_LLAMA_DIRECT_REPO", "bartowski/Llama-3.2-3B-Instruct-GGUF").strip()
-        filename = os.environ.get("COMFYUI_LLAMA_DIRECT_FILE", "Llama-3.2-3B-Instruct-Q4_K_M.gguf").strip()
-        if not repo_id or not filename:
-            logging.warning("COMFYUI_LLAMA_GGUF_MODE=direct requires COMFYUI_LLAMA_DIRECT_REPO and COMFYUI_LLAMA_DIRECT_FILE")
-            return None
-
-        final_path = os.path.join(out_dir, filename)
-        if os.path.isfile(final_path) and os.path.getsize(final_path) > 0:
-            _bootstrap_trace(f"_ensure_llama_gguf_available: direct model already present {final_path}")
-            return final_path
-
-        try:
-            _bootstrap_trace(f"_ensure_llama_gguf_available: direct download {repo_id}/{filename}")
-            downloaded = _hf_hub_download_to_local_dir(repo_id, filename, out_dir, hf_token)
-            _bootstrap_trace(f"_ensure_llama_gguf_available: direct download completed {downloaded}")
-            return downloaded
-        except Exception as exc:
-            logging.warning(f"Unable to download LLaMA GGUF from {repo_id}/{filename}: {exc}")
-            _bootstrap_trace(f"_ensure_llama_gguf_available: direct download failed -> {exc}")
-            return None
-
-    repo_id = os.environ.get("COMFYUI_LLAMA_HF_REPO", "meta-llama/Llama-3.2-3B-Instruct").strip()
-    quant_type = os.environ.get("COMFYUI_LLAMA_QUANT", "Q4_K_M").strip() or "Q4_K_M"
-    if not repo_id:
-        logging.warning("COMFYUI_LLAMA_GGUF_MODE=convert requires COMFYUI_LLAMA_HF_REPO")
-        return None
-
-    model_name = repo_id.rstrip("/").split("/")[-1].strip() or "llama-model"
-    final_path = os.path.join(out_dir, f"{model_name}-{quant_type}.gguf")
-    if os.path.isfile(final_path) and os.path.getsize(final_path) > 0:
-        _bootstrap_trace(f"_ensure_llama_gguf_available: converted model already present {final_path}")
-        return final_path
-
-    base_dir = os.path.dirname(os.path.realpath(__file__))
-    workdir_root = os.environ.get("COMFYUI_LLAMA_WORKDIR", "").strip() or os.path.join(base_dir, "llm_work", "llama_gguf")
-    repo_slug = re.sub(r"[^A-Za-z0-9._-]+", "-", repo_id.strip("/")) or "llama-model"
-    model_workdir = os.path.join(workdir_root, repo_slug)
-    snapshot_dir = os.path.join(model_workdir, "hf_model")
-    converted_dir = os.path.join(model_workdir, "converted")
-    quantized_dir = os.path.join(model_workdir, "quantized")
-    llama_cpp_dir = os.path.join(workdir_root, "llama.cpp")
-
-    try:
-        _bootstrap_trace(f"_ensure_llama_gguf_available: snapshot repo {repo_id} -> {snapshot_dir}")
-        _snapshot_hf_repo_to_local_dir(
-            repo_id,
-            snapshot_dir,
-            hf_token=hf_token,
-            ignore_patterns=[
-                "*.gguf",
-                "*.onnx",
-                "*.msgpack",
-                "*.h5",
-                "*.ot",
-                "*.tflite",
-                "*.tar.gz",
-            ],
-        )
-
-        _bootstrap_trace(f"_ensure_llama_gguf_available: prepare llama.cpp in {llama_cpp_dir}")
-        _clone_or_update_llama_cpp_repo(llama_cpp_dir)
-        quantize_bin = _build_llama_cpp_quantize_binary(llama_cpp_dir)
-
-        _bootstrap_trace(f"_ensure_llama_gguf_available: convert to f16 gguf from {snapshot_dir}")
-        f16_gguf = _convert_llama_hf_to_f16_gguf(
-            llama_cpp_dir,
-            snapshot_dir,
-            converted_dir,
-            output_stem=model_name,
-        )
-
-        _bootstrap_trace(f"_ensure_llama_gguf_available: quantize {f16_gguf} -> {quant_type}")
-        quantized_gguf = _quantize_llama_gguf(
-            quantize_bin,
-            f16_gguf,
-            quant_type,
-            quantized_dir,
-            output_stem=model_name,
-        )
-
-        final_copied = _copy_llama_artifact_to_output(quantized_gguf, out_dir)
-        _bootstrap_trace(f"_ensure_llama_gguf_available: completed {final_copied}")
-        return final_copied
-    except Exception as exc:
-        logging.warning(f"Unable to build/convert LLaMA GGUF from {repo_id}: {exc}")
-        _bootstrap_trace(f"_ensure_llama_gguf_available: convert failed -> {exc}")
-        return None
 
 
 def _get_local_venv_python(base_dir):
@@ -1492,49 +1146,6 @@ def _ensure_headless_opencv():
 
     return changed_any or True
 
-def _apply_llama_cpp_present_penalty_compat():
-    """
-    Alcuni nodi/custom wrapper passano per errore `present_penalty` a llama_cpp,
-    mentre le versioni recenti espongono `presence_penalty` o non supportano
-    affatto questo parametro. Rendiamo la chiamata tollerante lato runtime.
-    """
-    if os.environ.get("COMFYUI_LLAMA_CPP_PRESENT_PENALTY_COMPAT", "1") != "1":
-        return
-
-    try:
-        from llama_cpp import Llama
-    except Exception as exc:
-        print(f"[BOOTSTRAP] Skipping llama_cpp present_penalty compat, import failed: {exc}")
-        return
-
-    original_create_chat_completion = getattr(Llama, "create_chat_completion", None)
-    if not callable(original_create_chat_completion):
-        print("[BOOTSTRAP] Skipping llama_cpp present_penalty compat, create_chat_completion not found")
-        return
-
-    if getattr(original_create_chat_completion, "_comfyui_present_penalty_patch", False):
-        return
-
-    def _wrapped_create_chat_completion(self, *args, **kwargs):
-        if "present_penalty" in kwargs:
-            present_penalty = kwargs.pop("present_penalty")
-            kwargs.setdefault("presence_penalty", present_penalty)
-
-        try:
-            return original_create_chat_completion(self, *args, **kwargs)
-        except TypeError as exc:
-            message = str(exc)
-            if "unexpected keyword argument 'presence_penalty'" not in message:
-                raise
-
-            fallback_kwargs = dict(kwargs)
-            fallback_kwargs.pop("presence_penalty", None)
-            return original_create_chat_completion(self, *args, **fallback_kwargs)
-
-    _wrapped_create_chat_completion._comfyui_present_penalty_patch = True
-    Llama.create_chat_completion = _wrapped_create_chat_completion
-    print("[BOOTSTRAP] Applied llama_cpp compat patch: present_penalty -> presence_penalty")
-
 
 def _check_cv2_import_subprocess():
     try:
@@ -1553,48 +1164,6 @@ def _check_cv2_import_subprocess():
         if isinstance(raw_output, bytes) and raw_output:
             return False, raw_output.decode("utf-8", errors="replace").strip()
         return False, str(exc)
-
-
-def _check_onnxruntime_import_subprocess():
-    try:
-        output = subprocess.check_output(
-            [
-                sys.executable,
-                "-c",
-                "import numpy as np; import onnxruntime as ort; print('ok', np.__version__, ort.__version__)",
-            ],
-            stderr=subprocess.STDOUT,
-            timeout=30,
-        )
-        return True, output.decode("utf-8", errors="replace").strip()
-    except Exception as exc:
-        raw_output = getattr(exc, "output", b"")
-        if isinstance(raw_output, bytes) and raw_output:
-            return False, raw_output.decode("utf-8", errors="replace").strip()
-        return False, str(exc)
-
-
-def _has_numpy_abi_mismatch(info):
-    markers = ("_ARRAY_API not found", "numpy.core.multiarray failed to import")
-    return any(marker in info for marker in markers)
-
-
-def _install_numpy_compat_runtime(log_context):
-    numpy_spec = os.environ.get("COMFYUI_NUMPY_COMPAT_SPEC", "numpy<2")
-    print(f"[BOOTSTRAP] Detected {log_context} ABI mismatch, installing: {numpy_spec}")
-    try:
-        subprocess.check_call(
-            _get_bootstrap_install_cmd(
-                "--disable-pip-version-check",
-                "--force-reinstall",
-                "--no-cache-dir",
-                numpy_spec,
-            )
-        )
-        return True
-    except Exception as exc:
-        print(f"[BOOTSTRAP] NumPy compat install failed for {log_context}: {exc}")
-        return False
 
 
 def _uninstall_opencv_packages(pip_cmd):
@@ -1653,8 +1222,22 @@ def _ensure_cv2_importable_or_fallback():
         return True
 
     # Tentativo 2: se è un errore di ABI NumPy<->OpenCV, forza NumPy 1.x e reinstalla.
-    if _has_numpy_abi_mismatch(info) and os.environ.get("COMFYUI_CV2_NUMPY1_FALLBACK", "1") == "1":
-        _install_numpy_compat_runtime("NumPy/OpenCV")
+    numpy_abi_markers = ("_ARRAY_API not found", "numpy.core.multiarray failed to import")
+    if any(marker in info for marker in numpy_abi_markers) and os.environ.get("COMFYUI_CV2_NUMPY1_FALLBACK", "1") == "1":
+        numpy_spec = os.environ.get("COMFYUI_NUMPY_COMPAT_SPEC", "numpy<2")
+        print(f"[BOOTSTRAP] Detected NumPy/OpenCV ABI mismatch, installing: {numpy_spec}")
+        try:
+            subprocess.check_call(
+                _get_bootstrap_install_cmd(
+                    "--disable-pip-version-check",
+                    "--force-reinstall",
+                    "--no-cache-dir",
+                    numpy_spec,
+                )
+            )
+        except Exception as exc:
+            print(f"[BOOTSTRAP] NumPy compat install failed: {exc}")
+
         _uninstall_opencv_packages(pip_cmd)
         try:
             subprocess.check_call(
@@ -1682,32 +1265,6 @@ def _ensure_cv2_importable_or_fallback():
             print(f"[BOOTSTRAP] cv2 fallback install failed: {exc}")
 
     print("[BOOTSTRAP] cv2 import still failing; continuing startup (custom nodes may fail).")
-    return False
-
-
-def _ensure_onnxruntime_importable_or_fallback():
-    """
-    Garantisce che `import onnxruntime` non fallisca per mismatch ABI con NumPy.
-    Questo evita che nodi come comfyui_controlnet_aux/DWPose saltino durante il load.
-    """
-    if os.environ.get("COMFYUI_ENSURE_ONNXRUNTIME", "1") != "1":
-        return True
-
-    ok, info = _check_onnxruntime_import_subprocess()
-    if ok:
-        print(f"[BOOTSTRAP] onnxruntime import OK: {info}")
-        return True
-
-    print(f"[BOOTSTRAP] onnxruntime import FAILED, attempting repair...\n{info}")
-
-    if _has_numpy_abi_mismatch(info) and os.environ.get("COMFYUI_ONNXRUNTIME_NUMPY1_FALLBACK", "1") == "1":
-        if _install_numpy_compat_runtime("NumPy/onnxruntime"):
-            ok, info = _check_onnxruntime_import_subprocess()
-            if ok:
-                print(f"[BOOTSTRAP] onnxruntime import OK after NumPy repair: {info}")
-                return True
-
-    print("[BOOTSTRAP] onnxruntime import still failing; continuing startup (DWPose/custom nodes may fail).")
     return False
 
 
@@ -2115,13 +1672,59 @@ def auto_install_requirements():
             installed_any = True
         _bootstrap_trace("auto_install_requirements: post-requirements OpenCV normalization completed")
 
+    # Pin safetensors a una versione stabile dopo tutti i requirements dei custom nodes.
+    # x-flux-comfyui e altri possono installare pre-release (es. 0.8.0rc0) che causano crash.
+    safetensors_pin = f"safetensors=={SAFETENSORS_TARGET_VERSION}"
+    pending_safetensors = _get_pending_requirements([safetensors_pin])
+    if pending_safetensors:
+        print(f"[BOOTSTRAP] Pinning safetensors to stable version: {safetensors_pin}")
+        try:
+            subprocess.check_call(_get_bootstrap_install_cmd(
+                "--disable-pip-version-check",
+                "--force-reinstall",
+                safetensors_pin,
+            ))
+            installed_any = True
+        except Exception as exc:
+            print(f"[BOOTSTRAP] Warning: failed pinning safetensors: {exc}")
+    _bootstrap_trace("auto_install_requirements: safetensors stable pin completed")
+
     # Protegge l'avvio da cv2 rotto (mismatch NumPy/OpenCV).
+    # Forza il PyTorch GPU-compatibile DOPO tutti i requirements.
+    # requirements.txt può specificare torch==2.6.0 che poi viene processato e
+    # ridegrada la versione installata dal bootstrap (es. 2.9.1+cu128 → 2.6.0+cu124).
+    # Torch 2.6.0 non supporta DynamicVRAM e ha problemi con fp8+async su hardware recente.
+    if os.environ.get("COMFYUI_ENFORCE_PYTORCH_VERSION", "1") == "1":
+        _pytorch_index_url = _get_compatible_pytorch_index_url()
+        if _pytorch_index_url:
+            _pytorch_stack = [
+                f"torch=={PYTORCH_TARGET_VERSION}",
+                f"torchvision=={TORCHVISION_TARGET_VERSION}",
+                f"torchaudio=={TORCHAUDIO_TARGET_VERSION}",
+            ]
+            _pending_pytorch = _get_pending_requirements(_pytorch_stack)
+            if _pending_pytorch:
+                print(
+                    f"[BOOTSTRAP] Enforcing GPU-compatible PyTorch after requirements: "
+                    f"{', '.join(_pytorch_stack)} from {_pytorch_index_url}"
+                )
+                try:
+                    subprocess.check_call(_get_bootstrap_install_cmd(
+                        "--disable-pip-version-check",
+                        "--force-reinstall",
+                        "--index-url", _pytorch_index_url,
+                        *_pytorch_stack,
+                    ))
+                    installed_any = True
+                except Exception as _exc:
+                    print(f"[BOOTSTRAP] Warning: PyTorch enforcement failed: {_exc}")
+            else:
+                print(f"[BOOTSTRAP] GPU-compatible PyTorch already at target version, skip")
+        _bootstrap_trace("auto_install_requirements: pytorch version enforcement completed")
+
     _bootstrap_trace("auto_install_requirements: checking cv2 importability")
     _ensure_cv2_importable_or_fallback()
     _bootstrap_trace("auto_install_requirements: cv2 importability check completed")
-    _bootstrap_trace("auto_install_requirements: checking onnxruntime importability")
-    _ensure_onnxruntime_importable_or_fallback()
-    _bootstrap_trace("auto_install_requirements: onnxruntime importability check completed")
 
     if installed_any:
         import importlib, site
@@ -2232,50 +1835,6 @@ def _apply_early_transformers_fluxtrainer_compat():
     _ensure_transformers_encoderdecodercache_compat(transformers, log_prefix="[BOOTSTRAP]")
 
 
-def _apply_llama_cpp_present_penalty_compat():
-    """
-    Alcuni nodi/custom wrapper passano per errore `present_penalty` a llama_cpp,
-    mentre le versioni recenti espongono `presence_penalty` o non supportano
-    affatto questo parametro. Rendiamo la chiamata tollerante lato runtime.
-    """
-    if os.environ.get("COMFYUI_LLAMA_CPP_PRESENT_PENALTY_COMPAT", "1") != "1":
-        return
-
-    try:
-        from llama_cpp import Llama
-    except Exception as exc:
-        print(f"[BOOTSTRAP] Skipping llama_cpp present_penalty compat, import failed: {exc}")
-        return
-
-    original_create_chat_completion = getattr(Llama, "create_chat_completion", None)
-    if not callable(original_create_chat_completion):
-        print("[BOOTSTRAP] Skipping llama_cpp present_penalty compat, create_chat_completion not found")
-        return
-
-    if getattr(original_create_chat_completion, "_comfyui_present_penalty_patch", False):
-        return
-
-    def _wrapped_create_chat_completion(self, *args, **kwargs):
-        if "present_penalty" in kwargs:
-            present_penalty = kwargs.pop("present_penalty")
-            kwargs.setdefault("presence_penalty", present_penalty)
-
-        try:
-            return original_create_chat_completion(self, *args, **kwargs)
-        except TypeError as exc:
-            message = str(exc)
-            if "unexpected keyword argument 'presence_penalty'" not in message:
-                raise
-
-            fallback_kwargs = dict(kwargs)
-            fallback_kwargs.pop("presence_penalty", None)
-            return original_create_chat_completion(self, *args, **fallback_kwargs)
-
-    _wrapped_create_chat_completion._comfyui_present_penalty_patch = True
-    Llama.create_chat_completion = _wrapped_create_chat_completion
-    print("[BOOTSTRAP] Applied llama_cpp compat patch: present_penalty -> presence_penalty")
-
-
 def _ensure_transformers_encoderdecodercache_compat(transformers_module, log_prefix="[WRAPPER]"):
     """
     Alcuni stack peft/diffusers importano EncoderDecoderCache.
@@ -2384,7 +1943,146 @@ def _ensure_transformers_encoderdecodercache_compat(transformers_module, log_pre
         print(f"{log_prefix} Warning: Failed updating transformers lazy import structure: {exc}")
 
 
+class _TeeBinaryBuffer:
+    """Buffer binario che duplica le scritture sia sull'originale che sul file di log."""
+    def __init__(self, original_buffer, log_file):
+        self._original = original_buffer
+        self._log_file = log_file
+
+    def write(self, data):
+        try:
+            self._original.write(data)
+        except Exception:
+            pass
+        try:
+            text = data.decode("utf-8", errors="replace") if isinstance(data, (bytes, bytearray)) else data
+            self._log_file.write(text)
+            self._log_file.flush()
+        except Exception:
+            pass
+        return len(data)
+
+    def flush(self):
+        try:
+            self._original.flush()
+        except Exception:
+            pass
+        try:
+            self._log_file.flush()
+        except Exception:
+            pass
+
+    def __getattr__(self, name):
+        return getattr(self._original, name)
+
+
+class _Tee:
+    """Duplica stdout/stderr sia sul terminale che su file di log."""
+    def __init__(self, original_stream, log_file):
+        self._original = original_stream
+        self._log_file = log_file
+
+    def write(self, data):
+        try:
+            self._original.write(data)
+            self._original.flush()
+        except Exception:
+            pass
+        try:
+            self._log_file.write(data)
+            self._log_file.flush()
+        except Exception:
+            pass
+
+    def flush(self):
+        try:
+            self._original.flush()
+        except Exception:
+            pass
+        try:
+            self._log_file.flush()
+        except Exception:
+            pass
+
+    def fileno(self):
+        return self._original.fileno()
+
+    def isatty(self):
+        try:
+            return self._original.isatty()
+        except Exception:
+            return False
+
+    @property
+    def buffer(self):
+        orig_buffer = getattr(self._original, "buffer", None)
+        if orig_buffer is not None:
+            return _TeeBinaryBuffer(orig_buffer, self._log_file)
+        return self._original
+
+    def __getattr__(self, name):
+        return getattr(self._original, name)
+
+
+def _setup_crash_logging():
+    import faulthandler
+
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    log_path = os.path.join(base_dir, "comfyui_crash.log")
+
+    try:
+        log_file = open(log_path, "a", encoding="utf-8", buffering=1)
+        header = (
+            f"\n{'='*60}\n"
+            f"[CRASH LOG] Session: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"[CRASH LOG] Python: {sys.version}\n"
+            f"[CRASH LOG] Args: {' '.join(sys.argv)}\n"
+            f"{'='*60}\n"
+        )
+        log_file.write(header)
+        log_file.flush()
+
+        sys.stdout = _Tee(sys.stdout, log_file)
+        sys.stderr = _Tee(sys.stderr, log_file)
+
+        faulthandler.enable(file=log_file, all_threads=True)
+
+    except Exception as exc:
+        print(f"[BOOTSTRAP] Warning: crash logging setup failed: {exc}", flush=True)
+        return
+
+    print(f"[CRASH LOG] Logging to: {log_path}", flush=True)
+
+    try:
+        with open("/proc/meminfo", encoding="utf-8") as f:
+            meminfo = f.read()
+        mem_total = re.search(r"MemTotal:\s+(\d+)", meminfo)
+        mem_avail = re.search(r"MemAvailable:\s+(\d+)", meminfo)
+        if mem_total and mem_avail:
+            total_gb = int(mem_total.group(1)) / 1024 / 1024
+            avail_gb = int(mem_avail.group(1)) / 1024 / 1024
+            print(f"[CRASH LOG] RAM: {avail_gb:.1f}GB available / {total_gb:.1f}GB total", flush=True)
+    except Exception:
+        pass
+
+    try:
+        gpu_info = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=name,memory.total,memory.free,temperature.gpu",
+             "--format=csv,noheader,nounits"],
+            timeout=5, text=True, stderr=subprocess.DEVNULL,
+        )
+        for line in gpu_info.strip().splitlines():
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) >= 3:
+                print(f"[CRASH LOG] GPU: {parts[0]} | VRAM {parts[2]}/{parts[1]} MB free | {parts[3]}°C", flush=True)
+    except Exception:
+        pass
+
+
 # Install custom nodes PRIMA del bootstrap requirements, così i loro requirements vengono inclusi.
+if __name__ == "__main__":
+    _setup_crash_logging()
+
 _bootstrap_trace("startup: ensure_local_venv begin")
 ensure_local_venv()
 _bootstrap_trace("startup: ensure_local_venv completed")
@@ -2404,18 +2102,12 @@ _bootstrap_trace("startup: cuda probe completed")
 # Evita mismatch: runtime cudaMallocAsync vs load-time native.
 if "--disable-cuda-malloc" not in sys.argv and os.environ.get("COMFYUI_FORCE_CUDA_MALLOC", "0") != "1":
     sys.argv.append("--disable-cuda-malloc")
-_legacy_pytorch_alloc_conf = os.environ.pop("PYTORCH_CUDA_ALLOC_CONF", "").strip()
-_current_pytorch_alloc_conf = os.environ.get("PYTORCH_ALLOC_CONF", "").strip()
-if not _current_pytorch_alloc_conf:
-    os.environ["PYTORCH_ALLOC_CONF"] = _legacy_pytorch_alloc_conf or "backend:native"
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "backend:native")
 
 # Compat FluxTrainer/transformers prima di importare ComfyUI.
 _bootstrap_trace("startup: early transformers compat begin")
 _apply_early_transformers_fluxtrainer_compat()
 _bootstrap_trace("startup: early transformers compat completed")
-_bootstrap_trace("startup: llama_cpp compat begin")
-_apply_llama_cpp_present_penalty_compat()
-_bootstrap_trace("startup: llama_cpp compat completed")
 
 _bootstrap_trace("startup: importing comfy.options")
 import comfy.options
@@ -2439,6 +2131,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 from tqdm import tqdm
+import comfy_env
 _bootstrap_trace("startup: ComfyUI runtime modules imported")
 
 if __name__ == "__main__":
@@ -2607,24 +2300,29 @@ def _resolve_model_roots():
     Risolve le root modelli in modo portabile:
     - COMFYUI_MODEL_ROOTS (path separati da os.pathsep) se definita
     - COMFYUI_MODELS_DEFAULT_ROOT forza sempre la root primaria
-    - altrimenti usa shared/default-models come unica root locale
+    - /mnt/default-models viene usata solo se gia' presente
+    - altrimenti usa una root locale al progetto per evitare mount non presenti/lenti
     """
     env_primary_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    local_primary_root = os.path.join(base_dir, "shared", "default-models")
+    local_primary_root = os.path.join(base_dir, "models-default")
+    local_shared_root = os.path.join(base_dir, "shared", "default-models")
+    vscode_shared_root = "/vscode/workspace/shared/default-models"
+    mnt_primary_root = "/mnt/default-models"
 
     if env_primary_root:
         primary_root = env_primary_root
+    elif os.path.isdir(mnt_primary_root):
+        primary_root = mnt_primary_root
     else:
         primary_root = local_primary_root
 
-    candidates = [primary_root]
+    secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip() or os.path.join(base_dir, "models")
 
-    # Aggiungi root secondarie solo se richieste esplicitamente: il bootstrap
-    # deve scaricare e registrare i modelli locali in shared/default-models.
-    secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip()
-    if secondary_root:
-        candidates.append(secondary_root)
+    candidates = [primary_root, secondary_root]
+    for shared_root in (local_shared_root, vscode_shared_root):
+        if os.path.isdir(shared_root):
+            candidates.append(shared_root)
 
     env_value = os.environ.get("COMFYUI_MODEL_ROOTS", "").strip()
     if env_value:
@@ -2632,16 +2330,12 @@ def _resolve_model_roots():
 
     roots = []
     seen = set()
-
-    def _append_root_candidate(path):
-        normalized = os.path.abspath(path)
+    for candidate in candidates:
+        normalized = os.path.abspath(candidate)
         if normalized in seen:
-            return
+            continue
         seen.add(normalized)
         roots.append(normalized)
-
-    for candidate in candidates:
-        _append_root_candidate(candidate)
 
     _bootstrap_trace(f"_resolve_model_roots: resolved {roots}")
     return roots
@@ -2663,7 +2357,7 @@ def _ensure_llm_subdirs(model_roots):
 
 def _sync_llm_primary_to_secondary(model_roots):
     """
-    Mantiene download su root primaria (shared) ma rende disponibili i file
+    Mantiene download su root primaria (models-default) ma rende disponibili i file
     anche in root secondaria (models) per nodi che usano path hardcoded models/LLM.
     """
     if os.environ.get("COMFYUI_SYNC_LLM_TO_SECONDARY", "0") != "1":
@@ -2757,71 +2451,56 @@ def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
         return False
 
 
-def _sync_model_alias_directories(model_roots):
+def _ensure_xlabs_controlnet_layout(model_roots):
     """
-    Alcuni selector/nodi continuano a leggere solo le cartelle canoniche ComfyUI
-    (es. controlnet) anche se registriamo alias aggiuntivi. Manteniamo quindi i file
-    visibili in tutte le root rilevanti e in entrambe le posizioni senza duplicare
-    inutilmente il contenuto.
+    x-flux-comfyui non usa sempre folder_paths: alcuni loader cercano
+    direttamente models/xlabs/controlnets/<file>. Espone li' i ControlNet XLabs.
     """
-    alias_pairs = [
-        ("controlnet", "xlabs/controlnets"),
+    if os.environ.get("COMFYUI_XLABS_CONTROLNET_COMPAT", "1") != "1":
+        _bootstrap_trace("_ensure_xlabs_controlnet_layout: disabled by env")
+        return
+
+    if not model_roots:
+        _bootstrap_trace("_ensure_xlabs_controlnet_layout: skipped because model_roots is empty")
+        return
+
+    filenames = [
+        "flux-depth-controlnet-v3.safetensors",
     ]
 
-    normalized_roots = []
-    seen_roots = set()
+    candidate_source_dirs = []
     for root in model_roots:
-        normalized = os.path.abspath(root)
-        if normalized in seen_roots:
-            continue
-        seen_roots.add(normalized)
-        normalized_roots.append(normalized)
-
-    for canonical_subdir, alias_subdir in alias_pairs:
-        discovered_files = {}
-
-        for root in normalized_roots:
-            for subdir in (canonical_subdir, alias_subdir):
-                source_dir = os.path.join(root, subdir)
-                if not os.path.isdir(source_dir):
-                    continue
-
-                try:
-                    entry_names = os.listdir(source_dir)
-                except Exception:
-                    continue
-
-                for entry_name in entry_names:
-                    src_path = os.path.join(source_dir, entry_name)
-                    if os.path.isdir(src_path):
-                        continue
-                    discovered_files.setdefault(entry_name, src_path)
-
-        if not discovered_files:
-            continue
-
-        for root in normalized_roots:
-            target_dirs = [
-                os.path.join(root, canonical_subdir),
-                os.path.join(root, alias_subdir),
+        candidate_source_dirs.extend(
+            [
+                os.path.join(root, "controlnet"),
+                os.path.join(root, "xlabs", "controlnets"),
             ]
+        )
 
-            for target_dir in target_dirs:
-                try:
-                    os.makedirs(target_dir, exist_ok=True)
-                except Exception as exc:
-                    logging.warning(f"Unable to prepare model alias directory {target_dir}: {exc}")
-                    continue
+    for root in model_roots:
+        target_dir = os.path.join(root, "xlabs", "controlnets")
+        for filename in filenames:
+            source_path = None
+            for source_dir in candidate_source_dirs:
+                candidate = os.path.join(source_dir, filename)
+                if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
+                    source_path = candidate
+                    break
 
-                for entry_name, src_path in discovered_files.items():
-                    dst_path = os.path.join(target_dir, entry_name)
-                    if os.path.abspath(src_path) == os.path.abspath(dst_path):
-                        continue
+            if source_path is None:
+                _bootstrap_trace(f"_ensure_xlabs_controlnet_layout: source not found for {filename}")
+                continue
 
-                    if _try_link_or_copy_file(src_path, dst_path):
-                        _bootstrap_trace(
-                            f"_sync_model_alias_directories: mirrored {src_path} -> {dst_path}"
-                        )
+            dest_path = os.path.join(target_dir, filename)
+            if os.path.realpath(source_path) == os.path.realpath(dest_path):
+                continue
+
+            if _try_link_or_copy_file(source_path, dest_path):
+                logging.info(f"Prepared XLabs ControlNet path: {dest_path} -> {source_path}")
+                _bootstrap_trace(f"_ensure_xlabs_controlnet_layout: prepared {dest_path} -> {source_path}")
+            else:
+                logging.warning(f"Unable to prepare XLabs ControlNet path {dest_path} from {source_path}")
+                _bootstrap_trace(f"_ensure_xlabs_controlnet_layout: failed {dest_path} from {source_path}")
 
 
 def _try_hf_snapshot_download(repo_id: str, local_dir: str, revision: str = "main", ignore_patterns=None) -> bool:
@@ -2898,7 +2577,7 @@ def _ensure_florence2_layout(model_roots):
         _bootstrap_trace("_ensure_florence2_layout: skipped because model_roots is empty")
         return
 
-    # Scarica SOLO nella root primaria (shared).
+    # Scarica SOLO nella root primaria (models-default).
     root = model_roots[0]
     llm_root = os.path.join(root, "LLM")
     model_dir = os.path.join(llm_root, "Florence-2-large")
@@ -3010,124 +2689,6 @@ def _ensure_florence2_layout(model_roots):
     _bootstrap_trace(f"_ensure_florence2_layout: completed for {model_dir}")
 
 
-def _ensure_da3_large_layout(model_roots):
-    """
-    Prepara il layout locale per Depth Anything 3 Large dentro models/LLM.
-    Il repo HF espone almeno config.json e model.safetensors, quindi conviene
-    mantenere una cartella repo-like invece di un file singolo nella root LLM.
-    """
-    repo_id = os.environ.get("COMFYUI_DA3_LARGE_REPO", "depth-anything/DA3-LARGE").strip() or "depth-anything/DA3-LARGE"
-    revision = os.environ.get("COMFYUI_DA3_LARGE_REVISION", "main").strip() or "main"
-    hf_base = f"https://huggingface.co/{repo_id}/resolve/{revision}"
-    required_files = [
-        "config.json",
-        "model.safetensors",
-    ]
-
-    if not model_roots:
-        _bootstrap_trace("_ensure_da3_large_layout: skipped because model_roots is empty")
-        return
-
-    root = model_roots[0]
-    llm_root = os.path.join(root, "LLM")
-    model_dir = os.path.join(llm_root, "DA3-LARGE")
-    _bootstrap_trace(f"_ensure_da3_large_layout: start for {model_dir}")
-
-    try:
-        os.makedirs(model_dir, exist_ok=True)
-    except Exception as exc:
-        logging.warning(f"Unable to create DA3-LARGE dir in {root}: {exc}")
-        _bootstrap_trace(f"_ensure_da3_large_layout: failed creating model dir -> {exc}")
-        return
-
-    ignore_snapshot = []
-    if os.path.isfile(os.path.join(model_dir, "model.safetensors")):
-        ignore_snapshot.append("model.safetensors")
-    _try_hf_snapshot_download(
-        repo_id=repo_id,
-        local_dir=model_dir,
-        revision=revision,
-        ignore_patterns=ignore_snapshot,
-    )
-    _bootstrap_trace(f"_ensure_da3_large_layout: snapshot step completed for {model_dir}")
-
-    for filename in required_files:
-        _bootstrap_trace(f"_ensure_da3_large_layout: ensuring required file {filename}")
-        _download_if_missing(f"{hf_base}/{filename}", os.path.join(model_dir, filename))
-
-    lower_alias = os.path.join(llm_root, "da3-large")
-    if not os.path.exists(lower_alias):
-        try:
-            os.symlink(model_dir, lower_alias, target_is_directory=True)
-        except Exception:
-            try:
-                shutil.copytree(model_dir, lower_alias, dirs_exist_ok=True)
-            except Exception as exc:
-                logging.warning(f"Unable to create lowercase DA3 alias {lower_alias}: {exc}")
-                _bootstrap_trace(f"_ensure_da3_large_layout: lowercase alias failed -> {exc}")
-
-    _bootstrap_trace(f"_ensure_da3_large_layout: completed for {model_dir}")
-
-
-def _ensure_default_llama_layout(model_roots):
-    """
-    Prepara un layout repo-like dentro
-    shared/default-models/diffusers/Llama-3-8B-Instruct per il modello
-    LLaMA di default.
-    """
-    repo_id = (
-        os.environ.get("COMFYUI_DEFAULT_LLM_REPO", "gradientai/Llama-3-8B-Instruct-262k").strip()
-        or "gradientai/Llama-3-8B-Instruct-262k"
-    )
-    revision = os.environ.get("COMFYUI_DEFAULT_LLM_REVISION", "main").strip() or "main"
-    model_dir_name = os.environ.get("COMFYUI_DEFAULT_LLM_DIRNAME", "").strip() or (
-        "Llama-3-8B-Instruct"
-    )
-
-    if not model_roots:
-        _bootstrap_trace("_ensure_default_llama_layout: skipped because model_roots is empty")
-        return
-
-    diffusers_root = os.path.join(model_roots[0], "diffusers")
-    model_dir = os.path.join(diffusers_root, model_dir_name)
-    _bootstrap_trace(f"_ensure_default_llama_layout: start for {repo_id} -> {model_dir}")
-
-    try:
-        os.makedirs(model_dir, exist_ok=True)
-    except Exception as exc:
-        logging.warning(f"Unable to create default LLaMA diffusers dir in {diffusers_root}: {exc}")
-        _bootstrap_trace(f"_ensure_default_llama_layout: failed creating model dir -> {exc}")
-        return
-
-    hf_token = (
-        os.environ.get("COMFYUI_DEFAULT_LLM_HF_TOKEN", "").strip()
-        or os.environ.get("COMFYUI_LLAMA_HF_TOKEN", "").strip()
-        or os.environ.get("HF_TOKEN", "").strip()
-        or None
-    )
-
-    downloaded = _try_hf_snapshot_download(
-        repo_id=repo_id,
-        local_dir=model_dir,
-        revision=revision,
-    )
-    if downloaded:
-        _bootstrap_trace(f"_ensure_default_llama_layout: snapshot completed for {model_dir}")
-    else:
-        try:
-            _snapshot_hf_repo_to_local_dir(
-                repo_id=repo_id,
-                local_dir=model_dir,
-                hf_token=hf_token,
-            )
-            _bootstrap_trace(f"_ensure_default_llama_layout: direct snapshot fallback completed for {model_dir}")
-        except Exception as exc:
-            logging.warning(f"Unable to download default LLaMA repo {repo_id} into {model_dir}: {exc}")
-            _bootstrap_trace(f"_ensure_default_llama_layout: snapshot skipped or failed for {model_dir} -> {exc}")
-
-    _bootstrap_trace(f"_ensure_default_llama_layout: completed for {model_dir}")
-
-
 def apply_shared_model_paths():
     """
     Registra più cartelle modelli condivise e scarica automaticamente i modelli mancanti
@@ -3155,80 +2716,49 @@ def apply_shared_model_paths():
     _bootstrap_trace(f"apply_shared_model_paths: ensure shared models begin on {model_roots[0]}")
     ensure_shared_models_downloaded(model_roots[0])
     _bootstrap_trace("apply_shared_model_paths: ensure shared models completed")
-    _bootstrap_trace("apply_shared_model_paths: default llama layout begin")
-    _ensure_default_llama_layout(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: default llama layout completed")
     _bootstrap_trace("apply_shared_model_paths: first LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: first LLM sync completed")
     _bootstrap_trace("apply_shared_model_paths: Florence2 layout begin")
     _ensure_florence2_layout(model_roots)
     _bootstrap_trace("apply_shared_model_paths: Florence2 layout completed")
-    _bootstrap_trace("apply_shared_model_paths: DA3 layout begin")
-    _ensure_da3_large_layout(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: DA3 layout completed")
     _bootstrap_trace("apply_shared_model_paths: second LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: second LLM sync completed")
-    _bootstrap_trace("apply_shared_model_paths: model alias sync begin")
-    _sync_model_alias_directories(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: model alias sync completed")
+    _ensure_xlabs_controlnet_layout(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: XLabs ControlNet layout completed")
 
-    iter_model_dir_bindings = globals().get("_iter_model_dir_bindings")
-    if callable(iter_model_dir_bindings):
-        model_dir_bindings = list(iter_model_dir_bindings())
-    else:
-        # Fallback sicuro: apply_custom_paths() gira prima dei helper definiti nel wrapper.
-        base_model_dirs = {
-            "checkpoints": "checkpoints",
-            "loras": "loras",
-            "vae": "vae",
-            "clip": "clip",
-            "inpaint": "inpaint",
-            "diffusion_models": "diffusion_models",
-            "transformer": "diffusion_models",
-            "embeddings": "embeddings",
-            "controlnet": "controlnet",
-            "upscale_models": "upscale_models",
-            "clip_vision": "clip_vision",
-            "ipadapter": "ipadapter",
-            "style_models": "style_models",
-            "gligen": "gligen",
-            "hypernetworks": "hypernetworks",
-            "vae_approx": "vae_approx",
-            "unet": "unet",
-            "text_encoders": "text_encoders",
-            "t5": "text_encoders",
-            "clip_l": "text_encoders",
-            "LLM": "LLM",
-            "llm": "LLM",
-        }
-        alias_model_dirs = {
-            "controlnet": [
-                "xlabs/controlnets",
-            ],
-        }
-
-        model_dir_bindings = []
-        seen_bindings = set()
-        for model_type, subdir in base_model_dirs.items():
-            binding = (model_type, subdir)
-            if binding in seen_bindings:
-                continue
-            seen_bindings.add(binding)
-            model_dir_bindings.append(binding)
-
-        for model_type, extra_subdirs in alias_model_dirs.items():
-            for subdir in extra_subdirs:
-                binding = (model_type, subdir)
-                if binding in seen_bindings:
-                    continue
-                seen_bindings.add(binding)
-                model_dir_bindings.append(binding)
+    model_dirs = {
+        "checkpoints": "checkpoints",
+        "loras": "loras",
+        "vae": "vae",
+        "clip": "clip",
+        "diffusion_models": "diffusion_models",
+        "transformer": "diffusion_models",
+        "embeddings": "embeddings",
+        "controlnet": "controlnet",
+        "control_net": "controlnet",
+        "controlnets": "controlnet",
+        "xlabs_controlnet": "controlnet",
+        "xlabs_controlnets": "controlnet",
+        "upscale_models": "upscale_models",
+        "clip_vision": "clip_vision",
+        "style_models": "style_models",
+        "gligen": "gligen",
+        "hypernetworks": "hypernetworks",
+        "vae_approx": "vae_approx",
+        "unet": "unet",
+        "text_encoders": "text_encoders",
+        "t5": "text_encoders",
+        "clip_l": "text_encoders",
+        # Compat Florence/LLM: alcuni nodi cercano "LLM", altri "llm".
+        "LLM": "LLM",
+        "llm": "LLM",
+    }
 
     # Aggiunge TUTTE le cartelle per ogni tipo modello
     for root in model_roots:
-        for model_type, subdir in model_dir_bindings:
+        for model_type, subdir in model_dirs.items():
             p = os.path.join(root, subdir)
             if os.path.isdir(p):
                 folder_paths.add_model_folder_path(model_type, p)
@@ -3351,11 +2881,7 @@ _bootstrap_trace("startup: prestartup scripts completed")
 from pathlib import Path
 import runpy
 import logging
-_current_pytorch_alloc_conf = os.environ.get("PYTORCH_ALLOC_CONF", "").strip()
-if "expandable_segments:True" not in _current_pytorch_alloc_conf.split(","):
-    os.environ["PYTORCH_ALLOC_CONF"] = ",".join(
-        part for part in [_current_pytorch_alloc_conf, "expandable_segments:True"] if part
-    )
+os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
 
 def _ensure_transformers_clipfeatureextractor_compat():
     """
@@ -3464,15 +2990,16 @@ MODEL_DIRS_MAP = {
     "loras": "loras",
     "vae": "vae",
     "clip": "clip",
-    "inpaint": "inpaint",
     "diffusion_models": "diffusion_models",
-    "diffusers": "diffusers",
     "transformer": "diffusion_models",
     "embeddings": "embeddings",
     "controlnet": "controlnet",
+    "control_net": "controlnet",
+    "controlnets": "controlnet",
+    "xlabs_controlnet": "controlnet",
+    "xlabs_controlnets": "controlnet",
     "upscale_models": "upscale_models",
     "clip_vision": "clip_vision",
-    "ipadapter": "ipadapter",
     "style_models": "style_models",
     "gligen": "gligen",
     "hypernetworks": "hypernetworks",
@@ -3481,124 +3008,10 @@ MODEL_DIRS_MAP = {
     "text_encoders": "text_encoders",
     "t5": "text_encoders",
     "clip_l": "text_encoders",
+    # Compat Florence/LLM: espone la stessa cartella con entrambe le chiavi.
     "LLM": "LLM",
     "llm": "LLM",
 }
-
-MODEL_DIR_ALIASES_MAP = {
-    # XLabs salva i controlnet Flux in una sottocartella dedicata.
-    "controlnet": [
-        "xlabs/controlnets",
-    ],
-}
-
-
-def _iter_model_dir_bindings():
-    seen = set()
-
-    for model_type, subdir in MODEL_DIRS_MAP.items():
-        binding = (model_type, subdir)
-        if binding in seen:
-            continue
-        seen.add(binding)
-        yield binding
-
-    for model_type, extra_subdirs in MODEL_DIR_ALIASES_MAP.items():
-        for subdir in extra_subdirs:
-            binding = (model_type, subdir)
-            if binding in seen:
-                continue
-            seen.add(binding)
-            yield binding
-
-
-def _build_extra_model_paths_config(model_roots: list[str]):
-    data = {}
-    for idx, root in enumerate(model_roots, start=1):
-        root = os.path.abspath(root)
-        entry_name = f"shared_models_{idx}"
-        entry = {"base_path": root}
-        entry.update(MODEL_DIRS_MAP)
-        data[entry_name] = entry
-
-        alias_index = 0
-        for model_type, subdir in _iter_model_dir_bindings():
-            if MODEL_DIRS_MAP.get(model_type) == subdir:
-                continue
-
-            alias_index += 1
-            data[f"{entry_name}_alias_{alias_index}"] = {
-                "base_path": root,
-                model_type: subdir,
-            }
-
-    return data
-
-
-MODEL_FILENAME_ALIASES = {
-    # Alcuni workflow esportati referenziano il nome Civitai dello stesso OpenPose SD1.5.
-    "controlV11pSd15_v10.safetensors": "control_v11p_sd15_openpose_fp16.safetensors",
-    # Compat tra basename del download URL Civitai e filename finale salvato localmente.
-    "juggernautxlRagnarok.k3mq.safetensors": "juggernautXL_ragnarokBy.safetensors",
-}
-
-
-def _normalize_known_model_alias(value):
-    if not isinstance(value, str):
-        return value
-
-    normalized_value = value.replace("\\", "/")
-
-    if os.path.isabs(value):
-        dir_name, base_name = os.path.split(value)
-        aliased_name = MODEL_FILENAME_ALIASES.get(base_name)
-        if aliased_name:
-            return os.path.join(dir_name, aliased_name)
-        return value
-
-    if "/" in normalized_value:
-        dir_name, base_name = normalized_value.rsplit("/", 1)
-        aliased_name = MODEL_FILENAME_ALIASES.get(base_name)
-        if aliased_name:
-            return f"{dir_name}/{aliased_name}"
-        return normalized_value
-
-    return MODEL_FILENAME_ALIASES.get(normalized_value, value)
-
-
-def _normalize_registered_model_path(value):
-    value = _normalize_known_model_alias(value)
-    if not isinstance(value, str) or not os.path.isabs(value):
-        return value
-
-    normalized_value = os.path.abspath(value)
-    best_match = None
-    best_prefix_len = -1
-
-    for root in _resolve_model_roots():
-        for _, subdir in _iter_model_dir_bindings():
-            registered_dir = os.path.abspath(os.path.join(root, subdir))
-            try:
-                if os.path.commonpath([normalized_value, registered_dir]) != registered_dir:
-                    continue
-            except ValueError:
-                continue
-
-            try:
-                relative_path = os.path.relpath(normalized_value, registered_dir)
-            except ValueError:
-                continue
-
-            if relative_path == os.pardir or relative_path.startswith(f"{os.pardir}{os.sep}"):
-                continue
-
-            prefix_len = len(registered_dir)
-            if prefix_len > best_prefix_len:
-                best_match = relative_path.replace("\\", "/")
-                best_prefix_len = prefix_len
-
-    return best_match or value
-
 
 MODEL_ROOTS = [
     # Resta come fallback statico, ma il wrapper usa _resolve_model_roots().
@@ -3616,7 +3029,13 @@ def _write_auto_extra_model_paths_yaml(config_path: str, model_roots: list[str])
     except Exception as e:
         raise RuntimeError(f"PyYAML non disponibile per generare extra_model_paths: {e}")
 
-    data = _build_extra_model_paths_config(model_roots)
+    data = {}
+    for idx, root in enumerate(model_roots, start=1):
+        root = os.path.abspath(root)
+        entry_name = f"shared_models_{idx}"
+        entry = {"base_path": root}
+        entry.update(MODEL_DIRS_MAP)
+        data[entry_name] = entry
 
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
     with open(config_path, "w", encoding="utf-8") as f:
@@ -3699,115 +3118,6 @@ def _cleanup_broken_manager_json_cache():
 
     if renamed:
         logging.info("[WRAPPER] Cleaned %d corrupt ComfyUI-Manager cache JSON file(s)", renamed)
-
-
-def _get_comfyui_manager_config_path():
-    get_user_directory = getattr(folder_paths, "get_user_directory", None)
-    if not callable(get_user_directory):
-        return None
-
-    try:
-        user_dir = os.path.abspath(get_user_directory())
-    except Exception as exc:
-        logging.warning(f"[WRAPPER] Unable to resolve ComfyUI user directory for manager config: {exc}")
-        return None
-
-    if hasattr(folder_paths, "get_system_user_directory"):
-        manager_files_path = os.path.join(user_dir, "__manager")
-    else:
-        manager_files_path = os.path.join(user_dir, "default", "ComfyUI-Manager")
-
-    return os.path.join(manager_files_path, "config.ini")
-
-
-def _is_comfyregistry_reachable(timeout=5):
-    probe_url = (
-        os.environ.get("COMFYUI_MANAGER_REGISTRY_PROBE_URL", "").strip()
-        or "https://api.comfy.org/nodes?page=1&limit=1"
-    )
-    request = urllib.request.Request(
-        probe_url,
-        headers={"User-Agent": "ComfyUI-Manager-NetworkProbe/1.0"},
-    )
-
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            status = getattr(response, "status", 200)
-            return 200 <= status < 500
-    except Exception as exc:
-        logging.warning(f"[WRAPPER] ComfyRegistry probe failed ({probe_url}): {exc}")
-        return False
-
-
-def _ensure_comfyui_manager_network_mode():
-    """
-    Permette di forzare `network_mode` via env e, in auto mode, ripiega su
-    `offline` quando ComfyRegistry non e' raggiungibile per evitare startup lenti
-    o apparentemente bloccati nel fetch iniziale.
-    """
-    if os.environ.get("COMFYUI_MANAGER_AUTO_CONFIGURE_NETWORK_MODE", "1") != "1":
-        return
-
-    config_path = _get_comfyui_manager_config_path()
-    if not config_path:
-        _bootstrap_trace("_ensure_comfyui_manager_network_mode: skipped because config path is unavailable")
-        return
-
-    import configparser
-
-    config = configparser.ConfigParser(strict=False)
-    if os.path.isfile(config_path):
-        config.read(config_path)
-
-    if "default" not in config:
-        config["default"] = {}
-
-    current_mode = (config["default"].get("network_mode") or "public").strip().lower() or "public"
-    requested_mode = os.environ.get("COMFYUI_MANAGER_NETWORK_MODE", "").strip().lower()
-    valid_modes = {"public", "private", "offline"}
-
-    if requested_mode and requested_mode not in valid_modes:
-        logging.warning(f"[WRAPPER] Ignoring unsupported COMFYUI_MANAGER_NETWORK_MODE='{requested_mode}'")
-        requested_mode = ""
-
-    target_mode = current_mode
-    change_reason = None
-
-    if requested_mode:
-        target_mode = requested_mode
-        if target_mode != current_mode:
-            change_reason = f"env override ({target_mode})"
-    else:
-        auto_offline_enabled = os.environ.get("COMFYUI_MANAGER_AUTO_OFFLINE_ON_REGISTRY_FAILURE", "1") == "1"
-        try:
-            probe_timeout = int(os.environ.get("COMFYUI_MANAGER_REGISTRY_PROBE_TIMEOUT", "5"))
-        except ValueError:
-            probe_timeout = 5
-
-        if auto_offline_enabled and current_mode == "public" and not _is_comfyregistry_reachable(timeout=probe_timeout):
-            target_mode = "offline"
-            change_reason = "ComfyRegistry unreachable"
-
-    if target_mode == current_mode and os.path.isfile(config_path):
-        _bootstrap_trace(
-            f"_ensure_comfyui_manager_network_mode: keeping network_mode={current_mode} ({config_path})"
-        )
-        return
-
-    config["default"]["network_mode"] = target_mode
-    os.makedirs(os.path.dirname(config_path), exist_ok=True)
-    with open(config_path, "w", encoding="utf-8") as config_file:
-        config.write(config_file)
-
-    logging.info(
-        "[WRAPPER] Set ComfyUI-Manager network_mode=%s in %s%s",
-        target_mode,
-        config_path,
-        f" ({change_reason})" if change_reason else "",
-    )
-    _bootstrap_trace(
-        f"_ensure_comfyui_manager_network_mode: wrote network_mode={target_mode} to {config_path}"
-    )
 
 
 def _append_disable_cuda_malloc_arg():
@@ -3895,7 +3205,6 @@ def _normalize_flux_prompt_value(value):
     for source, target in FLUX_PROMPT_PATH_REPLACEMENTS.items():
         new_value = new_value.replace(source, target)
 
-    new_value = _normalize_registered_model_path(new_value)
     return new_value
 
 
@@ -3932,12 +3241,6 @@ def _get_bootstrap_model_index():
             for model_type in aliases:
                 known_by_type.setdefault(model_type, set()).add(filename)
                 sources[(model_type, filename)] = (folder_name, url)
-
-                for alias_name, canonical_name in MODEL_FILENAME_ALIASES.items():
-                    if canonical_name != filename:
-                        continue
-                    known_by_type.setdefault(model_type, set()).add(alias_name)
-                    sources[(model_type, alias_name)] = (folder_name, url)
 
     _KNOWN_BOOTSTRAP_MODELS_BY_TYPE = known_by_type
     _KNOWN_BOOTSTRAP_MODEL_SOURCES = sources
@@ -4021,7 +3324,6 @@ def _install_known_model_selector_patch():
     original_get_full_path = getattr(folder_paths, "get_full_path", None)
     if callable(original_get_full_path) and not getattr(original_get_full_path, "_comfyui_known_model_patch", False):
         def _wrapped_get_full_path(model_type, filename, *args, **kwargs):
-            filename = _normalize_registered_model_path(filename)
             result = original_get_full_path(model_type, filename, *args, **kwargs)
             if result:
                 return result
@@ -4044,7 +3346,6 @@ def _install_known_model_selector_patch():
     original_get_full_path_or_raise = getattr(folder_paths, "get_full_path_or_raise", None)
     if callable(original_get_full_path_or_raise) and not getattr(original_get_full_path_or_raise, "_comfyui_known_model_patch", False):
         def _wrapped_get_full_path_or_raise(model_type, filename, *args, **kwargs):
-            filename = _normalize_registered_model_path(filename)
             try:
                 return original_get_full_path_or_raise(model_type, filename, *args, **kwargs)
             except Exception:
@@ -4120,9 +3421,6 @@ def _preflight_custom_logic():
     _bootstrap_trace("_preflight_custom_logic: cleanup manager cache begin")
     _cleanup_broken_manager_json_cache()
     _bootstrap_trace("_preflight_custom_logic: cleanup manager cache completed")
-    _bootstrap_trace("_preflight_custom_logic: manager network mode check begin")
-    _ensure_comfyui_manager_network_mode()
-    _bootstrap_trace("_preflight_custom_logic: manager network mode check completed")
 
     # 2) env vars opzionali
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -4189,22 +3487,14 @@ def _preflight_custom_logic():
         _bootstrap_trace(f"_preflight_custom_logic: shared model bootstrap begin on {model_roots[0]}")
         ensure_shared_models_downloaded(model_roots[0])
         _bootstrap_trace("_preflight_custom_logic: shared model downloads completed")
-        _bootstrap_trace("_preflight_custom_logic: default llama layout begin")
-        _ensure_default_llama_layout(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: default llama layout completed")
-        _bootstrap_trace("_preflight_custom_logic: llama gguf bootstrap begin")
-        _ensure_llama_gguf_available(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: llama gguf bootstrap completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: first LLM sync completed")
         _ensure_florence2_layout(model_roots)
         _bootstrap_trace("_preflight_custom_logic: Florence2 layout completed")
-        _ensure_da3_large_layout(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: DA3 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
-        _sync_model_alias_directories(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: model alias sync completed")
+        _ensure_xlabs_controlnet_layout(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: XLabs ControlNet layout completed")
 
     # 5) genera config path nativo ComfyUI per le shared folders
     auto_cfg = os.path.join(

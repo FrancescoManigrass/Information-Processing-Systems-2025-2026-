@@ -114,8 +114,9 @@ SHARED_MODELS_URLS = {
     # CLIP VISION
     # =========================
     "LLM": [
-        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
-        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
+        # Florence2 auto-download disabilitato: lasciare i file LLM gestiti manualmente.
+        # {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
+        # {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
@@ -1150,6 +1151,10 @@ def _ensure_florence2_layout(model_roots):
     non un singolo file .safetensors nella root LLM.
     Costruisce un layout compatibile: LLM/Florence-2-large/...
     """
+    if os.environ.get("COMFYUI_ENABLE_FLORENCE2_AUTO_DOWNLOAD", "0") != "1":
+        _bootstrap_trace("_ensure_florence2_layout: skipped (auto-download disabled)")
+        return
+
     hf_base = "https://huggingface.co/microsoft/Florence-2-large/resolve/main"
     required_files = [
         "config.json",
@@ -1275,7 +1280,8 @@ def apply_shared_model_paths():
     # così non alteri la seconda cartella
     ensure_shared_models_downloaded(model_roots[0])
     _sync_llm_primary_to_secondary(model_roots)
-    _ensure_florence2_layout(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: Florence2 layout skipped (auto-download disabled)")
+    # _ensure_florence2_layout(model_roots)
     _sync_llm_primary_to_secondary(model_roots)
 
     model_dirs = {
@@ -1608,7 +1614,8 @@ def _preflight_custom_logic():
     if model_roots:
         ensure_shared_models_downloaded(model_roots[0])
         _sync_llm_primary_to_secondary(model_roots)
-        _ensure_florence2_layout(model_roots)
+        _bootstrap_trace("_preflight_custom_logic: Florence2 layout skipped (auto-download disabled)")
+        # _ensure_florence2_layout(model_roots)
         _sync_llm_primary_to_secondary(model_roots)
 
     # 5) genera config path nativo ComfyUI per le shared folders

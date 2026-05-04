@@ -29,6 +29,8 @@ os.environ.setdefault("PIP_NO_INPUT", "1")
 COMFYUI_MANAGER_REPO_URL = "https://github.com/Comfy-Org/ComfyUI-Manager.git"
 COMFYUI_MANAGER_DIRNAME = "comfyui-manager"
 COMFYUI_MANAGER_LEGACY_DIRNAME = "ComfyUI-Manager"
+LLAMA3_CUSTOM_NODE_REPO_URL = "https://github.com/smthemex/ComfyUI_Llama3_8B.git"
+LLAMA3_CUSTOM_NODE_DIRNAME = "ComfyUI_Llama3_8B"
 LOCAL_VENV_DIRNAME = ".venv"
 OPENCV_GUI_PACKAGES = (
     "opencv-python",
@@ -99,7 +101,8 @@ SHARED_MODELS_URLS = {
     "diffusion_models": [
         # FLUX Trainer (set richiesto)
         {"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
-{"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
+        # Disabilitato: questo checkpoint FP8 manda ComfyUI in crash in questo ambiente.
+        # {"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
 
 
 
@@ -128,7 +131,8 @@ SHARED_MODELS_URLS = {
 
         # FLUX full (gated/opzionali, pesanti)
       # >10GB circa (FP8 FLUX)
-        {"url": "https://huggingface.co/lllyasviel/flux1_dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
+        # Disabilitato: anche questo punta a flux1-dev-fp8 e puo' provocare lo stesso crash.
+        # {"url": "https://huggingface.co/lllyasviel/flux1_dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
    
         # >10GB circa
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev/resolve/main/flux1-fill-dev.safetensors", "filename": "flux1-fill-dev.safetensors"},
@@ -177,8 +181,9 @@ SHARED_MODELS_URLS = {
     # CLIP VISION
     # =========================
     "LLM": [
-        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
-        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
+        # Florence2 auto-download disabilitato: lasciare i file LLM gestiti manualmente.
+        # {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
+        # {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
@@ -1574,6 +1579,64 @@ def ensure_comfyui_manager_installed():
     except Exception as exc:
         print(f"[BOOTSTRAP] Failed installing ComfyUI Manager: {exc}")
 
+
+def ensure_llama3_custom_node_installed():
+    if os.environ.get("COMFYUI_LLAMA3_NODE_AUTO_INSTALL", "1") != "1":
+        return
+
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    custom_nodes_dir = os.path.join(base_dir, "custom_nodes")
+    os.makedirs(custom_nodes_dir, exist_ok=True)
+
+    node_dir = os.path.join(custom_nodes_dir, LLAMA3_CUSTOM_NODE_DIRNAME)
+    disabled_dir = node_dir + ".disabled"
+    if os.path.isdir(disabled_dir):
+        print(f"[BOOTSTRAP] Llama3 custom node is disabled, skip: {disabled_dir}")
+        return
+
+    if os.path.isdir(node_dir):
+        print(f"[BOOTSTRAP] Llama3 custom node already present: {node_dir}")
+        return
+
+    if _run_cmd_quiet(["git", "clone", LLAMA3_CUSTOM_NODE_REPO_URL, node_dir]):
+        print(f"[BOOTSTRAP] Llama3 custom node installed: {node_dir}")
+        return
+
+    try:
+        import io
+        import shutil
+        import urllib.request
+        import zipfile
+
+        zip_url = LLAMA3_CUSTOM_NODE_REPO_URL[:-4].rstrip("/") + "/archive/refs/heads/main.zip"
+        print(f"[BOOTSTRAP] Downloading Llama3 custom node ZIP fallback: {zip_url}")
+        data = urllib.request.urlopen(zip_url, timeout=90).read()
+
+        extract_tmp = os.path.join(custom_nodes_dir, "_llama3_node_extract_tmp")
+        if os.path.isdir(extract_tmp):
+            shutil.rmtree(extract_tmp, ignore_errors=True)
+        os.makedirs(extract_tmp, exist_ok=True)
+
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            zf.extractall(extract_tmp)
+
+        extracted_root = None
+        for name in os.listdir(extract_tmp):
+            candidate = os.path.join(extract_tmp, name)
+            if os.path.isdir(candidate):
+                extracted_root = candidate
+                break
+
+        if not extracted_root:
+            raise RuntimeError("Extracted Llama3 custom node folder not found")
+
+        shutil.move(extracted_root, node_dir)
+        shutil.rmtree(extract_tmp, ignore_errors=True)
+        print(f"[BOOTSTRAP] Llama3 custom node installed from ZIP: {node_dir}")
+    except Exception as exc:
+        print(f"[BOOTSTRAP] Failed installing Llama3 custom node: {exc}")
+
+
 def auto_install_requirements():
     global _AUTO_REQUIREMENTS_ALREADY_RAN
 
@@ -1905,6 +1968,9 @@ _bootstrap_trace("startup: ensure_local_venv completed")
 _bootstrap_trace("startup: ensure_comfyui_manager_installed begin")
 ensure_comfyui_manager_installed()
 _bootstrap_trace("startup: ensure_comfyui_manager_installed completed")
+_bootstrap_trace("startup: ensure_llama3_custom_node_installed begin")
+ensure_llama3_custom_node_installed()
+_bootstrap_trace("startup: ensure_llama3_custom_node_installed completed")
 
 # Bootstrap PRIMA degli import ComfyUI
 _bootstrap_trace("startup: initial auto_install_requirements begin")
@@ -2122,6 +2188,7 @@ def _resolve_model_roots():
     base_dir = os.path.dirname(os.path.realpath(__file__))
     local_primary_root = os.path.join(base_dir, "models-default")
     mnt_primary_root = "/mnt/default-models"
+    vscode_shared_root = "/vscode/workspace/shared/default-models"
 
     if env_primary_root:
         primary_root = env_primary_root
@@ -2133,6 +2200,8 @@ def _resolve_model_roots():
     secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip() or os.path.join(base_dir, "models")
 
     candidates = [primary_root, secondary_root]
+    if base_dir.startswith("/vscode/workspace") or os.path.exists(vscode_shared_root):
+        candidates.append(vscode_shared_root)
 
     env_value = os.environ.get("COMFYUI_MODEL_ROOTS", "").strip()
     if env_value:
@@ -2163,6 +2232,91 @@ def _ensure_llm_subdirs(model_roots):
         except Exception as exc:
             logging.warning(f"Unable to create LLM folder in {root}: {exc}")
             _bootstrap_trace(f"_ensure_llm_subdirs: failed for {root} -> {exc}")
+
+
+def _ensure_xlabs_subdirs(model_roots):
+    xlabs_subdirs = (
+        "xlabs",
+        "xlabs/controlnets",
+        "xlabs/loras",
+        "xlabs/ipadapters",
+        "xlabs/flux",
+    )
+
+    for root in model_roots:
+        for subdir in xlabs_subdirs:
+            target_dir = os.path.join(root, subdir)
+            try:
+                _bootstrap_trace(f"_ensure_xlabs_subdirs: ensuring {target_dir}")
+                os.makedirs(target_dir, exist_ok=True)
+            except Exception as exc:
+                logging.warning(f"Unable to create XLabs folder in {root}: {exc}")
+                _bootstrap_trace(f"_ensure_xlabs_subdirs: failed for {target_dir} -> {exc}")
+
+
+def _install_xlabs_folder_paths_guard(model_roots):
+    if not model_roots:
+        return
+
+    xlabs_model_types = {
+        "xlabs": "xlabs",
+        "xlabs_loras": "xlabs/loras",
+        "xlabs_controlnets": "xlabs/controlnets",
+        "xlabs_ipadapters": "xlabs/ipadapters",
+        "xlabs_flux": "xlabs/flux",
+    }
+
+    extra_paths_by_type = {}
+    for model_type, subdir in xlabs_model_types.items():
+        extra_paths = []
+        seen = set()
+        for root in model_roots:
+            path = os.path.abspath(os.path.join(root, subdir))
+            if path in seen:
+                continue
+            seen.add(path)
+            extra_paths.append(path)
+        extra_paths_by_type[model_type] = extra_paths
+
+    class _XLabsFolderPathsGuard(dict):
+        def __setitem__(self, key, value):
+            if key in extra_paths_by_type and isinstance(value, tuple) and value:
+                paths = value[0]
+                extensions = value[1] if len(value) > 1 else folder_paths.supported_pt_extensions
+                if isinstance(paths, (list, tuple)):
+                    merged_paths = list(paths)
+                    seen_paths = {os.path.abspath(path) for path in merged_paths if isinstance(path, str)}
+                    for extra_path in extra_paths_by_type[key]:
+                        try:
+                            os.makedirs(extra_path, exist_ok=True)
+                        except Exception:
+                            pass
+                        if os.path.abspath(extra_path) not in seen_paths:
+                            merged_paths.append(extra_path)
+                            seen_paths.add(os.path.abspath(extra_path))
+                    value = (merged_paths, extensions)
+                    logging.info(f"[WRAPPER] XLabs model paths [{key}] -> {merged_paths}")
+                    _bootstrap_trace(f"_install_xlabs_folder_paths_guard: merged {key} -> {merged_paths}")
+            super().__setitem__(key, value)
+
+    current = getattr(folder_paths, "folder_names_and_paths", None)
+    if isinstance(current, _XLabsFolderPathsGuard):
+        for model_type, paths in extra_paths_by_type.items():
+            if model_type in current:
+                current[model_type] = current[model_type]
+            else:
+                current[model_type] = (paths, folder_paths.supported_pt_extensions)
+        return
+
+    guarded = _XLabsFolderPathsGuard(current or {})
+    folder_paths.folder_names_and_paths = guarded
+    for model_type, paths in extra_paths_by_type.items():
+        if model_type in guarded:
+            guarded[model_type] = guarded[model_type]
+        else:
+            guarded[model_type] = (paths, folder_paths.supported_pt_extensions)
+    logging.info("[WRAPPER] Installed XLabs folder_paths guard for shared model roots")
+    _bootstrap_trace("_install_xlabs_folder_paths_guard: installed")
 
 
 def _sync_llm_primary_to_secondary(model_roots):
@@ -2310,6 +2464,10 @@ def _ensure_florence2_layout(model_roots):
     non un singolo file .safetensors nella root LLM.
     Costruisce un layout compatibile: LLM/Florence-2-large/...
     """
+    if os.environ.get("COMFYUI_ENABLE_FLORENCE2_AUTO_DOWNLOAD", "0") != "1":
+        _bootstrap_trace("_ensure_florence2_layout: skipped (auto-download disabled)")
+        return
+
     repo_id = os.environ.get("COMFYUI_FLORENCE2_REPO", "microsoft/Florence-2-large").strip() or "microsoft/Florence-2-large"
     revision = os.environ.get("COMFYUI_FLORENCE2_REVISION", "main").strip() or "main"
     hf_base = f"https://huggingface.co/{repo_id}/resolve/{revision}"
@@ -2527,6 +2685,10 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: ensure LLM subdirs begin")
     _ensure_llm_subdirs(model_roots)
     _bootstrap_trace("apply_shared_model_paths: ensure LLM subdirs completed")
+    _bootstrap_trace("apply_shared_model_paths: ensure XLabs subdirs begin")
+    _ensure_xlabs_subdirs(model_roots)
+    _bootstrap_trace("apply_shared_model_paths: ensure XLabs subdirs completed")
+    _install_xlabs_folder_paths_guard(model_roots)
 
     # Scarica modelli mancanti SOLO nella prima root (quella principale)
     # così non alteri la seconda cartella
@@ -2536,9 +2698,8 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: first LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: first LLM sync completed")
-    _bootstrap_trace("apply_shared_model_paths: Florence2 layout begin")
-    _ensure_florence2_layout(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: Florence2 layout completed")
+    _bootstrap_trace("apply_shared_model_paths: Florence2 layout skipped (auto-download disabled)")
+    # _ensure_florence2_layout(model_roots)
     _bootstrap_trace("apply_shared_model_paths: DA3 layout begin")
     _ensure_da3_large_layout(model_roots)
     _bootstrap_trace("apply_shared_model_paths: DA3 layout completed")
@@ -3011,6 +3172,18 @@ MODEL_FILENAME_ALIASES = {
     "controlV11pSd15_v10.safetensors": "control_v11p_sd15_openpose_fp16.safetensors",
 }
 
+BLOCKED_MODEL_FILENAMES = {
+    # Questi FP8 causano crash del runtime ComfyUI in questo ambiente.
+    "flux1-dev-fp8.safetensors",
+    "flux1-schnell-fp8.safetensors",
+}
+
+
+def _is_blocked_model_filename(value):
+    if not isinstance(value, str):
+        return False
+    return os.path.basename(value.replace("\\", "/")) in BLOCKED_MODEL_FILENAMES
+
 
 def _normalize_registered_model_path(value):
     if not isinstance(value, str):
@@ -3149,12 +3322,12 @@ def _install_known_model_selector_patch():
         def _wrapped_get_filename_list(model_type, *args, **kwargs):
             filenames = original_get_filename_list(model_type, *args, **kwargs) or []
             known = _get_known_bootstrap_model_filenames(model_type)
-            if not known:
-                return filenames
 
             merged = []
             seen = set()
             for item in list(filenames) + known:
+                if _is_blocked_model_filename(item):
+                    continue
                 if item in seen:
                     continue
                 seen.add(item)
@@ -3169,6 +3342,10 @@ def _install_known_model_selector_patch():
     if callable(original_get_full_path) and not getattr(original_get_full_path, "_comfyui_known_model_patch", False):
         def _wrapped_get_full_path(model_type, filename, *args, **kwargs):
             filename = _normalize_registered_model_path(filename)
+            if _is_blocked_model_filename(filename):
+                logging.warning(f"[WRAPPER] Blocked unstable model load: {filename}")
+                return None
+
             result = original_get_full_path(model_type, filename, *args, **kwargs)
             if result:
                 return result
@@ -3192,6 +3369,9 @@ def _install_known_model_selector_patch():
     if callable(original_get_full_path_or_raise) and not getattr(original_get_full_path_or_raise, "_comfyui_known_model_patch", False):
         def _wrapped_get_full_path_or_raise(model_type, filename, *args, **kwargs):
             filename = _normalize_registered_model_path(filename)
+            if _is_blocked_model_filename(filename):
+                raise FileNotFoundError(f"Blocked unstable model load: {filename}")
+
             try:
                 return original_get_full_path_or_raise(model_type, filename, *args, **kwargs)
             except Exception:
@@ -3327,6 +3507,10 @@ def _preflight_custom_logic():
     _bootstrap_trace("_preflight_custom_logic: ensure LLM subdirs begin")
     _ensure_llm_subdirs(model_roots)
     _bootstrap_trace("_preflight_custom_logic: ensure LLM subdirs completed")
+    _bootstrap_trace("_preflight_custom_logic: ensure XLabs subdirs begin")
+    _ensure_xlabs_subdirs(model_roots)
+    _bootstrap_trace("_preflight_custom_logic: ensure XLabs subdirs completed")
+    _install_xlabs_folder_paths_guard(model_roots)
 
     # 4) download modelli mancanti SOLO nella root principale (come fai già)
     if model_roots:
@@ -3335,8 +3519,8 @@ def _preflight_custom_logic():
         _bootstrap_trace("_preflight_custom_logic: shared model downloads completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: first LLM sync completed")
-        _ensure_florence2_layout(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: Florence2 layout completed")
+        _bootstrap_trace("_preflight_custom_logic: Florence2 layout skipped (auto-download disabled)")
+        # _ensure_florence2_layout(model_roots)
         _ensure_da3_large_layout(model_roots)
         _bootstrap_trace("_preflight_custom_logic: DA3 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
