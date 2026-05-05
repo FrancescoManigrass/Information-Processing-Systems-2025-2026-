@@ -64,6 +64,9 @@ extra_packages = [
     "PyYAML",
     "tqdm",
     "comfy_aimdo",
+    "comfy-env",        # richiesto da custom nodes V3 (es. ComfyUI-DepthAnythingV3)
+    "comfy-3d-viewers",
+    "comfy-dynamic-widgets",
     "diffusers>=0.25.0",
     f"transformers=={TRANSFORMERS_TARGET_VERSION}",
     f"accelerate>={ACCELERATE_TARGET_VERSION}",
@@ -76,6 +79,340 @@ _AUTO_REQUIREMENTS_ALREADY_RAN = False
 def _bootstrap_trace(message):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     print(f"[BOOTSTRAP][TRACE {timestamp}] {message}", flush=True)
+
+
+# ── Bootstrap probe cache ──────────────────────────────────────────────────
+# Evita subprocess ripetuti (torch probe, cv2 probe) ad ogni avvio.
+# TTL configurabile via COMFYUI_BOOTSTRAP_CACHE_TTL (default 4h).
+_BOOTSTRAP_CACHE_TTL = int(os.environ.get("COMFYUI_BOOTSTRAP_CACHE_TTL", "14400"))
+
+def _bootstrap_cache_path():
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), ".bootstrap_cache.json")
+
+def _load_bootstrap_cache():
+    try:
+        import json as _j
+        p = _bootstrap_cache_path()
+        if not os.path.isfile(p):
+            return {}
+        with open(p, "r", encoding="utf-8") as _f:
+            d = _j.load(_f)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+def _save_bootstrap_cache(updates: dict):
+    try:
+        import json as _j
+        p = _bootstrap_cache_path()
+        d = _load_bootstrap_cache()
+        d.update(updates)
+        with open(p, "w", encoding="utf-8") as _f:
+            _j.dump(d, _f, separators=(",", ":"))
+    except Exception:
+        pass
+
+def _bootstrap_probe_cached(key: str) -> bool:
+    d = _load_bootstrap_cache()
+    return bool(d.get(key)) and (time.time() - d.get(key + "_ts", 0) < _BOOTSTRAP_CACHE_TTL)
+
+def _bootstrap_probe_set(key: str):
+    _save_bootstrap_cache({key: True, key + "_ts": time.time()})
+
+def _bootstrap_probe_invalidate():
+    """Da chiamare dopo qualsiasi install per forzare ri-verifica al prossimo avvio."""
+    _save_bootstrap_cache({
+        "cv2_ok": False, "cv2_ok_ts": 0,
+        f"torch_cuda_ok_{PYTORCH_TARGET_VERSION}": False,
+        f"cuda_probe_ok_{PYTORCH_TARGET_VERSION}": False,
+    })
+
+
+def _patch_xflux_vram_management():
+    """
+    x-flux-comfyui/nodes.py chiama `inmodel.diffusion_model.to(device)` che sposta
+    l'intero modello su GPU ignorando il VRAM manager di ComfyUI, causando OOM.
+    Sostituisce quella riga con comfy.model_management.load_models_gpu() che e'
+    VRAM-aware e gestisce l'offload automatico.
+    Patch idempotente: usa regex per trovare la riga indipendentemente dall'indentazione.
+    """
+    if os.environ.get("COMFYUI_PATCH_XFLUX_VRAM", "1") != "1":
+        return
+
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    nodes_path = os.path.join(base_dir, "custom_nodes", "x-flux-comfyui", "nodes.py")
+    if not os.path.isfile(nodes_path):
+        return
+
+    try:
+        with open(nodes_path, "r", encoding="utf-8") as _f:
+            content = _f.read()
+    except Exception as _exc:
+        print(f"[BOOTSTRAP] x-flux VRAM patch: could not read {nodes_path}: {_exc}", flush=True)
+        return
+
+    # Se il vecchio patch (load_models_gpu) è presente, ripristina dal backup e riapplica.
+    if "_xflux_mm.load_models_gpu([inmodel])" in content:
+        backup = nodes_path + ".pre_vram_patch"
+        if os.path.isfile(backup):
+            with open(backup, "r", encoding="utf-8") as _f:
+                content = _f.read()
+            print("[BOOTSTRAP] x-flux VRAM patch: old patch detected, restoring from backup to re-patch", flush=True)
+        else:
+            print("[BOOTSTRAP] x-flux VRAM patch: old patch detected but no backup found, skip", flush=True)
+            return
+
+    # Controllo idempotenza: se il nuovo patch è già presente, skip.
+    if "_xflux_mm.unload_all_models()" in content:
+        return
+
+    # Cerca la riga con regex tollerante all'indentazione (spazi o tab).
+    import re as _re
+    pattern = _re.compile(
+        r'^([ \t]*)inmodel\.diffusion_model\.to\(device\)[ \t]*$',
+        _re.MULTILINE,
+    )
+    match = pattern.search(content)
+    if not match:
+        print(
+            f"[BOOTSTRAP] x-flux VRAM patch: target line not found in {nodes_path} "
+            "(different version or already patched differently), skip",
+            flush=True,
+        )
+        return
+
+    indent = match.group(1)
+    replacement = (
+        f"{indent}try:\n"
+        f"{indent}    import comfy.model_management as _xflux_mm\n"
+        f"{indent}    _xflux_mm.unload_all_models()\n"
+        f"{indent}    _xflux_mm.soft_empty_cache()\n"
+        f"{indent}except Exception:\n"
+        f"{indent}    pass\n"
+        f"{indent}inmodel.diffusion_model.to(device)"
+    )
+    patched = pattern.sub(replacement, content, count=1)
+
+    try:
+        backup = nodes_path + ".pre_vram_patch"
+        if not os.path.exists(backup):
+            with open(backup, "w", encoding="utf-8") as _f:
+                _f.write(content)
+        with open(nodes_path, "w", encoding="utf-8") as _f:
+            _f.write(patched)
+        print(f"[BOOTSTRAP] Patched x-flux-comfyui VRAM management: {nodes_path}", flush=True)
+    except Exception as _exc:
+        print(f"[BOOTSTRAP] Warning: x-flux VRAM patch write failed: {_exc}", flush=True)
+
+
+def _ensure_comfy_env_stub():
+    """
+    Assicura compatibilita' con custom nodes V3 che importano `comfy_env`.
+    Se il pacchetto PyPI `comfy-env` e' installato, rimuove il vecchio stub
+    generato dal bootstrap cosi' Python puo' usare il pacchetto reale.
+    Altrimenti crea/aggiorna uno stub minimo compatibile.
+    """
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    comfy_env_path = os.path.join(base_dir, "comfy_env.py")
+    marker = "comfy_env bootstrap compatibility stub"
+
+    def _loaded_local_comfy_env():
+        loaded = sys.modules.get("comfy_env")
+        if loaded is None:
+            return None
+        loaded_file = getattr(loaded, "__file__", None)
+        if loaded_file and os.path.abspath(loaded_file) == os.path.abspath(comfy_env_path):
+            return loaded
+        return None
+
+    def _find_external_comfy_env_spec():
+        try:
+            import importlib.machinery as _machinery
+
+            excluded = {os.path.abspath(base_dir), os.path.abspath(os.getcwd())}
+            for entry in sys.path:
+                search_entry = entry or os.getcwd()
+                try:
+                    abs_entry = os.path.abspath(search_entry)
+                except Exception:
+                    continue
+                if abs_entry in excluded:
+                    continue
+
+                spec = _machinery.PathFinder.find_spec("comfy_env", [search_entry])
+                if spec is None or not getattr(spec, "origin", None):
+                    continue
+                if os.path.abspath(spec.origin) != os.path.abspath(comfy_env_path):
+                    return spec
+        except Exception:
+            pass
+
+        return None
+
+    def _fallback_setup_env(*_args, **_kwargs):
+        return None
+
+    def _fallback_copy_files(src_dir, dst_dir, pattern="**/*"):
+        from pathlib import Path as _Path
+        import shutil as _shutil
+
+        src_path = _Path(src_dir)
+        dst_path = _Path(dst_dir)
+        copied = []
+        if not src_path.exists():
+            return copied
+
+        for src in src_path.glob(pattern):
+            if not src.is_file():
+                continue
+            rel_path = src.relative_to(src_path)
+            dst = dst_path / rel_path
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if (
+                not dst.exists()
+                or src.stat().st_mtime > dst.stat().st_mtime
+                or src.stat().st_size != dst.stat().st_size
+            ):
+                _shutil.copy2(src, dst)
+            copied.append(dst)
+
+        return copied
+
+    def _fallback_install(*_args, **_kwargs):
+        return None
+
+    def _fallback_wrap_isolated_nodes(node_class_mappings, *_args, **_kwargs):
+        return node_class_mappings
+
+    def _fallback_register_nodes(module_or_globals=None, globals_dict=None):
+        import sys as _sys
+
+        target = {}
+        if globals_dict is not None and isinstance(globals_dict, dict):
+            target = globals_dict
+        elif isinstance(module_or_globals, dict):
+            target = module_or_globals
+        elif isinstance(module_or_globals, str):
+            mod = _sys.modules.get(module_or_globals)
+            if mod is not None:
+                target = vars(mod)
+        return target.get("NODE_CLASS_MAPPINGS", {}), target.get("NODE_DISPLAY_NAME_MAPPINGS", {})
+
+    def _patch_loaded_stub_module():
+        loaded = _loaded_local_comfy_env()
+        if loaded is None:
+            return
+        fallbacks = {
+            "setup_env": _fallback_setup_env,
+            "copy_files": _fallback_copy_files,
+            "install": _fallback_install,
+            "wrap_isolated_nodes": _fallback_wrap_isolated_nodes,
+            "register_nodes": _fallback_register_nodes,
+        }
+        for name, func in fallbacks.items():
+            if not hasattr(loaded, name):
+                setattr(loaded, name, func)
+
+    external_spec = _find_external_comfy_env_spec()
+    if external_spec is not None:
+        if os.path.isfile(comfy_env_path):
+            try:
+                with open(comfy_env_path, "r", encoding="utf-8") as _f:
+                    existing_content = _f.read()
+                if marker in existing_content or "generato automaticamente dal bootstrap" in existing_content:
+                    backup_path = f"{comfy_env_path}.bootstrap_stub"
+                    if os.path.exists(backup_path):
+                        os.remove(backup_path)
+                    os.replace(comfy_env_path, backup_path)
+                    print(f"[BOOTSTRAP] Disabled local comfy_env stub: {backup_path}", flush=True)
+            except Exception as _exc:
+                print(f"[BOOTSTRAP] Warning: could not disable local comfy_env stub: {_exc}", flush=True)
+
+        if _loaded_local_comfy_env() is not None:
+            sys.modules.pop("comfy_env", None)
+        try:
+            import importlib as _importlib
+            _importlib.invalidate_caches()
+        except Exception:
+            pass
+        return
+
+    stub_content = '''\
+"""comfy_env bootstrap compatibility stub."""
+
+
+def setup_env(*_args, **_kwargs):
+    return None
+
+
+def copy_files(src_dir, dst_dir, pattern="**/*"):
+    from pathlib import Path as _Path
+    import shutil as _shutil
+
+    src_path = _Path(src_dir)
+    dst_path = _Path(dst_dir)
+    copied = []
+    if not src_path.exists():
+        return copied
+
+    for src in src_path.glob(pattern):
+        if not src.is_file():
+            continue
+        rel_path = src.relative_to(src_path)
+        dst = dst_path / rel_path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if (
+            not dst.exists()
+            or src.stat().st_mtime > dst.stat().st_mtime
+            or src.stat().st_size != dst.stat().st_size
+        ):
+            _shutil.copy2(src, dst)
+        copied.append(dst)
+
+    return copied
+
+
+def install(*_args, **_kwargs):
+    return None
+
+
+def wrap_isolated_nodes(node_class_mappings, *_args, **_kwargs):
+    return node_class_mappings
+
+
+def register_nodes(module_or_globals=None, globals_dict=None):
+    import sys as _sys
+
+    target = {}
+    if globals_dict is not None and isinstance(globals_dict, dict):
+        target = globals_dict
+    elif isinstance(module_or_globals, dict):
+        target = module_or_globals
+    elif isinstance(module_or_globals, str):
+        mod = _sys.modules.get(module_or_globals)
+        if mod is not None:
+            target = vars(mod)
+    return target.get("NODE_CLASS_MAPPINGS", {}), target.get("NODE_DISPLAY_NAME_MAPPINGS", {})
+'''
+    try:
+        if os.path.isfile(comfy_env_path):
+            with open(comfy_env_path, "r", encoding="utf-8") as _f:
+                existing_content = _f.read()
+            required = ("def setup_env", "def copy_files", "def register_nodes")
+            if all(token in existing_content for token in required):
+                _patch_loaded_stub_module()
+                return
+            if marker not in existing_content and "generato automaticamente dal bootstrap" not in existing_content:
+                print(f"[BOOTSTRAP] Warning: existing comfy_env.py is not a bootstrap stub: {comfy_env_path}", flush=True)
+                _patch_loaded_stub_module()
+                return
+
+        with open(comfy_env_path, "w", encoding="utf-8") as _f:
+            _f.write(stub_content)
+        _patch_loaded_stub_module()
+        print(f"[BOOTSTRAP] Updated comfy_env compatibility stub: {comfy_env_path}", flush=True)
+    except Exception as _exc:
+        print(f"[BOOTSTRAP] Warning: could not create/update comfy_env stub: {_exc}", flush=True)
 
 SHARED_MODELS_URLS = {
     # =========================
@@ -220,6 +557,15 @@ SHARED_MODELS_URLS = {
     "unet": [
         # >10GB circa (FLUX full)
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors", "filename": "flux1-schnell.safetensors"},
+    ],
+
+    # =========================
+    # GGUF MODELS (llama.cpp quantized)
+    # =========================
+    "gguf": [
+        # Gemma 4 31B Q5_K_L (~24GB) — bartowski quant
+        {"url": "https://huggingface.co/bartowski/google_gemma-4-31B-it-GGUF/resolve/main/google_gemma-4-31B-it-Q5_K_L.gguf",
+         "filename": "google_gemma-4-31B-it-Q5_K_L.gguf"},
     ],
 }
 
@@ -818,8 +1164,14 @@ def _ensure_compatible_pytorch_runtime():
         _bootstrap_trace("pytorch compat: no compatible PyTorch wheel index detected, skip")
         return False
 
+    _torch_cache_key = f"torch_cuda_ok_{PYTORCH_TARGET_VERSION}"
+    if _bootstrap_probe_cached(_torch_cache_key):
+        _bootstrap_trace(f"pytorch compat: cache hit for torch {PYTORCH_TARGET_VERSION}, skip subprocess probe")
+        return False
+
     runtime_info = _inspect_torch_runtime(sys.executable)
     if runtime_info.get("cuda_current_device_ok"):
+        _bootstrap_probe_set(_torch_cache_key)
         _bootstrap_trace(
             "pytorch compat: existing torch runtime already works with CUDA "
             f"({runtime_info.get('torch_version', 'unknown')})"
@@ -878,8 +1230,14 @@ def _maybe_force_cpu_mode_from_torch_probe():
     if "--cpu" in sys.argv or os.environ.get("COMFYUI_CPU_FALLBACK_ACTIVE") == "1":
         return
 
+    _cuda_cache_key = f"cuda_probe_ok_{PYTORCH_TARGET_VERSION}"
+    if _bootstrap_probe_cached(_cuda_cache_key):
+        _bootstrap_trace("cuda probe: cache hit, skip subprocess probe")
+        return
+
     probe_ok, output = _run_torch_cuda_probe(sys.executable)
     if probe_ok:
+        _bootstrap_probe_set(_cuda_cache_key)
         return
 
     if _cuda_failure_requires_cpu_fallback(output):
@@ -1192,9 +1550,13 @@ def _ensure_cv2_importable_or_fallback():
     if os.environ.get("COMFYUI_ENSURE_CV2", "1") != "1":
         return True
 
+    if _bootstrap_probe_cached("cv2_ok"):
+        return True
+
     ok, info = _check_cv2_import_subprocess()
     if ok:
         print(f"[BOOTSTRAP] cv2 import OK: {info}")
+        _bootstrap_probe_set("cv2_ok")
         return True
 
     print(f"[BOOTSTRAP] cv2 import FAILED, attempting repair...\n{info}")
@@ -1642,6 +2004,8 @@ def auto_install_requirements():
         try:
             subprocess.check_call(_get_bootstrap_install_cmd(
                 "--disable-pip-version-check",
+                "--timeout", "600",   # 10 min per chunk (pacchetti CUDA > 200MB)
+                "--retries", "5",
                 "-r",
                 req,
             ))
@@ -1726,6 +2090,7 @@ def auto_install_requirements():
     _bootstrap_trace("auto_install_requirements: cv2 importability check completed")
 
     if installed_any:
+        _bootstrap_probe_invalidate()
         import importlib, site
         try:
             user_site = site.getusersitepackages()
@@ -2077,6 +2442,32 @@ def _setup_crash_logging():
     except Exception:
         pass
 
+    # Mostra i processi che usano la GPU — utile per identificare processi estranei che consumano VRAM.
+    try:
+        pmon = subprocess.check_output(
+            ["nvidia-smi", "pmon", "-c", "1", "-s", "m"],
+            timeout=5, text=True, stderr=subprocess.DEVNULL,
+        )
+        for pline in pmon.strip().splitlines():
+            if pline.startswith("#") or not pline.strip():
+                continue
+            fields = pline.split()
+            if len(fields) >= 4:
+                pid, gpu_idx, mem_mb = fields[1], fields[0], fields[3]
+                if mem_mb not in ("-", "0") and pid != "-":
+                    try:
+                        cmdline_path = f"/proc/{pid}/cmdline"
+                        if os.path.isfile(cmdline_path):
+                            with open(cmdline_path, "rb") as _pf:
+                                cmd = _pf.read().replace(b"\x00", b" ").decode("utf-8", errors="replace").strip()[:120]
+                        else:
+                            cmd = "(unavailable)"
+                    except Exception:
+                        cmd = "(unavailable)"
+                    print(f"[CRASH LOG] GPU process: PID={pid} GPU={gpu_idx} MEM={mem_mb}MiB CMD={cmd}", flush=True)
+    except Exception:
+        pass
+
 
 # Install custom nodes PRIMA del bootstrap requirements, così i loro requirements vengono inclusi.
 if __name__ == "__main__":
@@ -2102,6 +2493,7 @@ _bootstrap_trace("startup: cuda probe completed")
 if "--disable-cuda-malloc" not in sys.argv and os.environ.get("COMFYUI_FORCE_CUDA_MALLOC", "0") != "1":
     sys.argv.append("--disable-cuda-malloc")
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "backend:native")
+
 
 # Compat FluxTrainer/transformers prima di importare ComfyUI.
 _bootstrap_trace("startup: early transformers compat begin")
@@ -2130,7 +2522,11 @@ import urllib.request
 import urllib.parse
 import urllib.error
 from tqdm import tqdm
-import comfy_env
+_ensure_comfy_env_stub()
+try:
+    import comfy_env  # noqa: F401 — side-effect import, non presente in tutte le versioni
+except ImportError:
+    pass
 _bootstrap_trace("startup: ComfyUI runtime modules imported")
 
 if __name__ == "__main__":
@@ -2707,8 +3103,9 @@ def _ensure_florence2_layout(model_roots):
 
 def _ensure_llama3_layout(model_roots):
     """
-    Rende disponibile Llama-3-8B-Instruct nella cartella LLM per i custom nodes.
-    Cerca il modello nei path noti (diffusers/, LLM/), crea symlink in LLM/<name>.
+    Rende disponibile Llama-3-8B-Instruct per i custom nodes.
+    Crea symlink sia in LLM/<name> che in diffusers/<name> (richiesto da ComfyUI_Llama3_8B
+    che hardcoda il path di caricamento come <comfyui_root>/models/diffusers/<name>).
     Se non trovato e COMFYUI_LLAMA3_AUTO_DOWNLOAD=1 con HF_TOKEN, scarica da HuggingFace.
     """
     if os.environ.get("COMFYUI_LLAMA3_LAYOUT", "1") != "1":
@@ -2771,26 +3168,50 @@ def _ensure_llama3_layout(model_roots):
         return
 
     for root in model_roots:
+        # Symlink in LLM/ (per nodi che cercano in LLM/)
         llm_root = os.path.join(root, "LLM")
         try:
             os.makedirs(llm_root, exist_ok=True)
         except Exception:
+            pass
+        else:
+            for link_name in alias_names:
+                dest = os.path.join(llm_root, link_name)
+                if os.path.realpath(source_dir) == os.path.realpath(os.path.abspath(dest)):
+                    break
+                if os.path.exists(dest) or os.path.islink(dest):
+                    break
+                try:
+                    rel_target = os.path.relpath(source_dir, llm_root)
+                    os.symlink(rel_target, dest, target_is_directory=True)
+                    logging.info(f"[BOOTSTRAP] Linked Llama-3 (LLM): {dest} -> {source_dir}")
+                    _bootstrap_trace(f"_ensure_llama3_layout: linked LLM/{link_name}")
+                    break
+                except Exception as exc:
+                    _bootstrap_trace(f"_ensure_llama3_layout: symlink LLM/{link_name} failed: {exc}")
+
+        # Symlink in diffusers/ (richiesto da ComfyUI_Llama3_8B che hardcoda
+        # il path come <comfyui_root>/models/diffusers/<name>).
+        diffusers_root = os.path.join(root, "diffusers")
+        try:
+            os.makedirs(diffusers_root, exist_ok=True)
+        except Exception:
             continue
 
         for link_name in alias_names:
-            dest = os.path.join(llm_root, link_name)
+            dest = os.path.join(diffusers_root, link_name)
             if os.path.realpath(source_dir) == os.path.realpath(os.path.abspath(dest)):
                 break
             if os.path.exists(dest) or os.path.islink(dest):
                 break
             try:
-                rel_target = os.path.relpath(source_dir, llm_root)
+                rel_target = os.path.relpath(source_dir, diffusers_root)
                 os.symlink(rel_target, dest, target_is_directory=True)
-                logging.info(f"[BOOTSTRAP] Linked Llama-3: {dest} -> {source_dir}")
-                _bootstrap_trace(f"_ensure_llama3_layout: linked {dest}")
+                logging.info(f"[BOOTSTRAP] Linked Llama-3 (diffusers): {dest} -> {source_dir}")
+                _bootstrap_trace(f"_ensure_llama3_layout: linked diffusers/{link_name}")
                 break
             except Exception as exc:
-                _bootstrap_trace(f"_ensure_llama3_layout: symlink {dest} failed: {exc}")
+                _bootstrap_trace(f"_ensure_llama3_layout: symlink diffusers/{link_name} failed: {exc}")
 
     _bootstrap_trace("_ensure_llama3_layout: completed")
 
@@ -2956,6 +3377,8 @@ def apply_shared_model_paths():
         "llm": "LLM",
         # HuggingFace-style models (es. Llama-3 in diffusers/).
         "diffusers": "diffusers",
+        # GGUF quantized models (llama.cpp / ComfyUI-GGUF nodes).
+        "gguf": "gguf",
     }
 
     # Aggiunge TUTTE le cartelle per ogni tipo modello
@@ -3071,6 +3494,8 @@ def execute_prestartup_script():
         logging.info("")
 
 
+_ensure_comfy_env_stub()
+_patch_xflux_vram_management()
 _bootstrap_trace("startup: apply_custom_paths begin")
 apply_custom_paths()
 _bootstrap_trace("startup: apply_custom_paths completed")
@@ -3213,6 +3638,8 @@ MODEL_DIRS_MAP = {
     # Compat Florence/LLM: espone la stessa cartella con entrambe le chiavi.
     "LLM": "LLM",
     "llm": "LLM",
+    # GGUF quantized models (llama.cpp / ComfyUI-GGUF nodes).
+    "gguf": "gguf",
 }
 
 MODEL_ROOTS = [
@@ -3265,19 +3692,69 @@ def _append_extra_model_paths_arg(config_path: str):
 def _cleanup_broken_manager_json_cache():
     """
     Se un aggiornamento ComfyRegistry viene interrotto, possono restare JSON troncati
-    che causano JSONDecodeError in comfyui-manager. Rinomina solo i file corrotti.
+    o cache custom-node-list senza schema valido che causano errori in comfyui-manager.
+    Rinomina solo i file cache corrotti/invalidi, cosi' Manager li puo' rigenerare.
     """
     if os.environ.get("COMFYUI_MANAGER_CLEANUP_BROKEN_CACHE", "1") != "1":
         return
 
+    import json
+
     base_dir = os.path.dirname(os.path.realpath(__file__))
     manager_dir = os.path.join(base_dir, "custom_nodes", COMFYUI_MANAGER_DIRNAME)
+    user_dir = os.path.join(base_dir, "user")
 
-    cache_roots = [
+    for index, arg in enumerate(sys.argv):
+        if arg == "--user-directory" and index + 1 < len(sys.argv):
+            user_dir = os.path.abspath(sys.argv[index + 1])
+            break
+        if arg.startswith("--user-directory="):
+            user_dir = os.path.abspath(arg.split("=", 1)[1])
+            break
+
+    cache_roots = []
+    for cache_root in [
         os.path.join(manager_dir, ".cache"),
         os.path.join(manager_dir, "cache"),
         os.path.join(base_dir, ".cache", "comfyui-manager"),
-    ]
+        os.path.join(user_dir, "__manager", "cache"),
+        os.path.join(user_dir, "default", "ComfyUI-Manager", "cache"),
+    ]:
+        cache_root = os.path.abspath(cache_root)
+        if cache_root not in cache_roots:
+            cache_roots.append(cache_root)
+
+    def _rename_bad_cache(file_path, reason):
+        backup_path = f"{file_path}.corrupt"
+        try:
+            if os.path.exists(backup_path):
+                os.remove(backup_path)
+            os.replace(file_path, backup_path)
+            logging.warning(
+                "[WRAPPER] Renamed invalid manager cache JSON: %s -> %s (%s)",
+                file_path,
+                backup_path,
+                reason,
+            )
+            return True
+        except Exception as move_exc:
+            logging.warning(
+                "[WRAPPER] Failed handling invalid manager cache JSON %s: %s",
+                file_path,
+                move_exc,
+            )
+            return False
+
+    def _custom_node_list_schema_error(name, json_obj):
+        lower_name = name.lower()
+        if lower_name != "custom-node-list.json" and not lower_name.endswith("_custom-node-list.json"):
+            return None
+
+        if not isinstance(json_obj, dict):
+            return "custom-node-list root is not an object"
+        if not isinstance(json_obj.get("custom_nodes"), list):
+            return "custom-node-list is missing custom_nodes list"
+        return None
 
     renamed = 0
     for cache_root in cache_roots:
@@ -3292,28 +3769,13 @@ def _cleanup_broken_manager_json_cache():
                 file_path = os.path.join(root, name)
                 try:
                     with open(file_path, "r", encoding="utf-8") as json_file:
-                        import json
-
-                        json.load(json_file)
-                except json.JSONDecodeError as exc:
-                    backup_path = f"{file_path}.corrupt"
-                    try:
-                        if os.path.exists(backup_path):
-                            os.remove(backup_path)
-                        os.replace(file_path, backup_path)
+                        json_obj = json.load(json_file)
+                    schema_error = _custom_node_list_schema_error(name, json_obj)
+                    if schema_error and _rename_bad_cache(file_path, schema_error):
                         renamed += 1
-                        logging.warning(
-                            "[WRAPPER] Renamed corrupt manager cache JSON: %s -> %s (%s)",
-                            file_path,
-                            backup_path,
-                            exc,
-                        )
-                    except Exception as move_exc:
-                        logging.warning(
-                            "[WRAPPER] Failed handling corrupt manager cache JSON %s: %s",
-                            file_path,
-                            move_exc,
-                        )
+                except json.JSONDecodeError as exc:
+                    if _rename_bad_cache(file_path, exc):
+                        renamed += 1
                 except Exception:
                     # Ignora file non leggibili o lock temporanei.
                     pass
@@ -3628,8 +4090,25 @@ def _preflight_custom_logic():
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     os.environ.setdefault("DO_NOT_TRACK", "1")
 
+    # Punta HF_HOME alla root modelli condivisa (persistente tra i restart).
+    # Così i modelli scaricati da nodi come DepthAnythingV3 vengono cachati
+    # in /mnt/default-models/.huggingface e non riscaricati a ogni avvio.
+    # Override con HF_HOME nell'environment per disabilitare.
+    if not os.environ.get("HF_HOME"):
+        _hf_cache_roots = _resolve_model_roots()
+        if _hf_cache_roots:
+            _hf_home = os.path.join(_hf_cache_roots[0], ".huggingface")
+            try:
+                os.makedirs(_hf_home, exist_ok=True)
+                os.environ["HF_HOME"] = _hf_home
+                logging.info(f"[WRAPPER] Set HF_HOME to persistent cache: {_hf_home}")
+            except Exception as _hf_exc:
+                logging.warning(f"[WRAPPER] Could not set HF_HOME to {_hf_home}: {_hf_exc}")
+
     # 2a) Normalizza i workflow salvati con separatori Windows.
     base_dir = os.path.dirname(os.path.realpath(__file__))
+    _ensure_comfy_env_stub()
+    _patch_xflux_vram_management()
     _bootstrap_trace("_preflight_custom_logic: workflow normalization begin")
     _normalize_flux_workflow_paths(base_dir)
     _install_prompt_path_normalization_patch()
@@ -3733,7 +4212,7 @@ def _print_installed_packages_snapshot():
     prima di avviare il main ufficiale.
     Disattivabile con COMFYUI_PRINT_INSTALLED_PACKAGES=0.
     """
-    if os.environ.get("COMFYUI_PRINT_INSTALLED_PACKAGES", "1") != "1":
+    if os.environ.get("COMFYUI_PRINT_INSTALLED_PACKAGES", "0") != "1":
         return
 
     print("[BOOTSTRAP] Python executable:", sys.executable)

@@ -5,88 +5,18 @@
   "last_link_id": 337,
   "nodes": [
     {
-      "id": 69,
-      "type": "CLIPTextEncodeFlux",
-      "pos": [
-        637.99365352712,
-        2153.104894487142
-      ],
-      "size": [
-        232.7277069091797,
-        166
-      ],
-      "flags": {},
-      "order": 18,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "clip",
-          "type": "CLIP",
-          "link": 160
-        },
-        {
-          "name": "clip_l",
-          "type": "STRING",
-          "widget": {
-            "name": "clip_l"
-          },
-          "link": 308
-        },
-        {
-          "name": "t5xxl",
-          "type": "STRING",
-          "widget": {
-            "name": "t5xxl"
-          },
-          "link": 309
-        }
-      ],
-      "outputs": [
-        {
-          "name": "CONDITIONING",
-          "type": "CONDITIONING",
-          "slot_index": 0,
-          "links": [
-            163
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "CLIPTextEncodeFlux",
-        "ue_properties": {
-          "widget_ue_connectable": {
-            "clip_l": true,
-            "t5xxl": true
-          },
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {
-          "clip_l": true,
-          "t5xxl": true
-        }
-      },
-      "widgets_values": [
-        "",
-        "",
-        4
-      ]
-    },
-    {
       "id": 70,
       "type": "CLIPTextEncodeFlux",
       "pos": [
-        636.861085167745,
-        2362.9853876512047
+        1328.273248760171,
+        2232.2802868017625
       ],
       "size": [
         234.64395141601562,
         166
       ],
       "flags": {},
-      "order": 11,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
@@ -126,8 +56,8 @@
       "id": 5,
       "type": "EmptyLatentImage",
       "pos": [
-        635.1148693474325,
-        2574.6601923387047
+        1326.5270329398586,
+        2443.9550914892625
       ],
       "size": [
         236.04464721679688,
@@ -179,8 +109,8 @@
         }
       },
       "widgets_values": [
-        512,
-        512,
+        800,
+        800,
         1
       ]
     },
@@ -188,8 +118,8 @@
       "id": 10,
       "type": "VAELoader",
       "pos": [
-        939.0015122687648,
-        2426.1402043425696
+        1587.457752718106,
+        2445.105670538312
       ],
       "size": [
         286.85980224609375,
@@ -225,96 +155,6 @@
       ]
     },
     {
-      "id": 8,
-      "type": "VAEDecode",
-      "pos": [
-        1247.4391343390776,
-        2020.826117428507
-      ],
-      "size": [
-        140,
-        91.40807342529297
-      ],
-      "flags": {},
-      "order": 20,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "samples",
-          "type": "LATENT",
-          "link": 72
-        },
-        {
-          "name": "vae",
-          "type": "VAE",
-          "link": 12
-        }
-      ],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "slot_index": 0,
-          "links": [
-            124
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "VAEDecode",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": []
-    },
-    {
-      "id": 12,
-      "type": "UNETLoader",
-      "pos": [
-        -1015.4912109375,
-        2648.968505859375
-      ],
-      "size": [
-        812.3685913085938,
-        82
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "slot_index": 0,
-          "links": [
-            127
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "UNETLoader",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "flux1-dev-fp8.safetensors",
-        "fp8_e4m3fn"
-      ]
-    },
-    {
       "id": 78,
       "type": "ResizeAndPadImage",
       "pos": [
@@ -326,8 +166,8 @@
         130
       ],
       "flags": {},
-      "order": 9,
-      "mode": 2,
+      "order": 8,
+      "mode": 0,
       "inputs": [
         {
           "name": "image",
@@ -370,7 +210,7 @@
       ],
       "flags": {},
       "order": 17,
-      "mode": 2,
+      "mode": 0,
       "inputs": [
         {
           "name": "controlnet",
@@ -394,7 +234,9 @@
           "name": "controlnet_condition",
           "type": "ControlNetCondition",
           "slot_index": 0,
-          "links": []
+          "links": [
+            256
+          ]
         }
       ],
       "properties": {
@@ -414,49 +256,6 @@
       ]
     },
     {
-      "id": 11,
-      "type": "DualCLIPLoader",
-      "pos": [
-        -1015.362060546875,
-        2773.8388671875
-      ],
-      "size": [
-        817.5059204101562,
-        130
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "slot_index": 0,
-          "links": [
-            128
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "DualCLIPLoader",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "t5xxl_fp16.safetensors",
-        "clip_l.safetensors",
-        "flux",
-        "default"
-      ]
-    },
-    {
       "id": 47,
       "type": "LoadFluxControlNet",
       "pos": [
@@ -468,8 +267,8 @@
         260.3684997558594
       ],
       "flags": {},
-      "order": 3,
-      "mode": 2,
+      "order": 1,
+      "mode": 0,
       "inputs": [],
       "outputs": [
         {
@@ -493,7 +292,7 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "flux-dev-fp8",
+        "flux-dev",
         "flux-depth-controlnet-v3.safetensors"
       ]
     },
@@ -510,7 +309,7 @@
       ],
       "flags": {},
       "order": 16,
-      "mode": 2,
+      "mode": 0,
       "inputs": [
         {
           "name": "images",
@@ -544,8 +343,8 @@
         394.7673034667969
       ],
       "flags": {},
-      "order": 12,
-      "mode": 2,
+      "order": 11,
+      "mode": 0,
       "inputs": [
         {
           "name": "image",
@@ -600,8 +399,8 @@
         330
       ],
       "flags": {},
-      "order": 13,
-      "mode": 2,
+      "order": 12,
+      "mode": 0,
       "inputs": [
         {
           "name": "da3_model",
@@ -695,120 +494,6 @@
       ]
     },
     {
-      "id": 79,
-      "type": "DownloadAndLoadDepthAnythingV3Model",
-      "pos": [
-        -701.9205076571983,
-        1328.56912568061
-      ],
-      "size": [
-        388.65,
-        106
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 2,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "da3_model",
-          "type": "DA3MODEL",
-          "slot_index": 0,
-          "links": [
-            323
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "ComfyUI-DepthAnythingV3",
-        "ver": "f900962397f5dd3df02d3caba1e99b0cfe80c25a",
-        "Node name for S&R": "DownloadAndLoadDepthAnythingV3Model",
-        "aux_id": "PozzettiAndrea/ComfyUI-DepthAnythingV3"
-      },
-      "widgets_values": [
-        "da3_large.safetensors",
-        "auto",
-        "auto"
-      ]
-    },
-    {
-      "id": 75,
-      "type": "LoadImage",
-      "pos": [
-        -1653.5820284015663,
-        1467.6037826134593
-      ],
-      "size": [
-        416.5491027832031,
-        398.8439025878906
-      ],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [
-            320
-          ]
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.45",
-        "Node name for S&R": "LoadImage",
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "building.png",
-        "image"
-      ]
-    },
-    {
-      "id": 64,
-      "type": "SaveImage",
-      "pos": [
-        1580.0694522304193,
-        2019.9045332956243
-      ],
-      "size": [
-        829.0743408203125,
-        510.3020324707031
-      ],
-      "flags": {},
-      "order": 21,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 124
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "SaveImage",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "ComfyUI"
-      ]
-    },
-    {
       "id": 66,
       "type": "LoraLoader",
       "pos": [
@@ -820,7 +505,7 @@
         255.07887268066406
       ],
       "flags": {},
-      "order": 8,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -870,6 +555,247 @@
       ]
     },
     {
+      "id": 32,
+      "type": "PrimitiveNode",
+      "pos": [
+        -632.8590892245032,
+        1890.8942289752692
+      ],
+      "size": [
+        307.5680236816406,
+        356.799072265625
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "widget": {
+            "name": "system_content"
+          },
+          "links": [
+            335
+          ]
+        }
+      ],
+      "title": "Llama3 8B System Prompt (Primitive)",
+      "properties": {
+        "Run widget replace on values": false,
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "You must use the word YOUR_TOKEN.\nAct as an expert prompt designer specialising in description enhancers for inference Flux.1-dev model. Follow these rules:\n\nTake the simple description and enhance it.\nKeep only elements from the original description.\nThe output doesn't have any brackets.\nAdd details about:\n\nLighting\nStyle\nAtmosphere\n\nMaximum length of the output: 50 words\nDo not introduce any new elements.\nFocus on visual aspects that would help image generation\nKeep descriptions realistic and coherent\nMaintain the original mood and setting\n\nReturn only the enhanced description."
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 79,
+      "type": "DownloadAndLoadDepthAnythingV3Model",
+      "pos": [
+        -701.9205076571983,
+        1328.56912568061
+      ],
+      "size": [
+        388.65,
+        106
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "da3_model",
+          "type": "DA3MODEL",
+          "slot_index": 0,
+          "links": [
+            323
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-DepthAnythingV3",
+        "ver": "f900962397f5dd3df02d3caba1e99b0cfe80c25a",
+        "Node name for S&R": "DownloadAndLoadDepthAnythingV3Model",
+        "aux_id": "PozzettiAndrea/ComfyUI-DepthAnythingV3"
+      },
+      "widgets_values": [
+        "da3_large.safetensors",
+        "auto",
+        "auto"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "UNETLoader",
+      "pos": [
+        -1015.4912109375,
+        2648.968505859375
+      ],
+      "size": [
+        812.3685913085938,
+        82
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            127
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "UNETLoader",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "flux1-dev.safetensors",
+        "fp8_e4m3fn_fast"
+      ]
+    },
+    {
+      "id": 64,
+      "type": "SaveImage",
+      "pos": [
+        2113.782128188758,
+        2050.4811420621536
+      ],
+      "size": [
+        829.0743408203125,
+        510.3020324707031
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 124
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "SaveImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 75,
+      "type": "LoadImage",
+      "pos": [
+        -1653.5820284015663,
+        1467.6037826134593
+      ],
+      "size": [
+        416.5491027832031,
+        398.8439025878906
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            320
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45",
+        "Node name for S&R": "LoadImage",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "building.png",
+        "image"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "DualCLIPLoader",
+      "pos": [
+        -1015.362060546875,
+        2773.8388671875
+      ],
+      "size": [
+        817.5059204101562,
+        130
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 0,
+          "links": [
+            128
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "DualCLIPLoader",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "t5xxl_fp8_e4m3fn_scaled.safetensors",
+        "clip_l.safetensors",
+        "flux",
+        "default"
+      ]
+    },
+    {
       "id": 84,
       "type": "Local_Or_Repo_Choice",
       "pos": [
@@ -881,7 +807,7 @@
         110
       ],
       "flags": {},
-      "order": 6,
+      "order": 7,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -913,11 +839,130 @@
       ]
     },
     {
+      "id": 69,
+      "type": "CLIPTextEncodeFlux",
+      "pos": [
+        1329.405817119546,
+        2022.3997936376995
+      ],
+      "size": [
+        232.7277069091797,
+        166
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 160
+        },
+        {
+          "name": "clip_l",
+          "type": "STRING",
+          "widget": {
+            "name": "clip_l"
+          },
+          "link": 308
+        },
+        {
+          "name": "t5xxl",
+          "type": "STRING",
+          "widget": {
+            "name": "t5xxl"
+          },
+          "link": 309
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            163
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "CLIPTextEncodeFlux",
+        "ue_properties": {
+          "widget_ue_connectable": {
+            "clip_l": true,
+            "t5xxl": true
+          },
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {
+          "clip_l": true,
+          "t5xxl": true
+        }
+      },
+      "widgets_values": [
+        "",
+        "",
+        4
+      ]
+    },
+    {
+      "id": 8,
+      "type": "VAEDecode",
+      "pos": [
+        1890.6379505439036,
+        2051.9611372176078
+      ],
+      "size": [
+        140,
+        91.40807342529297
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 72
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            124
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "VAEDecode",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": []
+    },
+    {
       "id": 45,
       "type": "XlabsSampler",
       "pos": [
-        941.8286607062648,
-        2016.4964055144444
+        1590.284901155606,
+        2035.4618717101866
       ],
       "size": [
         283.1074523925781,
@@ -952,7 +997,7 @@
           "name": "controlnet_condition",
           "shape": 7,
           "type": "ControlNetCondition",
-          "link": null
+          "link": 256
         }
       ],
       "outputs": [
@@ -978,64 +1023,21 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        566554611333292,
-        "increment",
-        4,
-        6,
-        2.0,
+        42,
+        "fixed",
+        20,
+        25,
+        3.5,
         0,
         1
       ]
     },
     {
-      "id": 32,
-      "type": "PrimitiveNode",
-      "pos": [
-        -632.8590892245032,
-        1890.8942289752692
-      ],
-      "size": [
-        307.5680236816406,
-        356.799072265625
-      ],
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "widget": {
-            "name": "system_content"
-          },
-          "links": [
-            335
-          ]
-        }
-      ],
-      "title": "Llama3 8B System Prompt (Primitive)",
-      "properties": {
-        "Run widget replace on values": false,
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": [
-        "You must use the word CLASS_TOKEN\nAct as an expert prompt designer specialising in description enhancers for inference Flux.1-dev model. Follow these rules:\n\nTake the simple description and enhance it.\nKeep only elements from the original description.\nThe output doesn't have any brackets.\nAdd details about:\n\nLighting\nStyle\nAtmosphere\n\nMaximum length of the output: 50 words\nDo not introduce any new elements.\nFocus on visual aspects that would help image generation\nKeep descriptions realistic and coherent\nMaintain the original mood and setting\n\nReturn only the enhanced description."
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
       "id": 93,
       "type": "Meta_Llama3_8B",
       "pos": [
-        136.01863111074434,
-        2037.5214528398844
+        170.9998717945162,
+        2022.2859907923566
       ],
       "size": [
         438.3231195226108,
@@ -1074,21 +1076,21 @@
         "Node name for S&R": "Meta_Llama3_8B"
       },
       "widgets_values": [
-        2048,
-        0.8,
+        512,
+        0.9,
         0.9,
         false,
         "english",
-        "You must use the word CLASS_TOKEN\nAct as an expert prompt designer specialising in description enhancers for inference Flux.1-dev model. Follow these rules:\n\nTake the simple description and enhance it.\nKeep only elements from the original description.\nThe output doesn't have any brackets.\nAdd details about:\n\nLighting\nStyle\nAtmosphere\n\nMaximum length of the output: 50 words\nDo not introduce any new elements.\nFocus on visual aspects that would help image generation\nKeep descriptions realistic and coherent\nMaintain the original mood and setting\n\nReturn only the enhanced description.",
-        "CLASS_TOKEN. A cavernous atrium of raw, board-formed concrete. A massive concrete spiral staircase dominates the space, with dramatic light filtering through large windows and heavy exterior brise-soleil, framing views of historic Seville. Moody architectural photography, high contrast."
+        "You must use the word YOUR_TOKEN.\nAct as an expert prompt designer specialising in description enhancers for inference Flux.1-dev model. Follow these rules:\n\nTake the simple description and enhance it.\nKeep only elements from the original description.\nThe output doesn't have any brackets.\nAdd details about:\n\nLighting\nStyle\nAtmosphere\n\nMaximum length of the output: 50 words\nDo not introduce any new elements.\nFocus on visual aspects that would help image generation\nKeep descriptions realistic and coherent\nMaintain the original mood and setting\n\nReturn only the enhanced description.",
+        "YOUR_TOKEN. A cavernous atrium of raw, board-formed concrete. A massive concrete spiral staircase dominates the space, with dramatic light filtering through large windows and heavy exterior brise-soleil, framing views of historic Seville. Moody architectural photography, high contrast."
       ]
     },
     {
       "id": 65,
       "type": "ShowText|pysssss",
       "pos": [
-        975.2887597307747,
-        1430.9816297885138
+        1033.2311090361204,
+        1472.6868393744812
       ],
       "size": [
         230.67909240722656,
@@ -1129,7 +1131,7 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "\n\nCLASS_TOKEN. A cavernous atrium of raw, board-formed concrete is illuminated by dramatic light filtering through large windows and heavy exterior brise-soleil, casting an ethereal glow. The massive concrete spiral staircase, a prominent feature, stands tall and imposing, while historic Seville is framed in the background. The mood is moody and architectural, with high contrast and an emphasis on visual elements to help generate images.</s>"
+        "\n\nA grandiose space of stark concrete, with the striking spiral staircase stealing the show. The sun's rays peeking through the large windows illuminate the room, casting intricate shadows on the rough surface. The exterior sunscreens provide a perfect frame for the breathtaking views of the historic city, while the moody photography and high contrast lend a sense of drama and intrigue to the atmosphere.</s>"
       ]
     }
   ],
@@ -1245,6 +1247,14 @@
       5,
       1,
       "INT"
+    ],
+    [
+      256,
+      61,
+      0,
+      45,
+      4,
+      "ControlNetCondition"
     ],
     [
       308,
@@ -1405,8 +1415,8 @@
       "id": 9,
       "title": "Inference processing",
       "bounding": [
-        659.2837388312647,
-        1934.994574459757,
+        1293.6279457821693,
+        1958.0663656970046,
         749.6213989257812,
         612.1331787109375
       ],
@@ -1418,8 +1428,8 @@
       "id": 10,
       "title": "Output image",
       "bounding": [
-        1556.6121768397943,
-        1938.3802413034368,
+        2090.324852798133,
+        1968.9568500699652,
         870.9461059570312,
         614.364013671875
       ],
@@ -1431,15 +1441,15 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.5797677348642842,
+      "scale": 0.7058470702399805,
       "offset": [
-        890.0521751503743,
-        -1087.096105203322
+        -309.577381933243,
+        -1350.8702942184896
       ]
     },
     "ue_links": [],
     "links_added_by_ue": [],
-    "frontendVersion": "1.41.20",
+    "frontendVersion": "1.42.15",
     "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
     "VHS_MetadataImage": true,
