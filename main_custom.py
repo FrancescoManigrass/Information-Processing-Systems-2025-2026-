@@ -25,6 +25,10 @@ except Exception:
 # Evita prompt interattivi (es. pip uninstall "Proceed (Y/n)?") in ambienti non TTY.
 os.environ.setdefault("PIP_NO_INPUT", "1")
 
+# Disabilita mmap per comfy_aimdo su filesystem remoti/network che non supportano mmap().
+# Imposta a "0" per riabilitare se il filesystem locale lo supporta.
+os.environ.setdefault("COMFY_AIMDO_DISABLE_MMAP", "1")
+
 
 COMFYUI_MANAGER_REPO_URL = "https://github.com/Comfy-Org/ComfyUI-Manager.git"
 COMFYUI_MANAGER_DIRNAME = "comfyui-manager"
@@ -67,6 +71,7 @@ extra_packages = [
     "comfy-env",        # richiesto da custom nodes V3 (es. ComfyUI-DepthAnythingV3)
     "comfy-3d-viewers",
     "comfy-dynamic-widgets",
+    "numba",
     "diffusers>=0.25.0",
     f"transformers=={TRANSFORMERS_TARGET_VERSION}",
     f"accelerate>={ACCELERATE_TARGET_VERSION}",
@@ -425,6 +430,7 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
+        {"url": "https://huggingface.co/voxiliummusic/cyberrealistic_V4.0/resolve/main/cyberrealistic_v40.safetensors", "filename": "cyberrealistic_v40.safetensors"},
 
    ],
 
@@ -512,8 +518,8 @@ SHARED_MODELS_URLS = {
     # CLIP VISION
     # =========================
     "LLM": [
-        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
-        {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
+        #{"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
+        #{"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
@@ -2712,18 +2718,20 @@ def _resolve_model_roots():
     Risolve le root modelli in modo portabile:
     - COMFYUI_MODEL_ROOTS (path separati da os.pathsep) se definita
     - COMFYUI_MODELS_DEFAULT_ROOT forza sempre la root primaria
-    - /mnt/default-models viene usata solo se gia' presente
+    - /mnt/shared/default-models viene usata solo se gia' presente
     - altrimenti usa una root locale al progetto per evitare mount non presenti/lenti
     """
     env_primary_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    local_primary_root = os.path.join(base_dir, "models-default")
+    local_primary_root = os.path.join(base_dir, "shared")
     local_shared_root = os.path.join(base_dir, "shared", "default-models")
     vscode_shared_root = "/vscode/workspace/shared/default-models"
-    mnt_primary_root = "/mnt/default-models"
+    mnt_primary_root = "/mnt/shared/default-models"
 
     if env_primary_root:
         primary_root = env_primary_root
+    elif os.path.isdir(vscode_shared_root):
+        primary_root = vscode_shared_root
     elif os.path.isdir(mnt_primary_root):
         primary_root = mnt_primary_root
     else:
@@ -2732,8 +2740,8 @@ def _resolve_model_roots():
     secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip() or os.path.join(base_dir, "models")
 
     candidates = [primary_root, secondary_root]
-    for shared_root in (local_shared_root, vscode_shared_root):
-        if os.path.isdir(shared_root):
+    for shared_root in (local_shared_root, mnt_primary_root):
+        if os.path.isdir(shared_root) and os.path.abspath(shared_root) != os.path.abspath(primary_root):
             candidates.append(shared_root)
 
     env_value = os.environ.get("COMFYUI_MODEL_ROOTS", "").strip()
@@ -2769,7 +2777,7 @@ def _ensure_llm_subdirs(model_roots):
 
 def _sync_llm_primary_to_secondary(model_roots):
     """
-    Mantiene download su root primaria (models-default) ma rende disponibili i file
+    Mantiene download su root primaria (shared) ma rende disponibili i file
     anche in root secondaria (models) per nodi che usano path hardcoded models/LLM.
     """
     if os.environ.get("COMFYUI_SYNC_LLM_TO_SECONDARY", "0") != "1":
@@ -2963,7 +2971,12 @@ def _ensure_florence2_layout(model_roots):
     Florence2ModelLoader in genere cerca una CARTELLA modello dentro LLM,
     non un singolo file .safetensors nella root LLM.
     Costruisce un layout compatibile: LLM/Florence-2-large/...
+    Disabilitabile con COMFYUI_FLORENCE2_LAYOUT=0.
     """
+    if os.environ.get("COMFYUI_FLORENCE2_LAYOUT", "0") != "1":
+        _bootstrap_trace("_ensure_florence2_layout: disabled (set COMFYUI_FLORENCE2_LAYOUT=1 to enable)")
+        return
+
     repo_id = os.environ.get("COMFYUI_FLORENCE2_REPO", "microsoft/Florence-2-large").strip() or "microsoft/Florence-2-large"
     revision = os.environ.get("COMFYUI_FLORENCE2_REVISION", "main").strip() or "main"
     hf_base = f"https://huggingface.co/{repo_id}/resolve/{revision}"
@@ -2989,7 +3002,7 @@ def _ensure_florence2_layout(model_roots):
         _bootstrap_trace("_ensure_florence2_layout: skipped because model_roots is empty")
         return
 
-    # Scarica SOLO nella root primaria (models-default).
+    # Scarica SOLO nella root primaria (shared).
     root = model_roots[0]
     llm_root = os.path.join(root, "LLM")
     model_dir = os.path.join(llm_root, "Florence-2-large")
@@ -3379,6 +3392,11 @@ def apply_shared_model_paths():
         "diffusers": "diffusers",
         # GGUF quantized models (llama.cpp / ComfyUI-GGUF nodes).
         "gguf": "gguf",
+        # IP-Adapter models.
+        "ipadapter": "ipadapter",
+        "ip_adapter": "ipadapter",
+        # Inpainting models.
+        "inpaint": "inpaint",
     }
 
     # Aggiunge TUTTE le cartelle per ogni tipo modello
@@ -3494,8 +3512,69 @@ def execute_prestartup_script():
         logging.info("")
 
 
+def _patch_comfy_utils_mmap_fallback():
+    """
+    comfy_aimdo.model_mmap.ModelMMAP usa mmap() che fallisce su filesystem
+    di rete/condivisi (NFS, virtio-fs, FUSE, ecc.) perché non supportano mmap().
+    Questo patch intercetta il RuntimeError da ModelMMAP in comfy.utils.load_safetensors
+    e fa fallback al caricamento standard safetensors senza mmap.
+    """
+    if os.environ.get("COMFY_AIMDO_DISABLE_MMAP", "1") != "1":
+        return
+
+    try:
+        import comfy.utils as _cu
+    except ImportError:
+        return
+
+    _orig = getattr(_cu, "load_safetensors", None)
+    if not callable(_orig) or getattr(_orig, "_mmap_fallback_patched", False):
+        return
+
+    def _patched_load_safetensors(ckpt):
+        try:
+            return _orig(ckpt)
+        except RuntimeError as _exc:
+            msg = str(_exc)
+            if "ModelMMAP" not in msg and "mmap" not in msg.lower():
+                raise
+            # mmap non supportato dal filesystem: fallback a caricamento standard
+            try:
+                from safetensors import safe_open as _safe_open
+                sd = {}
+                metadata = {}
+                with _safe_open(ckpt, framework="pt", device="cpu") as _f:
+                    metadata = _f.metadata() or {}
+                    for k in _f.keys():
+                        sd[k] = _f.get_tensor(k)
+                logging.info(f"[BOOTSTRAP] mmap fallback: loaded {ckpt} via safe_open (no mmap)")
+                return sd, metadata
+            except Exception as _fe:
+                _fe_msg = str(_fe)
+                # "header too small" / "header invalid" → file corrotto o download incompleto
+                _is_corrupt = any(x in _fe_msg.lower() for x in (
+                    "header too small", "header invalid", "header",
+                    "not a safetensors file", "unexpected end",
+                ))
+                if _is_corrupt:
+                    import os as _os
+                    _size = _os.path.getsize(ckpt) if _os.path.isfile(ckpt) else -1
+                    raise RuntimeError(
+                        f"File corrotto o download incompleto ({_size} bytes): {ckpt}\n"
+                        f"Elimina il file e riavvia ComfyUI per riscaricarlo."
+                    ) from _fe
+                raise RuntimeError(
+                    f"mmap fallback failed for {ckpt}: {_fe}"
+                ) from _exc
+
+    _patched_load_safetensors._mmap_fallback_patched = True
+    _cu.load_safetensors = _patched_load_safetensors
+    print("[BOOTSTRAP] Installed comfy.utils.load_safetensors mmap fallback patch", flush=True)
+
+
 _ensure_comfy_env_stub()
 _patch_xflux_vram_management()
+_patch_comfy_utils_mmap_fallback()
 _bootstrap_trace("startup: apply_custom_paths begin")
 apply_custom_paths()
 _bootstrap_trace("startup: apply_custom_paths completed")
@@ -3640,11 +3719,16 @@ MODEL_DIRS_MAP = {
     "llm": "LLM",
     # GGUF quantized models (llama.cpp / ComfyUI-GGUF nodes).
     "gguf": "gguf",
+    # IP-Adapter models.
+    "ipadapter": "ipadapter",
+    "ip_adapter": "ipadapter",
+    # Inpainting models.
+    "inpaint": "inpaint",
 }
 
 MODEL_ROOTS = [
     # Resta come fallback statico, ma il wrapper usa _resolve_model_roots().
-    "/mnt/default-models",
+    "/mnt/shared/default-models",
     "/vscode/workspace/models",
 ]
 
@@ -4092,7 +4176,7 @@ def _preflight_custom_logic():
 
     # Punta HF_HOME alla root modelli condivisa (persistente tra i restart).
     # Così i modelli scaricati da nodi come DepthAnythingV3 vengono cachati
-    # in /mnt/default-models/.huggingface e non riscaricati a ogni avvio.
+    # in /mnt/shared/default-models/.huggingface e non riscaricati a ogni avvio.
     # Override con HF_HOME nell'environment per disabilitare.
     if not os.environ.get("HF_HOME"):
         _hf_cache_roots = _resolve_model_roots()
