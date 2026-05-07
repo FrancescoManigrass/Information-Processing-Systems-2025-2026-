@@ -1,0 +1,253 @@
+{
+  "id": "a060737b-596d-4fe8-bd55-93968ce24347",
+  "revision": 0,
+  "last_node_id": 93,
+  "last_link_id": 338,
+  "nodes": [
+    {
+      "id": 65,
+      "type": "ShowText|pysssss",
+      "pos": [
+        808.5995092293826,
+        2020.6030284475648
+      ],
+      "size": [
+        230.67909240722656,
+        512.8274536132812
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 337
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "shape": 6,
+          "type": "STRING",
+          "slot_index": 0,
+          "links": []
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-custom-scripts",
+        "ver": "f2838ed5e59de4d73cde5c98354b87a8d3200190",
+        "Node name for S&R": "ShowText|pysssss",
+        "aux_id": "pythongosssss/ComfyUI-Custom-Scripts",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "\n\nEnhanced description: A vast, cavernous atrium with raw, board-formed concrete walls and a towering concrete spiral staircase, illuminated by dramatic light filtering through large windows and heavy exterior brise-soleil. The contrast between the stark, textured concrete and the soft light is striking, creating a moody, atmospheric setting that evokes a sense of history and grandeur. The resulting visual is that of a historic yet modern architectural masterpiece.</s>"
+      ]
+    },
+    {
+      "id": 84,
+      "type": "Local_Or_Repo_Choice",
+      "pos": [
+        -232.75898614210155,
+        1954.5375286425908
+      ],
+      "size": [
+        358,
+        110
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "repo_id",
+          "type": "STRING",
+          "slot_index": 0,
+          "links": [
+            334
+          ]
+        }
+      ],
+      "title": "Llama3 8B Model Source",
+      "properties": {
+        "cnr_id": "ComfyUI_Llama3_8B",
+        "ver": "main",
+        "Node name for S&R": "Local_Or_Repo_Choice",
+        "aux_id": "smthemex/ComfyUI_Llama3_8B",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "Meta-Llama-3-8B-Instruct",
+        "gradientai/Llama-3-8B-Instruct-262k"
+      ]
+    },
+    {
+      "id": 93,
+      "type": "Meta_Llama3_8B",
+      "pos": [
+        170.9998717945162,
+        2022.2859907923566
+      ],
+      "size": [
+        438.3231195226108,
+        479.4966929887137
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "repo_id",
+          "type": "STRING",
+          "link": 334
+        },
+        {
+          "name": "system_content",
+          "type": "STRING",
+          "widget": {
+            "name": "system_content"
+          },
+          "link": 335
+        }
+      ],
+      "outputs": [
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "links": [
+            337
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui_llama3_8b",
+        "ver": "1.0.0",
+        "Node name for S&R": "Meta_Llama3_8B"
+      },
+      "widgets_values": [
+        2048,
+        0.9,
+        0.9,
+        true,
+        "english",
+        "You must use the word TOKEN.\nAct as an expert prompt designer specialising in description enhancers for inference Flux.1-dev model. Follow these rules:\n\nTake the simple description and enhance it.\nKeep only elements from the original description.\nThe output doesn't have any brackets.\nAdd details about:\n\nLighting\nStyle\nAtmosphere\n\nMaximum length of the output: 50 words\nDo not introduce any new elements.\nFocus on visual aspects that would help image generation\nKeep descriptions realistic and coherent\nMaintain the original mood and setting\n\nReturn only the enhanced description.",
+        "TOKEN. A cavernous atrium of raw, board-formed concrete. A massive concrete spiral staircase dominates the space, with dramatic light filtering through large windows and heavy exterior brise-soleil, framing views of historic Seville. Moody architectural photography, high contrast."
+      ]
+    },
+    {
+      "id": 32,
+      "type": "PrimitiveNode",
+      "pos": [
+        -707.5464887536705,
+        2202.6442153251996
+      ],
+      "size": [
+        307.5680236816406,
+        356.799072265625
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "widget": {
+            "name": "system_content"
+          },
+          "links": [
+            335
+          ]
+        }
+      ],
+      "title": "Llama3 8B System Prompt (Primitive)",
+      "properties": {
+        "Run widget replace on values": false,
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "You must use the word TOKEN.\nAct as an expert prompt designer specialising in description enhancers for inference Flux.1-dev model. Follow these rules:\n\nTake the simple description and enhance it.\nKeep only elements from the original description.\nThe output doesn't have any brackets.\nAdd details about:\n\nLighting\nStyle\nAtmosphere\n\nMaximum length of the output: 50 words\nDo not introduce any new elements.\nFocus on visual aspects that would help image generation\nKeep descriptions realistic and coherent\nMaintain the original mood and setting\n\nReturn only the enhanced description."
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    }
+  ],
+  "links": [
+    [
+      334,
+      84,
+      0,
+      93,
+      0,
+      "STRING"
+    ],
+    [
+      335,
+      32,
+      0,
+      93,
+      1,
+      "STRING"
+    ],
+    [
+      337,
+      93,
+      0,
+      65,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 4,
+      "title": "Prompt engineering through ComfyUI_Llama3_8B",
+      "bounding": [
+        -182.71392868793393,
+        1867.5214528398835,
+        1200,
+        835
+      ],
+      "color": "#ffffff",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6928879613727938,
+      "offset": [
+        984.389448198026,
+        -1501.0567480719667
+      ]
+    },
+    "ue_links": [],
+    "links_added_by_ue": [],
+    "frontendVersion": "1.42.15",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true,
+    "workflowRendererVersion": "LG"
+  },
+  "version": 0.4
+}
