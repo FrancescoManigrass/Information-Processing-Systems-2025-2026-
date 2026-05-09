@@ -75,6 +75,8 @@ extra_packages = [
     "diffusers>=0.25.0",
     f"transformers=={TRANSFORMERS_TARGET_VERSION}",
     f"accelerate>={ACCELERATE_TARGET_VERSION}",
+    "scikit-image",     # richiesto da ComfyUI_Swwan (layerstyle_utils)
+    "imagesize",        # richiesto da comfyui-fluxtrainer (train_util)
 ]
 
 
@@ -503,6 +505,7 @@ SHARED_MODELS_URLS = {
     "vae": [
         # FLUX VAE (richiesto dai workflow FluxTrainer)
         {"url": "https://huggingface.co/comfyanonymous/flux_vae/resolve/main/flux-vae-bf16.safetensors", "filename": "flux-vae-bf16.safetensors"},
+        {"url": "https://huggingface.co/StableDiffusionVN/Flux/resolve/main/Vae/flux_vae.safetensors", "filename": "flux_vae.safetensors"},
 
         {"url": "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/vae/ae.safetensors", "filename": "ae.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
