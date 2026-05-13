@@ -9,6 +9,7 @@ import time
 import urllib.request
 import venv
 import glob
+import logging
 import types
 import colorsys
 
@@ -46,18 +47,22 @@ TRANSFORMERS_TARGET_VERSION = os.environ.get("COMFYUI_TRANSFORMERS_VERSION", "4.
 ACCELERATE_TARGET_VERSION = os.environ.get("COMFYUI_ACCELERATE_VERSION", "1.6.0")
 TRANSFORMERS_TARGET_VERSION = os.environ.get("COMFYUI_TRANSFORMERS_VERSION", "4.54.1")
 DIFFUSERS_TARGET_VERSION = os.environ.get("COMFYUI_DIFFUSERS_VERSION", "0.32.1")
-HUGGINGFACE_HUB_TARGET_VERSION = os.environ.get("COMFYUI_HUGGINGFACE_HUB_VERSION", "0.34.3")
+HUGGINGFACE_HUB_TARGET_VERSION = os.environ.get("COMFYUI_HUGGINGFACE_HUB_VERSION", "0.36.2")
 SAFETENSORS_TARGET_VERSION = os.environ.get("COMFYUI_SAFETENSORS_VERSION", "0.7.0")
 PYTORCH_TARGET_VERSION = os.environ.get("COMFYUI_TORCH_VERSION", "2.9.1")
 TORCHVISION_TARGET_VERSION = os.environ.get("COMFYUI_TORCHVISION_VERSION", "0.24.1")
 TORCHAUDIO_TARGET_VERSION = os.environ.get("COMFYUI_TORCHAUDIO_VERSION", "2.9.1")
 PYTORCH_WHEEL_INDEX_URL = os.environ.get("COMFYUI_PYTORCH_INDEX_URL", "").strip()
 
+HUGGINGFACE_RUNTIME_FORCE_PACKAGES = [
+    f"transformers=={TRANSFORMERS_TARGET_VERSION}",
+    f"huggingface-hub=={HUGGINGFACE_HUB_TARGET_VERSION}",
+]
+
 FLUXTRAINER_FORCE_PACKAGES = [
     f"accelerate=={ACCELERATE_TARGET_VERSION}",
-    f"transformers=={TRANSFORMERS_TARGET_VERSION}",
+    *HUGGINGFACE_RUNTIME_FORCE_PACKAGES,
     f"diffusers[torch]=={DIFFUSERS_TARGET_VERSION}",
-    f"huggingface-hub=={HUGGINGFACE_HUB_TARGET_VERSION}",
     f"safetensors=={SAFETENSORS_TARGET_VERSION}",
     "sentencepiece>=0.2.0",
 ]
@@ -74,6 +79,7 @@ extra_packages = [
     "numba",
     "diffusers>=0.25.0",
     f"transformers=={TRANSFORMERS_TARGET_VERSION}",
+    f"huggingface-hub=={HUGGINGFACE_HUB_TARGET_VERSION}",
     f"accelerate>={ACCELERATE_TARGET_VERSION}",
     "scikit-image",     # richiesto da ComfyUI_Swwan (layerstyle_utils)
     "imagesize",        # richiesto da comfyui-fluxtrainer (train_util)
@@ -551,6 +557,7 @@ SHARED_MODELS_URLS = {
     # =========================
     "controlnet": [
         {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-depth-controlnet-v3.safetensors", "filename": "flux-depth-controlnet-v3.safetensors"},
+        {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-canny-v3/resolve/main/flux-canny-controlnet-v3.safetensors", "filename": "flux-canny-controlnet-v3.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
     ],
 
@@ -650,6 +657,159 @@ def _install_fluxtrainer_runtime_stack(custom_nodes_dir):
         print("[BOOTSTRAP] FluxTrainer core packages already aligned, skip")
 
     return changed_any
+
+
+def _get_huggingface_runtime_import_error():
+    # NOTE: 'tqdm_class' fu rimosso da hf_hub_download in huggingface_hub >= 0.22.
+    # Non si controlla più la sua presenza: la compat patch (sotto) gestisce runtime
+    # i chiamanti che lo passano ancora. Il probe verifica solo che gli import funzionino.
+    script = (
+        "import transformers\n"
+        "import huggingface_hub\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "print(getattr(transformers, '__version__', 'unknown'), "
+        "getattr(huggingface_hub, '__version__', 'unknown'))\n"
+    )
+
+    try:
+        probe = subprocess.run(
+            [sys.executable, "-c", script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=45,
+        )
+    except Exception as exc:
+        return str(exc)
+
+    if probe.returncode == 0:
+        return ""
+
+    return (probe.stdout or "").strip() or f"import probe failed with exit code {probe.returncode}"
+
+
+def _enforce_huggingface_runtime_stack():
+    pending_packages = _get_pending_requirements(HUGGINGFACE_RUNTIME_FORCE_PACKAGES)
+    force_reinstall = False
+    if not pending_packages:
+        import_error = _get_huggingface_runtime_import_error()
+        if not import_error:
+            print("[BOOTSTRAP] Hugging Face runtime packages already aligned, skip")
+            return False
+
+        print(f"[BOOTSTRAP] Hugging Face runtime import check failed, reinstalling pinned stack: {import_error}")
+        pending_packages = list(HUGGINGFACE_RUNTIME_FORCE_PACKAGES)
+        force_reinstall = True
+
+    print(
+        "[BOOTSTRAP] Enforcing Hugging Face runtime package versions: "
+        + ", ".join(HUGGINGFACE_RUNTIME_FORCE_PACKAGES)
+    )
+    install_args = [
+        "--disable-pip-version-check",
+        "--upgrade",
+    ]
+    if force_reinstall:
+        install_args.append("--force-reinstall")
+
+    subprocess.check_call(_get_bootstrap_install_cmd(
+        *install_args,
+        *pending_packages,
+    ))
+    return True
+
+
+def _patch_huggingface_hub_download_tqdm_class_compat():
+    """
+    Custom nodes (es. ComfyUI-DepthAnythingV3) possono chiamare hf_hub_download
+    passando tqdm_class=..., parametro rimosso in huggingface_hub >= 0.22.
+    La patch:
+      1. Sostituisce hf_hub_download nei moduli huggingface_hub noti.
+      2. Fa il sweep di sys.modules per aggiornare tutti i riferimenti diretti
+         già bindati con 'from huggingface_hub import hf_hub_download'.
+    """
+    try:
+        import importlib
+        import inspect
+
+        # Prima: ottieni (o importa) huggingface_hub e ricava il riferimento canonico.
+        try:
+            hf_module = importlib.import_module("huggingface_hub")
+        except Exception:
+            return False
+
+        canonical_original = getattr(hf_module, "hf_hub_download", None)
+        if not callable(canonical_original):
+            return False
+
+        # Se già patchato, il canonical è il wrapper; ricava l'originale vero.
+        already_patched = getattr(canonical_original, "_comfyui_tqdm_class_compat", False)
+
+        if not already_patched:
+            # Costruisci il wrapper una volta sola.
+            original = canonical_original
+
+            def _wrapped_hf_hub_download(*args, __original=original, **kwargs):
+                try:
+                    supports_tqdm_class = "tqdm_class" in inspect.signature(__original).parameters
+                except Exception:
+                    supports_tqdm_class = False
+                if not supports_tqdm_class:
+                    kwargs.pop("tqdm_class", None)
+                return __original(*args, **kwargs)
+
+            _wrapped_hf_hub_download.__name__ = getattr(original, "__name__", "hf_hub_download")
+            _wrapped_hf_hub_download.__doc__ = getattr(original, "__doc__", None)
+            _wrapped_hf_hub_download._comfyui_tqdm_class_compat = True
+            wrapper = _wrapped_hf_hub_download
+
+            # Aggiorna i moduli huggingface_hub noti.
+            for module_name in (
+                "huggingface_hub",
+                "huggingface_hub.file_download",
+                "huggingface_hub._snapshot_download",
+            ):
+                try:
+                    mod = importlib.import_module(module_name)
+                    attr = getattr(mod, "hf_hub_download", None)
+                    if callable(attr) and not getattr(attr, "_comfyui_tqdm_class_compat", False):
+                        setattr(mod, "hf_hub_download", wrapper)
+                except Exception:
+                    pass
+
+            logging.info("[BOOTSTRAP] Applied huggingface_hub hf_hub_download tqdm_class compatibility patch")
+        else:
+            # Usa il wrapper già esistente per il sweep di sys.modules.
+            wrapper = canonical_original
+            original = getattr(wrapper, "__wrapped__", None)  # non presente, ma difensivo
+
+        # Sweep di tutti i moduli già caricati che hanno bindato hf_hub_download
+        # direttamente (from huggingface_hub import hf_hub_download).
+        # Questo copre custom nodes importati prima o dopo la patch.
+        patched_sysmods = 0
+        for mod_name, mod in list(sys.modules.items()):
+            if mod is None:
+                continue
+            attr = getattr(mod, "hf_hub_download", None)
+            if not callable(attr):
+                continue
+            if getattr(attr, "_comfyui_tqdm_class_compat", False):
+                continue
+            # È un riferimento all'originale non patchato: sostituiscilo.
+            try:
+                setattr(mod, "hf_hub_download", wrapper)
+                patched_sysmods += 1
+            except (AttributeError, TypeError):
+                pass
+
+        if patched_sysmods:
+            logging.info(
+                f"[BOOTSTRAP] Swept sys.modules: updated hf_hub_download in {patched_sysmods} additional module(s)"
+            )
+        return True
+    except Exception as exc:
+        logging.warning(f"[BOOTSTRAP] huggingface_hub tqdm_class compatibility patch skipped: {exc}")
+        return False
 
 
 def _normalize_requirement_entry(requirement):
@@ -1679,7 +1839,11 @@ def _get_bootstrap_install_cmd(*install_args, python_executable=None):
         effective_args = list(install_args)
         if "--no-input" not in effective_args:
             effective_args.insert(0, "--no-input")
-        return _get_bootstrap_pip_cmd(python_executable) + ["install", *effective_args]
+        pip_cmd = _get_bootstrap_pip_cmd(python_executable)
+        uv_target = _get_uv_user_site_target(pip_cmd, python_executable)
+        if uv_target:
+            return pip_cmd + ["install", "--target", uv_target, *effective_args]
+        return pip_cmd + ["install", *effective_args]
     except RuntimeError:
         pass
 
@@ -1718,6 +1882,47 @@ def _get_bootstrap_install_cmd(*install_args, python_executable=None):
         return fallback_commands[0]
 
     raise RuntimeError(f"No supported package installer available for: {python_executable}")
+
+
+def _is_uv_pip_cmd(command):
+    command = [os.path.basename(str(part)) for part in command]
+    if len(command) >= 2 and command[-2:] == ["uv", "pip"]:
+        return True
+    if len(command) >= 4 and command[-4:] == ["python", "-m", "uv", "pip"]:
+        return True
+    return len(command) >= 3 and command[-3:] == ["-m", "uv", "pip"]
+
+
+def _get_uv_user_site_target(pip_cmd, python_executable):
+    """
+    uv non fa fallback automatico allo user-site quando l'env /usr non e' scrivibile.
+    In quel caso installiamo direttamente nello user-site importato da Python
+    (es. /vscode/.local/lib/python3.10/site-packages).
+    """
+    if os.environ.get("COMFYUI_UV_TARGET_USER_SITE", "1") != "1":
+        return None
+    if not _is_uv_pip_cmd(pip_cmd):
+        return None
+    if os.environ.get("VIRTUAL_ENV") or getattr(sys, "base_prefix", sys.prefix) != sys.prefix:
+        return None
+    if os.path.realpath(python_executable) != os.path.realpath(sys.executable):
+        return None
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        return None
+    if not os.path.realpath(sys.prefix).startswith("/usr"):
+        return None
+
+    try:
+        import site
+
+        user_site = site.getusersitepackages()
+        if not user_site:
+            return None
+        os.makedirs(user_site, exist_ok=True)
+        return user_site
+    except Exception as exc:
+        print(f"[BOOTSTRAP] Warning: unable to resolve Python user site for uv install: {exc}")
+        return None
 
 
 def _ensure_venv_package_manager(venv_python, host_python):
@@ -2038,6 +2243,14 @@ def auto_install_requirements():
         if _install_fluxtrainer_runtime_stack(custom_nodes_dir):
             installed_any = True
         _bootstrap_trace("auto_install_requirements: FluxTrainer final reconciliation completed")
+
+    if os.environ.get("COMFYUI_ENFORCE_HUGGINGFACE_RUNTIME", "1") == "1":
+        if _enforce_huggingface_runtime_stack():
+            installed_any = True
+        _bootstrap_trace("auto_install_requirements: Hugging Face runtime enforcement completed")
+
+    _patch_huggingface_hub_download_tqdm_class_compat()
+    _bootstrap_trace("auto_install_requirements: Hugging Face runtime compat patch completed")
 
     if _should_force_headless_opencv():
         if _ensure_headless_opencv():
@@ -2493,6 +2706,9 @@ _bootstrap_trace("startup: ensure_comfyui_manager_installed completed")
 _bootstrap_trace("startup: initial auto_install_requirements begin")
 auto_install_requirements()
 _bootstrap_trace("startup: initial auto_install_requirements completed")
+_bootstrap_trace("startup: Hugging Face runtime compat patch begin")
+_patch_huggingface_hub_download_tqdm_class_compat()
+_bootstrap_trace("startup: Hugging Face runtime compat patch completed")
 _bootstrap_trace("startup: cuda probe begin")
 _maybe_force_cpu_mode_from_torch_probe()
 _bootstrap_trace("startup: cuda probe completed")
@@ -2889,6 +3105,7 @@ def _ensure_xlabs_controlnet_layout(model_roots):
 
     filenames = [
         "flux-depth-controlnet-v3.safetensors",
+        "flux-canny-controlnet-v3.safetensors",
     ]
 
     candidate_source_dirs = []
@@ -2935,6 +3152,7 @@ def _try_hf_snapshot_download(repo_id: str, local_dir: str, revision: str = "mai
         return False
 
     try:
+        _patch_huggingface_hub_download_tqdm_class_compat()
         from huggingface_hub import snapshot_download
     except Exception as exc:
         logging.info(f"huggingface_hub non disponibile, salto snapshot_download: {exc}")
@@ -3167,6 +3385,7 @@ def _ensure_llama3_layout(model_roots):
             os.makedirs(target_dir, exist_ok=True)
             _bootstrap_trace(f"_ensure_llama3_layout: downloading {repo_id} to {target_dir}")
             try:
+                _patch_huggingface_hub_download_tqdm_class_compat()
                 from huggingface_hub import snapshot_download
                 snapshot_download(repo_id=repo_id, local_dir=target_dir, token=hf_token)
                 logging.info(f"[BOOTSTRAP] Downloaded Llama-3: {repo_id} -> {target_dir}")
@@ -3281,6 +3500,7 @@ def _ensure_llama32_1b_layout(model_roots):
             os.makedirs(target_dir, exist_ok=True)
             _bootstrap_trace(f"_ensure_llama32_1b_layout: downloading {repo_id} to {target_dir}")
             try:
+                _patch_huggingface_hub_download_tqdm_class_compat()
                 from huggingface_hub import snapshot_download
                 snapshot_download(repo_id=repo_id, local_dir=target_dir, token=hf_token)
                 logging.info(f"[BOOTSTRAP] Downloaded Llama-3.2-1B: {repo_id} -> {target_dir}")
@@ -4167,6 +4387,9 @@ def _preflight_custom_logic():
     _bootstrap_trace("_preflight_custom_logic: auto_install_requirements begin")
     auto_install_requirements()
     _bootstrap_trace("_preflight_custom_logic: auto_install_requirements completed")
+    _bootstrap_trace("_preflight_custom_logic: Hugging Face runtime compat patch begin")
+    _patch_huggingface_hub_download_tqdm_class_compat()
+    _bootstrap_trace("_preflight_custom_logic: Hugging Face runtime compat patch completed")
 
     # 1b) ripulisce eventuali cache JSON corrotte di ComfyUI-Manager
     _bootstrap_trace("_preflight_custom_logic: cleanup manager cache begin")
