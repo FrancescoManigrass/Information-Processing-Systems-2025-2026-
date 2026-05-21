@@ -724,92 +724,141 @@ def _patch_huggingface_hub_download_tqdm_class_compat():
     Custom nodes (es. ComfyUI-DepthAnythingV3) possono chiamare hf_hub_download
     passando tqdm_class=..., parametro rimosso in huggingface_hub >= 0.22.
     La patch:
-      1. Sostituisce hf_hub_download nei moduli huggingface_hub noti.
-      2. Fa il sweep di sys.modules per aggiornare tutti i riferimenti diretti
-         già bindati con 'from huggingface_hub import hf_hub_download'.
+      1. Installa un hook builtins.__import__ che intercetta qualsiasi
+         `from huggingface_hub import hf_hub_download` e sostituisce il
+         riferimento nel modulo sorgente con il wrapper prima che il caller
+         lo legga. Questo è immuno ai reset del LazyModule e alle reimport.
+      2. Sostituisce hf_hub_download nei moduli huggingface_hub noti usando
+         __dict__ direttamente (bypassa __setattr__ del LazyModule).
+      3. Fa il sweep di sys.modules per aggiornare riferimenti già bindati.
     """
-    try:
-        import importlib
-        import inspect
+    import builtins
+    import importlib
+    import inspect
 
-        # Prima: ottieni (o importa) huggingface_hub e ricava il riferimento canonico.
-        try:
-            hf_module = importlib.import_module("huggingface_hub")
-        except Exception:
-            return False
+    # ── Costruisci il wrapper ────────────────────────────────────────────────
+    def _make_tqdm_class_wrapper(original):
+        if getattr(original, "_comfyui_tqdm_class_compat", False):
+            return original
 
-        canonical_original = getattr(hf_module, "hf_hub_download", None)
-        if not callable(canonical_original):
-            return False
-
-        # Se già patchato, il canonical è il wrapper; ricava l'originale vero.
-        already_patched = getattr(canonical_original, "_comfyui_tqdm_class_compat", False)
-
-        if not already_patched:
-            # Costruisci il wrapper una volta sola.
-            original = canonical_original
-
-            def _wrapped_hf_hub_download(*args, __original=original, **kwargs):
-                try:
-                    supports_tqdm_class = "tqdm_class" in inspect.signature(__original).parameters
-                except Exception:
-                    supports_tqdm_class = False
-                if not supports_tqdm_class:
-                    kwargs.pop("tqdm_class", None)
-                return __original(*args, **kwargs)
-
-            _wrapped_hf_hub_download.__name__ = getattr(original, "__name__", "hf_hub_download")
-            _wrapped_hf_hub_download.__doc__ = getattr(original, "__doc__", None)
-            _wrapped_hf_hub_download._comfyui_tqdm_class_compat = True
-            wrapper = _wrapped_hf_hub_download
-
-            # Aggiorna i moduli huggingface_hub noti.
-            for module_name in (
-                "huggingface_hub",
-                "huggingface_hub.file_download",
-                "huggingface_hub._snapshot_download",
-            ):
-                try:
-                    mod = importlib.import_module(module_name)
-                    attr = getattr(mod, "hf_hub_download", None)
-                    if callable(attr) and not getattr(attr, "_comfyui_tqdm_class_compat", False):
-                        setattr(mod, "hf_hub_download", wrapper)
-                except Exception:
-                    pass
-
-            logging.info("[BOOTSTRAP] Applied huggingface_hub hf_hub_download tqdm_class compatibility patch")
-        else:
-            # Usa il wrapper già esistente per il sweep di sys.modules.
-            wrapper = canonical_original
-            original = getattr(wrapper, "__wrapped__", None)  # non presente, ma difensivo
-
-        # Sweep di tutti i moduli già caricati che hanno bindato hf_hub_download
-        # direttamente (from huggingface_hub import hf_hub_download).
-        # Questo copre custom nodes importati prima o dopo la patch.
-        patched_sysmods = 0
-        for mod_name, mod in list(sys.modules.items()):
-            if mod is None:
-                continue
-            attr = getattr(mod, "hf_hub_download", None)
-            if not callable(attr):
-                continue
-            if getattr(attr, "_comfyui_tqdm_class_compat", False):
-                continue
-            # È un riferimento all'originale non patchato: sostituiscilo.
+        def _wrapped_hf_hub_download(*args, __orig=original, **kwargs):
             try:
-                setattr(mod, "hf_hub_download", wrapper)
+                supports_tqdm_class = "tqdm_class" in inspect.signature(__orig).parameters
+            except Exception:
+                supports_tqdm_class = False
+            if not supports_tqdm_class:
+                kwargs.pop("tqdm_class", None)
+            return __orig(*args, **kwargs)
+
+        _wrapped_hf_hub_download.__name__ = getattr(original, "__name__", "hf_hub_download")
+        _wrapped_hf_hub_download.__doc__ = getattr(original, "__doc__", None)
+        _wrapped_hf_hub_download._comfyui_tqdm_class_compat = True
+        return _wrapped_hf_hub_download
+
+    # ── Recupera/crea il wrapper canonico ───────────────────────────────────
+    try:
+        hf_module = importlib.import_module("huggingface_hub")
+    except Exception:
+        return False
+
+    canonical = getattr(hf_module, "hf_hub_download", None)
+    if not callable(canonical):
+        return False
+
+    if getattr(canonical, "_comfyui_tqdm_class_compat", False):
+        wrapper = canonical
+    else:
+        wrapper = _make_tqdm_class_wrapper(canonical)
+
+    # ── 1) builtins.__import__ interceptor ──────────────────────────────────
+    # Intercetta qualsiasi `from huggingface_hub import hf_hub_download`
+    # anche se avviene DOPO questa patch (lazy custom node imports).
+    # L'intercettore patcha il __dict__ del modulo sorgente prima che il
+    # caller Python legga il simbolo, quindi il caller riceve sempre il wrapper.
+    _orig_import = builtins.__import__
+    if not getattr(_orig_import, "_comfyui_hfhub_compat", False):
+
+        def _intercepting_import(name, glob=None, loc=None, fromlist=(), level=0):
+            result = _orig_import(name, glob, loc, fromlist, level)
+            if not fromlist or "hf_hub_download" not in fromlist:
+                return result
+            # IMPORTANT: `IMPORT_FROM` always reads from `result` (the object
+            # returned by __import__), NOT from a navigated submodule.
+            # We must patch result.__dict__ directly so the subsequent
+            # `getattr(result, 'hf_hub_download')` in the bytecode gets our wrapper.
+            try:
+                fn = result.__dict__.get("hf_hub_download")
+                if fn is None:
+                    fn = getattr(result, "hf_hub_download", None)
+                if callable(fn) and not getattr(fn, "_comfyui_tqdm_class_compat", False):
+                    w = _make_tqdm_class_wrapper(fn)
+                    try:
+                        result.__dict__["hf_hub_download"] = w
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            return result
+
+        _intercepting_import._comfyui_hfhub_compat = True
+        builtins.__import__ = _intercepting_import
+        logging.info("[BOOTSTRAP] Installed hf_hub_download import interceptor (builtins.__import__)")
+
+    # ── 2) Patcha moduli huggingface_hub noti via __dict__ ──────────────────
+    # Usa __dict__ direttamente per bypassare eventuale __setattr__ del LazyModule.
+    already_patched_in_known = False
+    for module_name in (
+        "huggingface_hub",
+        "huggingface_hub.file_download",
+        "huggingface_hub._snapshot_download",
+    ):
+        try:
+            mod = sys.modules.get(module_name) or importlib.import_module(module_name)
+            fn = mod.__dict__.get("hf_hub_download") or getattr(mod, "hf_hub_download", None)
+            if callable(fn) and not getattr(fn, "_comfyui_tqdm_class_compat", False):
+                w = _make_tqdm_class_wrapper(fn)
+                try:
+                    mod.__dict__["hf_hub_download"] = w
+                except Exception:
+                    try:
+                        setattr(mod, "hf_hub_download", w)
+                    except Exception:
+                        pass
+                already_patched_in_known = True
+        except Exception:
+            pass
+
+    if already_patched_in_known:
+        logging.info("[BOOTSTRAP] Applied hf_hub_download tqdm_class patch to huggingface_hub modules")
+
+    # ── 3) Sweep sys.modules ─────────────────────────────────────────────────
+    patched_sysmods = 0
+    for mod_name, mod in list(sys.modules.items()):
+        if mod is None:
+            continue
+        fn = mod.__dict__.get("hf_hub_download") if hasattr(mod, "__dict__") else None
+        if fn is None:
+            fn = getattr(mod, "hf_hub_download", None)
+        if not callable(fn):
+            continue
+        if getattr(fn, "_comfyui_tqdm_class_compat", False):
+            continue
+        w = _make_tqdm_class_wrapper(fn)
+        try:
+            mod.__dict__["hf_hub_download"] = w
+            patched_sysmods += 1
+        except Exception:
+            try:
+                setattr(mod, "hf_hub_download", w)
                 patched_sysmods += 1
-            except (AttributeError, TypeError):
+            except Exception:
                 pass
 
-        if patched_sysmods:
-            logging.info(
-                f"[BOOTSTRAP] Swept sys.modules: updated hf_hub_download in {patched_sysmods} additional module(s)"
-            )
-        return True
-    except Exception as exc:
-        logging.warning(f"[BOOTSTRAP] huggingface_hub tqdm_class compatibility patch skipped: {exc}")
-        return False
+    if patched_sysmods:
+        logging.info(
+            f"[BOOTSTRAP] Swept sys.modules: updated hf_hub_download in {patched_sysmods} additional module(s)"
+        )
+    return True
 
 
 def _normalize_requirement_entry(requirement):
@@ -1843,6 +1892,17 @@ def _get_bootstrap_install_cmd(*install_args, python_executable=None):
         uv_target = _get_uv_user_site_target(pip_cmd, python_executable)
         if uv_target:
             return pip_cmd + ["install", "--target", uv_target, *effective_args]
+        # Fallback --user: quando il sistema non e' scrivibile e non siamo in un venv.
+        # Copre sia pip puro che uv quando _get_uv_user_site_target non ha applicato --target.
+        if (
+            "--user" not in effective_args
+            and not os.environ.get("VIRTUAL_ENV")
+            and getattr(sys, "base_prefix", sys.prefix) == sys.prefix
+            and not (hasattr(os, "geteuid") and os.geteuid() == 0)
+            and python_executable == os.path.realpath(sys.executable)
+            and not _system_site_packages_writable()
+        ):
+            return pip_cmd + ["install", "--user", *effective_args]
         return pip_cmd + ["install", *effective_args]
     except RuntimeError:
         pass
@@ -1893,11 +1953,37 @@ def _is_uv_pip_cmd(command):
     return len(command) >= 3 and command[-3:] == ["-m", "uv", "pip"]
 
 
+def _system_site_packages_writable():
+    """
+    Prova a creare un file temporaneo nelle cartelle site-packages di sistema.
+    Ritorna True se almeno una e' scrivibile dall'utente corrente.
+    """
+    try:
+        import site as _site
+        candidates = list(_site.getsitepackages()) if hasattr(_site, "getsitepackages") else []
+    except Exception:
+        return True  # Fallback conservativo: assume scrivibile
+
+    for path in candidates:
+        if not path or not os.path.isdir(path):
+            continue
+        test_path = os.path.join(path, ".comfyui_perm_test.tmp")
+        try:
+            with open(test_path, "wb") as _f:
+                _f.write(b"x")
+            os.remove(test_path)
+            return True
+        except Exception:
+            continue
+    return False
+
+
 def _get_uv_user_site_target(pip_cmd, python_executable):
     """
-    uv non fa fallback automatico allo user-site quando l'env /usr non e' scrivibile.
+    uv non fa fallback automatico allo user-site quando il sistema non e' scrivibile.
     In quel caso installiamo direttamente nello user-site importato da Python
     (es. /vscode/.local/lib/python3.10/site-packages).
+    Usa un check reale di scrivibilita' invece del fragile prefisso /usr.
     """
     if os.environ.get("COMFYUI_UV_TARGET_USER_SITE", "1") != "1":
         return None
@@ -1909,7 +1995,8 @@ def _get_uv_user_site_target(pip_cmd, python_executable):
         return None
     if hasattr(os, "geteuid") and os.geteuid() == 0:
         return None
-    if not os.path.realpath(sys.prefix).startswith("/usr"):
+    # Verifica effettiva: se il sistema e' scrivibile non serve redirectare.
+    if _system_site_packages_writable():
         return None
 
     try:

@@ -2,7 +2,7 @@
   "id": "a060737b-596d-4fe8-bd55-93968ce24347",
   "revision": 0,
   "last_node_id": 86,
-  "last_link_id": 330,
+  "last_link_id": 329,
   "nodes": [
     {
       "id": 69,
@@ -241,7 +241,6 @@
         "cnr_id": "x-flux-comfyui",
         "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
         "Node name for S&R": "XlabsSampler",
-        "aux_id": "XLabs-AI/x-flux-comfyui",
         "ue_properties": {
           "widget_ue_connectable": {},
           "version": "7.2.2",
@@ -498,7 +497,6 @@
         "cnr_id": "comfyui_tinyterranodes",
         "ver": "2.0.9",
         "Node name for S&R": "ttN text",
-        "aux_id": "TinyTerra/ComfyUI_tinyterraNodes",
         "ttNnodeVersion": "1.0.0",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -557,7 +555,6 @@
         "cnr_id": "comfyui_essentials",
         "ver": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
         "Node name for S&R": "GetImageSize+",
-        "aux_id": "cubiq/ComfyUI_essentials",
         "ue_properties": {
           "widget_ue_connectable": {},
           "input_ue_unconnectable": {},
@@ -626,6 +623,42 @@
       "widgets_values": []
     },
     {
+      "id": 83,
+      "type": "DownloadAndLoadDepthAnythingV3Model",
+      "pos": [
+        -148.65055047658444,
+        1482.9081011523551
+      ],
+      "size": [
+        388.65,
+        82
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "da3_model",
+          "type": "DA3MODEL",
+          "slot_index": 0,
+          "links": [
+            324
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-DepthAnythingV3",
+        "ver": "f900962397f5dd3df02d3caba1e99b0cfe80c25a",
+        "Node name for S&R": "DownloadAndLoadDepthAnythingV3Model",
+        "aux_id": "PozzettiAndrea/ComfyUI-DepthAnythingV3"
+      },
+      "widgets_values": [
+        "da3nested_giant_large.safetensors",
+        "auto"
+      ]
+    },
+    {
       "id": 85,
       "type": "PreviewImage",
       "pos": [
@@ -683,7 +716,8 @@
             318,
             320,
             322,
-            326
+            326,
+            327
           ]
         },
         {
@@ -700,8 +734,7 @@
       "properties": {
         "cnr_id": "comfyui_essentials",
         "ver": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
-        "Node name for S&R": "ImageResize+",
-        "aux_id": "bollerdominik/ComfyUI-load-lora-from-url"
+        "Node name for S&R": "ImageResize+"
       },
       "widgets_values": [
         960,
@@ -724,7 +757,7 @@
         260.3684997558594
       ],
       "flags": {},
-      "order": 4,
+      "order": 5,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -740,7 +773,6 @@
         "cnr_id": "x-flux-comfyui",
         "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
         "Node name for S&R": "LoadFluxControlNet",
-        "aux_id": "XLabs-AI/x-flux-comfyui",
         "ue_properties": {
           "widget_ue_connectable": {},
           "version": "7.2.2",
@@ -776,7 +808,7 @@
         {
           "name": "image",
           "type": "IMAGE",
-          "link": 330
+          "link": 327
         },
         {
           "name": "controlnet_condition",
@@ -799,7 +831,6 @@
         "cnr_id": "x-flux-comfyui",
         "ver": "00328556efc9472410d903639dc9e68a8471f7ac",
         "Node name for S&R": "ApplyFluxControlNet",
-        "aux_id": "XLabs-AI/x-flux-comfyui",
         "ue_properties": {
           "widget_ue_connectable": {},
           "version": "7.2.2",
@@ -810,41 +841,6 @@
       "widgets_values": [
         0.9000000000000001
       ]
-    },
-    {
-      "id": 56,
-      "type": "PreviewImage",
-      "pos": [
-        67.83093257968662,
-        2113.2857473428962
-      ],
-      "size": [
-        390.71976307917294,
-        246.00000000000023
-      ],
-      "flags": {},
-      "order": 13,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "images",
-          "type": "IMAGE",
-          "link": 322
-        }
-      ],
-      "outputs": [],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.63",
-        "Node name for S&R": "PreviewImage",
-        "ue_properties": {
-          "widget_ue_connectable": {},
-          "version": "7.2.2",
-          "input_ue_unconnectable": {}
-        },
-        "widget_ue_connectable": {}
-      },
-      "widgets_values": []
     },
     {
       "id": 66,
@@ -902,89 +898,43 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "flux_lora_file_name_rank16_bf16 (2).safetensors",
+        "flux_lora_file_name_rank16_bf16.safetensors",
         0.7000000000000002,
         1.0000000000000002
       ]
     },
     {
-      "id": 83,
-      "type": "DownloadAndLoadDepthAnythingV2Model",
+      "id": 56,
+      "type": "PreviewImage",
       "pos": [
-        -73.97683692637467,
-        1007.5808764609831
+        67.83093257968662,
+        2113.2857473428962
       ],
       "size": [
-        388.65,
-        82
+        390.71976307917294,
+        246.00000000000023
       ],
       "flags": {},
-      "order": 5,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "da_v2_model",
-          "type": "DAMODEL",
-          "slot_index": 0,
-          "links": [
-            324
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "ComfyUI-DepthAnythingV2",
-        "ver": "main",
-        "Node name for S&R": "DownloadAndLoadDepthAnythingV2Model",
-        "aux_id": "kijai/ComfyUI-DepthAnythingV2"
-      },
-      "widgets_values": [
-        "depth_anything_v2_vitl_fp32.safetensors",
-        "auto"
-      ]
-    },
-    {
-      "id": 84,
-      "type": "DepthAnything_V2",
-      "pos": [
-        330.6283436610981,
-        1240.6350682443112
-      ],
-      "size": [
-        272.05859375,
-        120
-      ],
-      "flags": {},
-      "order": 14,
+      "order": 13,
       "mode": 0,
       "inputs": [
         {
-          "name": "da_model",
-          "type": "DAMODEL",
-          "link": 324
-        },
-        {
           "name": "images",
           "type": "IMAGE",
-          "link": 326
+          "link": 322
         }
       ],
-      "outputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "slot_index": 0,
-          "links": [
-            325,
-            330
-          ]
-        }
-      ],
+      "outputs": [],
       "properties": {
-        "cnr_id": "ComfyUI-DepthAnythingV2",
-        "ver": "main",
-        "Node name for S&R": "DepthAnything_V2",
-        "aux_id": "kijai/ComfyUI-DepthAnythingV2"
+        "cnr_id": "comfy-core",
+        "ver": "0.3.63",
+        "Node name for S&R": "PreviewImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.2.2",
+          "input_ue_unconnectable": {}
+        },
+        "widget_ue_connectable": {}
       },
       "widgets_values": []
     },
@@ -1027,6 +977,110 @@
       "widgets_values": [
         "building.png",
         "image"
+      ]
+    },
+    {
+      "id": 84,
+      "type": "DepthAnything_V3",
+      "pos": [
+        253.58510934508263,
+        1259.813168720149
+      ],
+      "size": [
+        272.05859375,
+        330
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "da3_model",
+          "type": "DA3MODEL",
+          "link": 324
+        },
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 326
+        },
+        {
+          "name": "camera_params",
+          "shape": 7,
+          "type": "CAMERA_PARAMS",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "depth",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            325
+          ]
+        },
+        {
+          "name": "confidence",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "resized_rgb_image",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "ray_origin",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "ray_direction",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "name": "extrinsics_json",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "intrinsics_json",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "sky_mask",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "extrinsics",
+          "type": "EXTRINSICS",
+          "links": null
+        },
+        {
+          "name": "intrinsics",
+          "type": "INTRINSICS",
+          "links": null
+        },
+        {
+          "name": "gaussian_ply_path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "ComfyUI-DepthAnythingV3",
+        "ver": "0bb483bb0db9bf0fdae73117fec75ea96dc45b7c",
+        "Node name for S&R": "DepthAnything_V3"
+      },
+      "widgets_values": [
+        "V2-Style",
+        "resize",
+        false,
+        false
       ]
     }
   ],
@@ -1197,7 +1251,7 @@
       0,
       84,
       0,
-      "DAMODEL"
+      "DA3MODEL"
     ],
     [
       325,
@@ -1216,6 +1270,14 @@
       "IMAGE"
     ],
     [
+      327,
+      79,
+      0,
+      86,
+      1,
+      "IMAGE"
+    ],
+    [
       328,
       47,
       0,
@@ -1230,14 +1292,6 @@
       45,
       4,
       "ControlNetCondition"
-    ],
-    [
-      330,
-      84,
-      0,
-      86,
-      1,
-      "IMAGE"
     ]
   ],
   "groups": [
@@ -1349,15 +1403,15 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.7674769468720053,
+      "scale": 0.42416548331697684,
       "offset": [
-        868.6031296512015,
-        -668.0625893001254
+        933.8968386310253,
+        -1096.2657595575704
       ]
     },
     "ue_links": [],
     "links_added_by_ue": [],
-    "frontendVersion": "1.42.15",
+    "frontendVersion": "1.41.20",
     "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
     "VHS_MetadataImage": true,
