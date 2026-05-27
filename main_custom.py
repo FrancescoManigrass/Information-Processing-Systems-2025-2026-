@@ -31,6 +31,84 @@ os.environ.setdefault("PIP_NO_INPUT", "1")
 os.environ.setdefault("COMFY_AIMDO_DISABLE_MMAP", "1")
 
 
+def _try_prepare_writable_dir(path: str):
+    if not path:
+        return None
+
+    try:
+        normalized = os.path.abspath(path)
+        os.makedirs(normalized, exist_ok=True)
+        test_path = os.path.join(normalized, ".comfyui_cache_write_test.tmp")
+        with open(test_path, "wb") as handle:
+            handle.write(b"ok")
+        os.remove(test_path)
+        return normalized
+    except Exception:
+        return None
+
+
+def _configure_early_disk_caches():
+    """
+    HuggingFace/Transformers leggono le variabili cache al primo import.
+    In CrownLabs la home /vscode può avere una quota piccola: se la cache resta lì,
+    FluxTrainer può fallire anche scrivendo solo i metadata dei tokenizer.
+    """
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    env_cache_root = os.environ.get("COMFYUI_CACHE_ROOT", "").strip()
+    env_model_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
+
+    candidates = [
+        env_cache_root,
+        os.path.join(env_model_root, ".cache") if env_model_root else "",
+        "/mnt/default-models/.cache",
+        "/mnt/shared/default-models/.cache",
+        "/vscode/workspace/.cache",
+        os.path.join(base_dir, ".cache"),
+    ]
+
+    cache_root = None
+    seen = set()
+    for candidate in candidates:
+        if not candidate:
+            continue
+        normalized = os.path.abspath(candidate)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        cache_root = _try_prepare_writable_dir(normalized)
+        if cache_root:
+            break
+
+    if not cache_root:
+        return
+
+    hf_home = os.environ.setdefault("HF_HOME", os.path.join(cache_root, "huggingface"))
+    hf_hub_cache = os.environ.setdefault("HF_HUB_CACHE", os.path.join(hf_home, "hub"))
+    os.environ.setdefault("HUGGINGFACE_HUB_CACHE", hf_hub_cache)
+    os.environ.setdefault("TRANSFORMERS_CACHE", hf_hub_cache)
+    os.environ.setdefault("HF_DATASETS_CACHE", os.path.join(hf_home, "datasets"))
+    os.environ.setdefault("TORCH_HOME", os.path.join(cache_root, "torch"))
+    os.environ.setdefault("PIP_CACHE_DIR", os.path.join(cache_root, "pip"))
+    os.environ.setdefault("XDG_CACHE_HOME", cache_root)
+
+    for env_name in (
+        "HF_HOME",
+        "HF_HUB_CACHE",
+        "TRANSFORMERS_CACHE",
+        "HF_DATASETS_CACHE",
+        "TORCH_HOME",
+        "PIP_CACHE_DIR",
+        "XDG_CACHE_HOME",
+    ):
+        try:
+            os.makedirs(os.environ[env_name], exist_ok=True)
+        except Exception:
+            pass
+
+
+_configure_early_disk_caches()
+
+
 COMFYUI_MANAGER_REPO_URL = "https://github.com/Comfy-Org/ComfyUI-Manager.git"
 COMFYUI_MANAGER_DIRNAME = "comfyui-manager"
 COMFYUI_MANAGER_LEGACY_DIRNAME = "ComfyUI-Manager"
@@ -65,6 +143,7 @@ FLUXTRAINER_FORCE_PACKAGES = [
     f"diffusers[torch]=={DIFFUSERS_TARGET_VERSION}",
     f"safetensors=={SAFETENSORS_TARGET_VERSION}",
     "sentencepiece>=0.2.0",
+
 ]
 
 
@@ -83,6 +162,7 @@ extra_packages = [
     f"accelerate>={ACCELERATE_TARGET_VERSION}",
     "scikit-image",     # richiesto da ComfyUI_Swwan (layerstyle_utils)
     "imagesize",        # richiesto da comfyui-fluxtrainer (train_util)
+        "voluptuous"
 ]
 
 
@@ -3024,7 +3104,7 @@ def _resolve_model_roots():
     Risolve le root modelli in modo portabile:
     - COMFYUI_MODEL_ROOTS (path separati da os.pathsep) se definita
     - COMFYUI_MODELS_DEFAULT_ROOT forza sempre la root primaria
-    - /mnt/shared/default-models viene usata solo se gia' presente
+    - /mnt/default-models o /mnt/shared/default-models vengono usate solo se gia' presenti
     - altrimenti usa una root locale al progetto per evitare mount non presenti/lenti
     """
     env_primary_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
@@ -3032,21 +3112,24 @@ def _resolve_model_roots():
     local_primary_root = os.path.join(base_dir, "shared")
     local_shared_root = os.path.join(base_dir, "shared", "default-models")
     vscode_shared_root = "/vscode/workspace/shared/default-models"
-    mnt_primary_root = "/mnt/shared/default-models"
+    mnt_default_root = "/mnt/default-models"
+    mnt_shared_root = "/mnt/shared/default-models"
 
     if env_primary_root:
         primary_root = env_primary_root
+    elif os.path.isdir(mnt_default_root):
+        primary_root = mnt_default_root
+    elif os.path.isdir(mnt_shared_root):
+        primary_root = mnt_shared_root
     elif os.path.isdir(vscode_shared_root):
         primary_root = vscode_shared_root
-    elif os.path.isdir(mnt_primary_root):
-        primary_root = mnt_primary_root
     else:
         primary_root = local_primary_root
 
     secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip() or os.path.join(base_dir, "models")
 
     candidates = [primary_root, secondary_root]
-    for shared_root in (local_shared_root, mnt_primary_root):
+    for shared_root in (local_shared_root, mnt_default_root, mnt_shared_root):
         if os.path.isdir(shared_root) and os.path.abspath(shared_root) != os.path.abspath(primary_root):
             candidates.append(shared_root)
 
