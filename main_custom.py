@@ -143,7 +143,7 @@ FLUXTRAINER_FORCE_PACKAGES = [
     f"diffusers[torch]=={DIFFUSERS_TARGET_VERSION}",
     f"safetensors=={SAFETENSORS_TARGET_VERSION}",
     "sentencepiece>=0.2.0",
-
+    "protobuf>=3.20.0",
 ]
 
 
@@ -162,7 +162,9 @@ extra_packages = [
     f"accelerate>={ACCELERATE_TARGET_VERSION}",
     "scikit-image",     # richiesto da ComfyUI_Swwan (layerstyle_utils)
     "imagesize",        # richiesto da comfyui-fluxtrainer (train_util)
-        "voluptuous"
+    "protobuf>=3.20.0", # richiesto da transformers T5TokenizerFast (tokenizer .model files)
+    "voluptuous",
+    "matplotlib"
 ]
 
 
@@ -513,6 +515,7 @@ SHARED_MODELS_URLS = {
     # =========================
     "checkpoints": [
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly.safetensors", "filename": "v1-5-pruned-emaonly.safetensors"},
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
 
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "filename": "sd_xl_base_1.0.safetensors"},
@@ -618,6 +621,11 @@ SHARED_MODELS_URLS = {
     # LORAS
     # =========================
     "loras": [
+        *(
+            [{"url": os.environ["COMFYUI_YOUR_SD15_LORA_URL"], "filename": "your_sd15_lora.safetensors"}]
+            if os.environ.get("COMFYUI_YOUR_SD15_LORA_URL")
+            else []
+        ),
         #{"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-8steps-V1.0.safetensors"},
         #{"url": "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors", "filename": "Qwen-Image-Lightning-4steps-V1.0.safetensors"},
 
@@ -638,6 +646,7 @@ SHARED_MODELS_URLS = {
     "controlnet": [
         {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-depth-controlnet-v3.safetensors", "filename": "flux-depth-controlnet-v3.safetensors"},
         {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-canny-v3/resolve/main/flux-canny-controlnet-v3.safetensors", "filename": "flux-canny-controlnet-v3.safetensors"},
+        {"url": "https://huggingface.co/webui/ControlNet-modules-safetensors/resolve/main/v11/control_v11f1p_sd15_depth.safetensors", "filename": "control_v11f1p_sd15_depth.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
     ],
 
