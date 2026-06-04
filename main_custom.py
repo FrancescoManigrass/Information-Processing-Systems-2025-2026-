@@ -121,12 +121,14 @@ OPENCV_HEADLESS_PACKAGE = "opencv-python-headless"
 # NOTE: `diffusers` recenti importano `Dinov2WithRegistersConfig` da `transformers`.
 # Alcune versioni/build di transformers non lo espongono: o si aggiorna transformers,
 # oppure si applica una compat patch runtime (vedi sotto).
+
+
 TRANSFORMERS_TARGET_VERSION = os.environ.get("COMFYUI_TRANSFORMERS_VERSION", "4.44.0")
 ACCELERATE_TARGET_VERSION = os.environ.get("COMFYUI_ACCELERATE_VERSION", "1.6.0")
 TRANSFORMERS_TARGET_VERSION = os.environ.get("COMFYUI_TRANSFORMERS_VERSION", "4.54.1")
 DIFFUSERS_TARGET_VERSION = os.environ.get("COMFYUI_DIFFUSERS_VERSION", "0.32.1")
-HUGGINGFACE_HUB_TARGET_VERSION = os.environ.get("COMFYUI_HUGGINGFACE_HUB_VERSION", "0.36.2")
-SAFETENSORS_TARGET_VERSION = os.environ.get("COMFYUI_SAFETENSORS_VERSION", "0.7.0")
+HUGGINGFACE_HUB_TARGET_VERSION = os.environ.get("COMFYUI_HUGGINGFACE_HUB_VERSION", "0.34.3")
+SAFETENSORS_TARGET_VERSION = os.environ.get("COMFYUI_SAFETENSORS_VERSION", "0.4.5")
 PYTORCH_TARGET_VERSION = os.environ.get("COMFYUI_TORCH_VERSION", "2.9.1")
 TORCHVISION_TARGET_VERSION = os.environ.get("COMFYUI_TORCHVISION_VERSION", "0.24.1")
 TORCHAUDIO_TARGET_VERSION = os.environ.get("COMFYUI_TORCHAUDIO_VERSION", "2.9.1")
@@ -142,6 +144,7 @@ FLUXTRAINER_FORCE_PACKAGES = [
     *HUGGINGFACE_RUNTIME_FORCE_PACKAGES,
     f"diffusers[torch]=={DIFFUSERS_TARGET_VERSION}",
     f"safetensors=={SAFETENSORS_TARGET_VERSION}",
+    "came-pytorch==0.1.3",
     "sentencepiece>=0.2.0",
     "protobuf>=3.20.0",
 ]
@@ -514,7 +517,7 @@ SHARED_MODELS_URLS = {
     # CHECKPOINTS
     # =========================
     "checkpoints": [
-        {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
+       # {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "filename": "v1-5-pruned-emaonly-fp16.safetensors"},
         {"url": "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly.safetensors", "filename": "v1-5-pruned-emaonly.safetensors"},
         {"url": "https://huggingface.co/webui/stable-diffusion-2-inpainting/resolve/main/512-inpainting-ema.safetensors", "filename": "512-inpainting-ema.safetensors"},
 
@@ -522,6 +525,7 @@ SHARED_MODELS_URLS = {
         {"url": "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "filename": "sd_xl_refiner_1.0.safetensors"},
         {"url": "https://huggingface.co/stabilityai/sdxl-turbo/resolve/main/sd_xl_turbo_1.0_fp16.safetensors", "filename": "sd_xl_turbo_1.0_fp16.safetensors"},
         {"url": "https://huggingface.co/voxiliummusic/cyberrealistic_V4.0/resolve/main/cyberrealistic_v40.safetensors", "filename": "cyberrealistic_v40.safetensors"},
+        {"url": "https://huggingface.co/Hishambarakat/checkpoint/resolve/fa9be0812fb75f2646096c2833d1236c80751d34/flux/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
 
    ],
 
@@ -531,14 +535,15 @@ SHARED_MODELS_URLS = {
     "diffusion_models": [
         # FLUX Trainer (set richiesto)
         {"url": "https://huggingface.co/bstungnguyen/Flux/resolve/main/flux1-dev.safetensors", "filename": "flux1-dev.safetensors"},
-{"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
+        {"url": "https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-dev-fp8.safetensors"},
+        {"url": "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors", "filename": "flux1-schnell.safetensors"},
 
 
 
 
 
         # >10GB circa (Qwen Image fp8)
-        # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors", "filename": "qwen_image_fp8_e4m3fn.safetensors"},
+        {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors", "filename": "qwen_image_fp8_e4m3fn.safetensors"},
         # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors", "filename": "qwen_image_distill_full_fp8_e4m3fn.safetensors"},
         # {"url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_fp8_e4m3fn.safetensors", "filename": "qwen_image_edit_fp8_e4m3fn.safetensors"},
 
@@ -559,9 +564,6 @@ SHARED_MODELS_URLS = {
         # {"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors", "filename": "hunyuan_video_v2_replace_image_to_video_720p_bf16.safetensors"},
 
         # FLUX full (gated/opzionali, pesanti)
-      # >10GB circa (FP8 FLUX)
-        {"url": "https://huggingface.co/lllyasviel/flux1_dev/resolve/main/flux1-dev-fp8.safetensors", "filename": "flux1-schnell-fp8.safetensors"},
-   
         # >10GB circa
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev/resolve/main/flux1-fill-dev.safetensors", "filename": "flux1-fill-dev.safetensors"},
         # {"url": "https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev/resolve/main/flux1-kontext-dev.safetensors", "filename": "flux1-kontext-dev.safetensors"},
@@ -594,7 +596,6 @@ SHARED_MODELS_URLS = {
     "vae": [
         # FLUX VAE (richiesto dai workflow FluxTrainer)
         {"url": "https://huggingface.co/comfyanonymous/flux_vae/resolve/main/flux-vae-bf16.safetensors", "filename": "flux-vae-bf16.safetensors"},
-        {"url": "https://huggingface.co/StableDiffusionVN/Flux/resolve/main/Vae/flux_vae.safetensors", "filename": "flux_vae.safetensors"},
 
         {"url": "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/vae/ae.safetensors", "filename": "ae.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "filename": "qwen_image_vae.safetensors"},
@@ -610,8 +611,9 @@ SHARED_MODELS_URLS = {
     # CLIP VISION
     # =========================
     "LLM": [
-        #{"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
-        #{"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
+        # Florence2 auto-download disabilitato: lasciare i file LLM gestiti manualmente.
+        # {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/model.safetensors", "filename": "florence-2-large-model.safetensors"},
+        # {"url": "https://huggingface.co/microsoft/Florence-2-large/resolve/main/pytorch_model.bin", "filename": "florence-2-large-pytorch_model.bin"},
         #{"url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors?download=true", "filename": "clip_vision_h.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors?download=true", "filename": "llava_llama3_vision.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "filename": "sigclip_vision_patch14_384.safetensors"},
@@ -646,6 +648,9 @@ SHARED_MODELS_URLS = {
     "controlnet": [
         {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-depth-controlnet-v3.safetensors", "filename": "flux-depth-controlnet-v3.safetensors"},
         {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-canny-v3/resolve/main/flux-canny-controlnet-v3.safetensors", "filename": "flux-canny-controlnet-v3.safetensors"},
+        {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-hed-v3/resolve/main/flux-hed-controlnet-v3.safetensors", "filename": "flux-hed-controlnet-v3.safetensors"},
+        {"url": "https://huggingface.co/XLabs-AI/flux-controlnet-seg/resolve/main/flux-seg-controlnet.safetensors", "filename": "flux-seg-controlnet.safetensors"},
+        {"url": "https://huggingface.co/promeai/FLUX.1-controlnet-lineart-promeai/resolve/99c135d84d5aa22fc202ebfb0fba83091b08c224/flux.1-dev-controlnet-lineart-14000.safetensors", "filename": "flux-lineart-controlnet.safetensors"},
         {"url": "https://huggingface.co/webui/ControlNet-modules-safetensors/resolve/main/v11/control_v11f1p_sd15_depth.safetensors", "filename": "control_v11f1p_sd15_depth.safetensors"},
         #{"url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/qwen_image_union_diffsynth_lora.safetensors", "filename": "qwen_image_union_diffsynth_lora.safetensors"},
     ],
@@ -665,14 +670,51 @@ SHARED_MODELS_URLS = {
     ],
 
     # =========================
+    # DIFFUSERS REPOS
+    # =========================
+    "diffusers": [
+        {"url": "https://huggingface.co/manycore-research/FLUX.1-Layout-ControlNet/resolve/main/config.json", "filename": "manycore-research/FLUX.1-Layout-ControlNet/config.json"},
+        {"url": "https://huggingface.co/manycore-research/FLUX.1-Layout-ControlNet/resolve/main/diffusion_pytorch_model.safetensors", "filename": "manycore-research/FLUX.1-Layout-ControlNet/diffusion_pytorch_model.safetensors"},
+    ],
+
+    # =========================
     # GGUF MODELS (llama.cpp quantized)
     # =========================
     "gguf": [
+        # Gemma auto-download disabilitato: lasciare i GGUF gestiti manualmente.
         # Gemma 4 31B Q5_K_L (~24GB) — bartowski quant
-        {"url": "https://huggingface.co/bartowski/google_gemma-4-31B-it-GGUF/resolve/main/google_gemma-4-31B-it-Q5_K_L.gguf",
-         "filename": "google_gemma-4-31B-it-Q5_K_L.gguf"},
+        # {"url": "https://huggingface.co/bartowski/google_gemma-4-31B-it-GGUF/resolve/main/google_gemma-4-31B-it-Q5_K_L.gguf",
+        #  "filename": "google_gemma-4-31B-it-Q5_K_L.gguf"},
     ],
 }
+
+
+MODEL_FILENAME_ALIASES = {
+    # Hugging Face stores this as flux-dev-controlnet-union-pro.safetensors,
+    # while some workflows use the shorter legacy/widget name.
+    "flux-Union-controlnet.safetensors": (
+        "flux-dev-controlnet-union-pro.safetensors",
+        "flux-union-controlnet.safetensors",
+    ),
+}
+
+
+def _equivalent_model_filenames(filename: str):
+    names = [filename]
+    for canonical, aliases in MODEL_FILENAME_ALIASES.items():
+        group = [canonical, *aliases]
+        if filename in group:
+            names = group
+            break
+
+    result = []
+    seen = set()
+    for name in names:
+        if name in seen:
+            continue
+        seen.add(name)
+        result.append(name)
+    return result
 
 
 def _find_fluxtrainer_requirements(custom_nodes_dir):
@@ -950,6 +992,158 @@ def _patch_huggingface_hub_download_tqdm_class_compat():
     return True
 
 
+def _oneformer_cuda_runtime_error_requires_cpu(message):
+    if not message:
+        return False
+
+    lowered = str(message).lower()
+    if "cuda" not in lowered:
+        return False
+
+    indicators = (
+        "invalid argument",
+        "illegal memory access",
+        "device-side assert",
+        "driver error",
+        "cuda error",
+        "cublas",
+        "cusparse",
+    )
+    return any(indicator in lowered for indicator in indicators)
+
+
+def _get_controlnet_aux_oneformer_device():
+    device = os.environ.get("COMFYUI_CONTROLNET_AUX_ONEFORMER_DEVICE", "cpu").strip()
+    if not device:
+        return "cpu"
+
+    normalized = device.lower()
+    if normalized in {"auto", "comfy", "default"}:
+        try:
+            import comfy.model_management as model_management
+
+            return model_management.get_torch_device()
+        except Exception:
+            return "cpu"
+
+    return device
+
+
+def _patch_controlnet_aux_oneformer_module(module):
+    """
+    OneFormer in comfyui_controlnet_aux can hit CUDA driver/runtime edge cases on
+    some lab GPUs even when the main ComfyUI CUDA probe passes. Keep only these
+    semantic preprocessors on CPU by default; the rest of ComfyUI stays on GPU.
+    """
+    if module is None or getattr(module, "_comfyui_oneformer_cpu_compat", False):
+        return False
+
+    common_annotator_call = getattr(module, "common_annotator_call", None)
+    if not callable(common_annotator_call):
+        return False
+
+    class_specs = {
+        "OneFormer_COCO_SemSegPreprocessor": "150_16_swin_l_oneformer_coco_100ep.pth",
+        "OneFormer_ADE20K_SemSegPreprocessor": "250_16_swin_l_oneformer_ade20k_160k.pth",
+    }
+
+    patched_any = False
+    for class_name, filename in class_specs.items():
+        node_class = getattr(module, class_name, None)
+        if node_class is None:
+            continue
+
+        original = getattr(node_class, "semantic_segmentate", None)
+        if not callable(original) or getattr(original, "_comfyui_oneformer_cpu_compat", False):
+            continue
+
+        def _wrapped_semantic_segmentate(self, image, resolution=512, __filename=filename):
+            from custom_controlnet_aux.oneformer import OneformerSegmentor
+
+            device = _get_controlnet_aux_oneformer_device()
+            model = OneformerSegmentor.from_pretrained(filename=__filename)
+            try:
+                model = model.to(device)
+                out = common_annotator_call(model, image, resolution=resolution)
+            except RuntimeError as exc:
+                if str(device).lower() != "cpu" and _oneformer_cuda_runtime_error_requires_cpu(str(exc)):
+                    logging.warning(
+                        "[WRAPPER] OneFormer CUDA execution failed on %s, retrying on CPU: %s",
+                        device,
+                        exc,
+                    )
+                    try:
+                        import torch
+
+                        if torch.cuda.is_available():
+                            torch.cuda.empty_cache()
+                    except Exception:
+                        pass
+                    model = model.to("cpu")
+                    out = common_annotator_call(model, image, resolution=resolution)
+                else:
+                    raise
+            finally:
+                try:
+                    del model
+                except Exception:
+                    pass
+            return (out,)
+
+        _wrapped_semantic_segmentate._comfyui_oneformer_cpu_compat = True
+        node_class.semantic_segmentate = _wrapped_semantic_segmentate
+        patched_any = True
+
+    if patched_any:
+        module._comfyui_oneformer_cpu_compat = True
+        logging.info(
+            "[WRAPPER] Patched comfyui_controlnet_aux OneFormer preprocessors "
+            "to use %s by default",
+            os.environ.get("COMFYUI_CONTROLNET_AUX_ONEFORMER_DEVICE", "cpu"),
+        )
+    return patched_any
+
+
+def _patch_loaded_controlnet_aux_oneformer_modules():
+    patched_any = False
+    for module_name, module in list(sys.modules.items()):
+        if not module_name.endswith("node_wrappers.oneformer"):
+            continue
+        patched_any = _patch_controlnet_aux_oneformer_module(module) or patched_any
+    return patched_any
+
+
+def _install_controlnet_aux_oneformer_cpu_compat():
+    if os.environ.get("COMFYUI_PATCH_CONTROLNET_AUX_ONEFORMER_CPU", "1") != "1":
+        return False
+
+    try:
+        import importlib
+    except Exception:
+        return False
+
+    _patch_loaded_controlnet_aux_oneformer_modules()
+
+    original_import_module = importlib.import_module
+    if getattr(original_import_module, "_comfyui_oneformer_cpu_import_hook", False):
+        return True
+
+    def _wrapped_import_module(name, package=None):
+        module = original_import_module(name, package)
+        try:
+            module_name = getattr(module, "__name__", "")
+            if module_name.endswith("node_wrappers.oneformer"):
+                _patch_controlnet_aux_oneformer_module(module)
+        except Exception as exc:
+            logging.debug("[WRAPPER] OneFormer CPU compat patch skipped: %s", exc)
+        return module
+
+    _wrapped_import_module._comfyui_oneformer_cpu_import_hook = True
+    _wrapped_import_module._comfyui_original_import_module = original_import_module
+    importlib.import_module = _wrapped_import_module
+    return True
+
+
 def _normalize_requirement_entry(requirement):
     if requirement is None:
         return ""
@@ -995,6 +1189,57 @@ def _is_requirement_satisfied(requirement):
     return True
 
 
+def _get_requirement_package_name(requirement):
+    requirement = _normalize_requirement_entry(requirement)
+    if not requirement or Requirement is None:
+        return ""
+
+    if requirement.startswith(("-", ".", "/")) or requirement.startswith(("git+", "http://", "https://")):
+        return ""
+
+    try:
+        return Requirement(requirement).name.lower()
+    except Exception:
+        return ""
+
+
+def _should_skip_bootstrap_managed_requirement(requirement):
+    if os.environ.get("COMFYUI_SKIP_BOOTSTRAP_MANAGED_REQUIREMENTS", "1") != "1":
+        return False
+    if os.environ.get("COMFYUI_ENFORCE_PYTORCH_VERSION", "1") != "1":
+        return False
+
+    return _get_requirement_package_name(requirement) in PYTORCH_REQUIREMENT_PACKAGE_NAMES
+
+
+def _write_filtered_requirements_file(requirements_path):
+    skipped = []
+    kept_lines = []
+
+    with open(requirements_path, "r", encoding="utf-8") as handle:
+        for raw_line in handle:
+            if _should_skip_bootstrap_managed_requirement(raw_line):
+                skipped.append(_normalize_requirement_entry(raw_line))
+                continue
+            kept_lines.append(raw_line)
+
+    if not skipped:
+        return requirements_path, None, skipped
+
+    temp_file = tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        delete=False,
+        prefix="comfyui-filtered-requirements-",
+        suffix=".txt",
+    )
+    try:
+        temp_file.writelines(kept_lines)
+        return temp_file.name, temp_file.name, skipped
+    finally:
+        temp_file.close()
+
+
 def _get_pending_requirements(requirements):
     pending = []
     seen = set()
@@ -1019,8 +1264,13 @@ def _requirements_file_needs_install(requirements_path):
                 if not normalized:
                     continue
 
+                if _should_skip_bootstrap_managed_requirement(normalized):
+                    continue
+
                 if normalized.startswith("-"):
-                    return True
+                    if normalized.startswith(("-r ", "--requirement ")):
+                        return True
+                    continue
 
                 if not _is_requirement_satisfied(normalized):
                     return True
@@ -2390,6 +2640,20 @@ def auto_install_requirements():
             print(f"[BOOTSTRAP] Requirements already satisfied, skip: {req}")
             continue
 
+        install_req = req
+        temp_req = None
+        skipped_bootstrap_managed = []
+        try:
+            install_req, temp_req, skipped_bootstrap_managed = _write_filtered_requirements_file(req)
+        except Exception as exc:
+            print(f"[BOOTSTRAP] WARNING: Unable to filter bootstrap-managed requirements from {req}: {exc}")
+
+        if skipped_bootstrap_managed:
+            print(
+                "[BOOTSTRAP] Skipping bootstrap-managed requirement(s) from "
+                f"{req}: {', '.join(skipped_bootstrap_managed)}"
+            )
+
         print(f"[BOOTSTRAP] Installing requirements from: {req}")
         try:
             subprocess.check_call(_get_bootstrap_install_cmd(
@@ -2397,7 +2661,7 @@ def auto_install_requirements():
                 "--timeout", "600",   # 10 min per chunk (pacchetti CUDA > 200MB)
                 "--retries", "5",
                 "-r",
-                req,
+                install_req,
             ))
             installed_any = True
             _bootstrap_trace(f"auto_install_requirements: requirements install completed for {req}")
@@ -2412,6 +2676,12 @@ def auto_install_requirements():
                 )
                 continue
             raise
+        finally:
+            if temp_req:
+                try:
+                    os.remove(temp_req)
+                except Exception:
+                    pass
 
     # IMPORTANT: riallinea FluxTrainer alla fine, dopo TUTTI gli altri requirements,
     # così eventuali installazioni precedenti non lasciano l'ambiente in stato incoerente.
@@ -2451,10 +2721,8 @@ def auto_install_requirements():
     _bootstrap_trace("auto_install_requirements: safetensors stable pin completed")
 
     # Protegge l'avvio da cv2 rotto (mismatch NumPy/OpenCV).
-    # Forza il PyTorch GPU-compatibile DOPO tutti i requirements.
-    # requirements.txt può specificare torch==2.6.0 che poi viene processato e
-    # ridegrada la versione installata dal bootstrap (es. 2.9.1+cu128 → 2.6.0+cu124).
-    # Torch 2.6.0 non supporta DynamicVRAM e ha problemi con fp8+async su hardware recente.
+    # Riporta PyTorch ai pin del requirements dopo i custom nodes, evitando
+    # rimbalzi tra stack CUDA diversi a ogni avvio.
     if os.environ.get("COMFYUI_ENFORCE_PYTORCH_VERSION", "1") == "1":
         _pytorch_index_url = _get_compatible_pytorch_index_url()
         if _pytorch_index_url:
@@ -2885,6 +3153,9 @@ _bootstrap_trace("startup: initial auto_install_requirements completed")
 _bootstrap_trace("startup: Hugging Face runtime compat patch begin")
 _patch_huggingface_hub_download_tqdm_class_compat()
 _bootstrap_trace("startup: Hugging Face runtime compat patch completed")
+_bootstrap_trace("startup: ControlNet Aux OneFormer CPU compat patch begin")
+_install_controlnet_aux_oneformer_cpu_compat()
+_bootstrap_trace("startup: ControlNet Aux OneFormer CPU compat patch completed")
 _bootstrap_trace("startup: cuda probe begin")
 _maybe_force_cpu_mode_from_torch_probe()
 _bootstrap_trace("startup: cuda probe completed")
@@ -2963,15 +3234,74 @@ def _infer_filename_from_url(url: str) -> str:
         raise ValueError(f"Impossibile dedurre filename da URL: {url}")
     return filename
 
+def _is_safetensors_header_valid(path: str) -> bool:
+    """
+    Valida che il file safetensors non sia corrotto o incompleto.
+    Legge solo i primi 8 byte (header length) e verifica che il file
+    contenga almeno header_length + 8 byte totali.
+    """
+    try:
+        import json
+        import struct
+        with open(path, "rb") as f:
+            raw = f.read(8)
+            if len(raw) < 8:
+                return False
+            header_size = struct.unpack("<Q", raw)[0]
+            if header_size < 2 or header_size > 100 * 1024 * 1024:
+                return False
+            header = f.read(header_size)
+            if len(header) < header_size:
+                return False
+            header_data = json.loads(header.decode("utf-8"))
+            if not isinstance(header_data, dict):
+                return False
+            f.seek(0, 2)
+            return f.tell() >= 8 + header_size
+    except Exception:
+        return False
+
+
+def _is_existing_model_file_valid(path: str) -> bool:
+    try:
+        if not os.path.isfile(path) or os.path.getsize(path) <= 0:
+            return False
+    except Exception:
+        return False
+
+    if path.lower().endswith(".safetensors"):
+        return _is_safetensors_header_valid(path)
+
+    return True
+
+
+def _is_shared_model_placeholder(filename: str) -> bool:
+    normalized = (filename or "").strip().lower()
+    if not normalized:
+        return True
+    if normalized in {".gitkeep", ".keep"}:
+        return True
+    if normalized.startswith("put_") and normalized.endswith("_here"):
+        return True
+    return False
+
+
 def _download_if_missing(url: str, dest_path: str, timeout: int = 120, ignore_http_404: bool = False):
     """
-    Scarica il file solo se non esiste già.
+    Scarica il file solo se non esiste già o se è corrotto.
     Scrive su .part e poi fa rename atomico.
     Mostra una progress bar con tqdm.
     """
-    if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
+    if _is_existing_model_file_valid(dest_path):
         logging.info(f"Model already present, skip download: {dest_path}")
         return
+
+    if os.path.isfile(dest_path):
+        logging.warning(f"Model file corrotto o incompleto, riscarico: {dest_path}")
+        try:
+            os.remove(dest_path)
+        except Exception:
+            pass
 
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     tmp_path = dest_path + ".part"
@@ -3007,6 +3337,13 @@ def _download_if_missing(url: str, dest_path: str, timeout: int = 120, ignore_ht
                     pbar.update(len(chunk))
 
         os.replace(tmp_path, dest_path)
+        if dest_path.lower().endswith(".safetensors") and not _is_safetensors_header_valid(dest_path):
+            logging.error(f"Downloaded safetensors is invalid, removing: {dest_path}")
+            try:
+                os.remove(dest_path)
+            except Exception:
+                pass
+            return
         logging.info(f"Download completed: {dest_path}")
 
     except urllib.error.HTTPError as e:
@@ -3057,19 +3394,110 @@ def _is_writable_directory(path: str) -> bool:
     """
     Verifica se la directory è realmente scrivibile provando a creare un file temporaneo.
     """
+    test_file = os.path.join(path, ".comfyui_write_test.tmp")
     try:
         os.makedirs(path, exist_ok=True)
-        test_file = os.path.join(path, ".comfyui_write_test.tmp")
         with open(test_file, "wb") as f:
             f.write(b"ok")
         os.remove(test_file)
         return True
     except Exception as e:
+        try:
+            if os.path.exists(test_file):
+                os.remove(test_file)
+        except Exception:
+            pass
         logging.warning(f"Directory non scrivibile (skip download): {path} -> {e}")
         return False
 
 
-def ensure_shared_models_downloaded(shared_root: str):
+def _preferred_shared_model_roots(model_roots=None):
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    candidates = [
+        os.environ.get("COMFYUI_SHARED_MODELS_ROOT", "").strip(),
+        os.path.join(base_dir, "shared", "default-models"),
+        "/vscode/workspace/shared/default-models",
+        "/mnt/shared/default-models",
+    ]
+
+    for root in model_roots or []:
+        normalized = os.path.abspath(root)
+        if normalized.endswith(os.path.join("shared", "default-models")):
+            candidates.append(root)
+
+    roots = []
+    seen = set()
+    for candidate in candidates:
+        if not candidate:
+            continue
+        normalized = os.path.abspath(candidate)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        roots.append(normalized)
+    return roots
+
+
+def _local_models_root():
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    return os.path.abspath(
+        os.environ.get("COMFYUI_MODELS_ROOT", "").strip()
+        or os.path.join(base_dir, "models")
+    )
+
+
+def _path_is_in_shared_model_root(path: str, model_roots=None) -> bool:
+    try:
+        normalized_path = os.path.abspath(path)
+    except Exception:
+        return False
+
+    for root in _preferred_shared_model_roots(model_roots):
+        try:
+            normalized_root = os.path.abspath(root)
+            if normalized_path == normalized_root or normalized_path.startswith(normalized_root + os.sep):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def _select_writable_model_root(model_roots):
+    """
+    Usa prima una root condivisa scrivibile. In CrownLabs /mnt/default-models
+    puo' esistere ma avere quota esaurita; i download devono stare in shared.
+    """
+    for root in _preferred_shared_model_roots(model_roots):
+        if _is_writable_directory(root):
+            return os.path.abspath(root)
+        _bootstrap_trace(f"_select_writable_model_root: shared root not writable {root}")
+
+    if os.environ.get("COMFYUI_ALLOW_NON_SHARED_MODEL_DOWNLOAD", "0") != "1":
+        _bootstrap_trace("_select_writable_model_root: no writable shared root found; downloads disabled")
+        return None
+
+    for root in model_roots or []:
+        if _is_writable_directory(root):
+            return os.path.abspath(root)
+        _bootstrap_trace(f"_select_writable_model_root: not writable {root}")
+    return None
+
+
+def _find_existing_model_file(model_roots, folder_name: str, filename: str):
+    union_names = set(_equivalent_model_filenames("flux-Union-controlnet.safetensors"))
+    for root in model_roots or []:
+        for candidate_filename in _equivalent_model_filenames(filename):
+            candidate = os.path.join(root, folder_name, candidate_filename)
+            if _is_existing_model_file_valid(candidate):
+                if candidate_filename in union_names and not _path_is_in_shared_model_root(candidate, model_roots):
+                    continue
+                return candidate
+            if os.path.isfile(candidate):
+                _bootstrap_trace(f"_find_existing_model_file: ignoring invalid file {candidate}")
+    return None
+
+
+def ensure_shared_models_downloaded(shared_root: str, available_roots=None):
     """
     Per ogni cartella in SHARED_MODELS_URLS:
       - crea la cartella se non esiste (solo se scrivibile)
@@ -3089,6 +3517,10 @@ def ensure_shared_models_downloaded(shared_root: str):
         _bootstrap_trace(f"ensure_shared_models_downloaded: root not writable, skipping {shared_root}")
         return
 
+    available_shared_roots = _preferred_shared_model_roots(available_roots)
+    if shared_root not in available_shared_roots:
+        available_shared_roots.insert(0, shared_root)
+
     for folder_name, entries in SHARED_MODELS_URLS.items():
         target_dir = os.path.join(shared_root, folder_name)
         _bootstrap_trace(f"ensure_shared_models_downloaded: checking folder {folder_name} -> {target_dir}")
@@ -3100,12 +3532,55 @@ def ensure_shared_models_downloaded(shared_root: str):
             continue
 
         for url, filename in _normalize_model_entries(entries):
+            existing_path = _find_existing_model_file(available_shared_roots, folder_name, filename)
+            if existing_path:
+                _bootstrap_trace(f"ensure_shared_models_downloaded: available elsewhere {filename} -> {existing_path}")
+                continue
+
             dest_path = os.path.join(target_dir, filename)
             _bootstrap_trace(f"ensure_shared_models_downloaded: ensure file {dest_path}")
             _download_if_missing(url, dest_path)
             _bootstrap_trace(f"ensure_shared_models_downloaded: file ready {dest_path}")
 
     _bootstrap_trace(f"ensure_shared_models_downloaded: completed for root {shared_root}")
+
+
+def _find_shared_model_entry(folder_name: str, filename: str):
+    target_names = set(_equivalent_model_filenames(filename))
+    for url, entry_filename in _normalize_model_entries(SHARED_MODELS_URLS.get(folder_name, [])):
+        if entry_filename in target_names or filename in _equivalent_model_filenames(entry_filename):
+            return url, entry_filename
+    return None
+
+
+def _canonical_shared_controlnet_path(model_roots, filename: str):
+    if filename not in set(_equivalent_model_filenames("flux-Union-controlnet.safetensors")):
+        return None
+
+    download_root = _select_writable_model_root(model_roots)
+    if not download_root:
+        return None
+
+    canonical_filename = "flux-Union-controlnet.safetensors"
+    canonical_path = os.path.join(download_root, "controlnet", canonical_filename)
+    if not _is_existing_model_file_valid(canonical_path):
+        model_entry = _find_shared_model_entry("controlnet", canonical_filename)
+        if not model_entry:
+            return None
+        url, _ = model_entry
+        _bootstrap_trace(f"_canonical_shared_controlnet_path: downloading {canonical_filename} to {canonical_path}")
+        _download_if_missing(url, canonical_path)
+
+    if not _is_existing_model_file_valid(canonical_path):
+        return None
+
+    for alias_filename in _equivalent_model_filenames(canonical_filename):
+        alias_path = os.path.join(download_root, "controlnet", alias_filename)
+        if os.path.abspath(alias_path) == os.path.abspath(canonical_path):
+            continue
+        _try_symlink_file(canonical_path, alias_path, replace_existing=True)
+
+    return canonical_path
 
 
 def _resolve_model_roots():
@@ -3118,8 +3593,8 @@ def _resolve_model_roots():
     """
     env_primary_root = os.environ.get("COMFYUI_MODELS_DEFAULT_ROOT", "").strip()
     base_dir = os.path.dirname(os.path.realpath(__file__))
-    local_primary_root = os.path.join(base_dir, "shared")
     local_shared_root = os.path.join(base_dir, "shared", "default-models")
+    local_primary_root = local_shared_root
     vscode_shared_root = "/vscode/workspace/shared/default-models"
     mnt_default_root = "/mnt/default-models"
     mnt_shared_root = "/mnt/shared/default-models"
@@ -3135,11 +3610,15 @@ def _resolve_model_roots():
     else:
         primary_root = local_primary_root
 
-    secondary_root = os.environ.get("COMFYUI_MODELS_ROOT", "").strip() or os.path.join(base_dir, "models")
+    secondary_root = _local_models_root()
 
     candidates = [primary_root, secondary_root]
-    for shared_root in (local_shared_root, mnt_default_root, mnt_shared_root):
-        if os.path.isdir(shared_root) and os.path.abspath(shared_root) != os.path.abspath(primary_root):
+    for shared_root in (local_shared_root, vscode_shared_root, mnt_default_root, mnt_shared_root):
+        if os.path.abspath(shared_root) == os.path.abspath(vscode_shared_root) and not os.path.isdir(vscode_shared_root):
+            continue
+        if os.path.isdir(shared_root) or shared_root == local_shared_root:
+            if os.path.abspath(shared_root) == os.path.abspath(primary_root):
+                continue
             candidates.append(shared_root)
 
     env_value = os.environ.get("COMFYUI_MODEL_ROOTS", "").strip()
@@ -3235,16 +3714,20 @@ def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
     2) symlink (fallback)
     3) copia (ultimo fallback)
     """
-    if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
+    if _is_existing_model_file_valid(dest_path):
         return True
 
-    if not os.path.isfile(src_path) or os.path.getsize(src_path) <= 0:
+    if not _is_existing_model_file_valid(src_path):
         return False
 
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
+    # Rimuove path esistente non valido: file vuoto, symlink rotto, o symlink che punta
+    # a una sorgente diversa (il file sorgente potrebbe essere cambiato).
     try:
-        if os.path.exists(dest_path) and os.path.getsize(dest_path) <= 0:
+        is_broken_symlink = os.path.islink(dest_path) and not os.path.exists(dest_path)
+        is_invalid_file = os.path.isfile(dest_path) and not _is_existing_model_file_valid(dest_path)
+        if is_broken_symlink or is_invalid_file:
             os.remove(dest_path)
     except Exception:
         pass
@@ -3269,6 +3752,100 @@ def _try_link_or_copy_file(src_path: str, dest_path: str) -> bool:
         return False
 
 
+def _try_symlink_file(src_path: str, dest_path: str, replace_existing: bool = False) -> bool:
+    if not _is_existing_model_file_valid(src_path):
+        return False
+
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+    try:
+        if os.path.islink(dest_path):
+            if os.path.realpath(dest_path) == os.path.realpath(src_path):
+                return _is_existing_model_file_valid(dest_path)
+            os.remove(dest_path)
+        elif os.path.exists(dest_path):
+            if replace_existing:
+                os.remove(dest_path)
+            else:
+                return (
+                    os.path.realpath(dest_path) == os.path.realpath(src_path)
+                    and _is_existing_model_file_valid(dest_path)
+                )
+    except Exception:
+        return False
+
+    try:
+        rel_target = os.path.relpath(src_path, os.path.dirname(dest_path))
+        os.symlink(rel_target, dest_path)
+        return True
+    except Exception:
+        return False
+
+
+def _ensure_real_directory(path: str) -> bool:
+    try:
+        if os.path.islink(path):
+            os.remove(path)
+        elif os.path.exists(path) and not os.path.isdir(path):
+            os.remove(path)
+        os.makedirs(path, exist_ok=True)
+        return os.path.isdir(path) and not os.path.islink(path)
+    except Exception as exc:
+        _bootstrap_trace(f"_ensure_real_directory: failed for {path}: {exc}")
+        return False
+
+
+def _remove_invalid_model_file(path: str):
+    try:
+        if os.path.islink(path):
+            if not os.path.exists(path) or not _is_existing_model_file_valid(path):
+                os.remove(path)
+                _bootstrap_trace(f"_remove_invalid_model_file: removed invalid symlink {path}")
+            return
+
+        if os.path.isfile(path) and not _is_existing_model_file_valid(path):
+            os.remove(path)
+            _bootstrap_trace(f"_remove_invalid_model_file: removed invalid file {path}")
+    except Exception as exc:
+        _bootstrap_trace(f"_remove_invalid_model_file: failed for {path}: {exc}")
+
+
+def _ensure_direct_xlabs_controlnet_links(model_roots, filenames):
+    local_target_dir = os.path.join(_local_models_root(), "xlabs", "controlnets")
+    if not _ensure_real_directory(local_target_dir):
+        return
+
+    source_roots = []
+    source_roots.extend(_preferred_shared_model_roots(model_roots))
+    source_roots.extend(model_roots or [])
+
+    seen_roots = set()
+    for root in source_roots:
+        if not root:
+            continue
+        root = os.path.abspath(root)
+        if root in seen_roots or root == os.path.abspath(_local_models_root()):
+            continue
+        seen_roots.add(root)
+
+        source_dir = os.path.join(root, "xlabs", "controlnets")
+        if not os.path.isdir(source_dir):
+            continue
+
+        for filename in filenames:
+            dest_path = os.path.join(local_target_dir, filename)
+            for source_filename in _equivalent_model_filenames(filename):
+                source_path = os.path.join(source_dir, source_filename)
+                if not _is_existing_model_file_valid(source_path):
+                    if os.path.isfile(source_path):
+                        _bootstrap_trace(f"_ensure_direct_xlabs_controlnet_links: ignoring invalid source {source_path}")
+                    continue
+
+                if _try_symlink_file(source_path, dest_path, replace_existing=True):
+                    _bootstrap_trace(f"_ensure_direct_xlabs_controlnet_links: linked {dest_path} -> {source_path}")
+                break
+
+
 def _ensure_xlabs_controlnet_layout(model_roots):
     """
     x-flux-comfyui non usa sempre folder_paths: alcuni loader cercano
@@ -3285,28 +3862,133 @@ def _ensure_xlabs_controlnet_layout(model_roots):
     filenames = [
         "flux-depth-controlnet-v3.safetensors",
         "flux-canny-controlnet-v3.safetensors",
+        "flux-hed-controlnet-v3.safetensors",
+        "flux-lineart-controlnet.safetensors",
+        "flux-seg-controlnet.safetensors",
+        "flux-Union-controlnet.safetensors",
+        "flux-dev-controlnet-union-pro.safetensors",
+        "flux-union-controlnet.safetensors",
+        "manycore-FLUX.1-Layout-ControlNet.safetensors",
     ]
+    local_models_root = _local_models_root()
+    source_roots = []
+    source_roots.extend(_preferred_shared_model_roots(model_roots))
+    source_roots.append(local_models_root)
+    source_roots.extend(model_roots)
 
     candidate_source_dirs = []
-    for root in model_roots:
-        candidate_source_dirs.extend(
-            [
-                os.path.join(root, "controlnet"),
-                os.path.join(root, "xlabs", "controlnets"),
-            ]
-        )
+    seen_source_dirs = set()
+    for root in source_roots:
+        if not root:
+            continue
+        for source_dir in (
+            os.path.join(root, "controlnet"),
+            os.path.join(root, "controlnets"),
+            os.path.join(root, "controlnet", "FLUX.1-Layout-ControlNet"),
+            os.path.join(root, "controlnet", "manycore-research", "FLUX.1-Layout-ControlNet"),
+            os.path.join(root, "xlabs", "flux"),
+            os.path.join(root, "xlabs", "controlnets"),
+            os.path.join(root, "xlabs", "controlnets", "FLUX.1-Layout-ControlNet"),
+        ):
+            normalized = os.path.abspath(source_dir)
+            if normalized in seen_source_dirs:
+                continue
+            seen_source_dirs.add(normalized)
+            candidate_source_dirs.append(normalized)
 
-    for root in model_roots:
+    download_root = _select_writable_model_root(model_roots)
+    target_dir = os.path.join(local_models_root, "xlabs", "controlnets")
+    if not _ensure_real_directory(target_dir):
+        return
+
+    # x-flux cerca direttamente models/xlabs/controlnets: deve essere una directory
+    # locale reale, non un symlink di directory verso una root con file vecchi.
+    for filename in filenames:
+        _remove_invalid_model_file(os.path.join(target_dir, filename))
+
+    _ensure_direct_xlabs_controlnet_links(model_roots, filenames)
+    for root in [local_models_root]:
         target_dir = os.path.join(root, "xlabs", "controlnets")
+        if not _ensure_real_directory(target_dir):
+            continue
         for filename in filenames:
             source_path = None
+            equivalent_filenames = _equivalent_model_filenames(filename)
+            union_names = set(_equivalent_model_filenames("flux-Union-controlnet.safetensors"))
+            if filename in union_names:
+                source_path = _canonical_shared_controlnet_path(model_roots, filename)
+
             for source_dir in candidate_source_dirs:
-                candidate = os.path.join(source_dir, filename)
-                if os.path.isfile(candidate) and os.path.getsize(candidate) > 0:
-                    source_path = candidate
+                if source_path is not None:
+                    break
+                for source_filename in equivalent_filenames:
+                    candidate = os.path.join(source_dir, source_filename)
+                    if _is_existing_model_file_valid(candidate):
+                        if filename in union_names and not _path_is_in_shared_model_root(candidate, model_roots):
+                            continue
+                        source_path = candidate
+                        break
+                    if os.path.isfile(candidate):
+                        _bootstrap_trace(f"_ensure_xlabs_controlnet_layout: ignoring invalid source {candidate}")
+                if source_path is not None:
                     break
 
             if source_path is None:
+                for root in source_roots:
+                    if source_path is not None:
+                        break
+                    if not root:
+                        continue
+                    for rel_dir in ("controlnet", "controlnets", "xlabs"):
+                        recursive_dir = os.path.join(root, rel_dir)
+                        if not os.path.isdir(recursive_dir):
+                            continue
+                        for dirpath, dirnames, walk_filenames in os.walk(recursive_dir):
+                            dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+                            for source_filename in equivalent_filenames:
+                                if source_filename not in walk_filenames:
+                                    continue
+                                candidate = os.path.join(dirpath, source_filename)
+                                if _is_existing_model_file_valid(candidate):
+                                    source_path = candidate
+                                    _bootstrap_trace(
+                                        f"_ensure_xlabs_controlnet_layout: found recursive source {candidate}"
+                                    )
+                                    break
+                                _bootstrap_trace(f"_ensure_xlabs_controlnet_layout: ignoring invalid source {candidate}")
+                            if source_path is not None:
+                                break
+
+            if source_path is None:
+                model_entry = _find_shared_model_entry("controlnet", filename)
+                if download_root and model_entry:
+                    url, source_filename = model_entry
+                    download_source = os.path.join(download_root, "controlnet", source_filename)
+                    _bootstrap_trace(f"_ensure_xlabs_controlnet_layout: downloading missing {filename} to {download_source}")
+                    _download_if_missing(url, download_source)
+                    if _is_existing_model_file_valid(download_source):
+                        for alias_filename in equivalent_filenames:
+                            alias_path = os.path.join(download_root, "controlnet", alias_filename)
+                            if os.path.abspath(alias_path) != os.path.abspath(download_source):
+                                _try_symlink_file(download_source, alias_path, replace_existing=True)
+                        source_path = download_source
+            if source_path is None and filename == "manycore-FLUX.1-Layout-ControlNet.safetensors":
+                model_entry = _find_shared_model_entry(
+                    "diffusers",
+                    "manycore-research/FLUX.1-Layout-ControlNet/diffusion_pytorch_model.safetensors",
+                )
+                if download_root and model_entry:
+                    url, source_filename = model_entry
+                    download_source = os.path.join(download_root, "diffusers", source_filename)
+                    _bootstrap_trace(
+                        f"_ensure_xlabs_controlnet_layout: downloading missing {filename} to {download_source}"
+                    )
+                    _download_if_missing(url, download_source)
+                    if _is_existing_model_file_valid(download_source):
+                        source_path = download_source
+
+            if source_path is None:
+                _remove_invalid_model_file(os.path.join(target_dir, filename))
                 _bootstrap_trace(f"_ensure_xlabs_controlnet_layout: source not found for {filename}")
                 continue
 
@@ -3314,7 +3996,7 @@ def _ensure_xlabs_controlnet_layout(model_roots):
             if os.path.realpath(source_path) == os.path.realpath(dest_path):
                 continue
 
-            if _try_link_or_copy_file(source_path, dest_path):
+            if _try_symlink_file(source_path, dest_path, replace_existing=True):
                 logging.info(f"Prepared XLabs ControlNet path: {dest_path} -> {source_path}")
                 _bootstrap_trace(f"_ensure_xlabs_controlnet_layout: prepared {dest_path} -> {source_path}")
             else:
@@ -3371,10 +4053,11 @@ def _ensure_florence2_layout(model_roots):
     Florence2ModelLoader in genere cerca una CARTELLA modello dentro LLM,
     non un singolo file .safetensors nella root LLM.
     Costruisce un layout compatibile: LLM/Florence-2-large/...
-    Disabilitabile con COMFYUI_FLORENCE2_LAYOUT=0.
+    Auto-download disabilitato di default: abilita solo con
+    COMFYUI_ENABLE_FLORENCE2_AUTO_DOWNLOAD=1.
     """
-    if os.environ.get("COMFYUI_FLORENCE2_LAYOUT", "0") != "1":
-        _bootstrap_trace("_ensure_florence2_layout: disabled (set COMFYUI_FLORENCE2_LAYOUT=1 to enable)")
+    if os.environ.get("COMFYUI_ENABLE_FLORENCE2_AUTO_DOWNLOAD", "0") != "1":
+        _bootstrap_trace("_ensure_florence2_layout: skipped (auto-download disabled)")
         return
 
     repo_id = os.environ.get("COMFYUI_FLORENCE2_REPO", "microsoft/Florence-2-large").strip() or "microsoft/Florence-2-large"
@@ -3425,7 +4108,7 @@ def _ensure_florence2_layout(model_roots):
         src = os.path.join(llm_root, src_name)
         dst = os.path.join(model_dir, dst_name)
         _bootstrap_trace(f"_ensure_florence2_layout: preparing legacy weight {dst_name}")
-        if os.path.isfile(dst) and os.path.getsize(dst) > 0:
+        if _is_existing_model_file_valid(dst):
             continue
         if _try_link_or_copy_file(src, dst):
             logging.info(f"Prepared Florence-2-large file: {dst}")
@@ -3721,6 +4404,101 @@ def _ensure_llama32_1b_layout(model_roots):
     _bootstrap_trace("_ensure_llama32_1b_layout: completed")
 
 
+def _ensure_local_model_symlinks(shared_root: str, local_models_root: str):
+    """
+    Per ogni file in shared_root crea un symlink corrispondente in local_models_root.
+    I download avvengono solo su shared; models/ contiene solo symlink.
+    """
+    if not shared_root or not local_models_root:
+        return
+    if os.path.abspath(shared_root) == os.path.abspath(local_models_root):
+        return
+    if not os.path.isdir(shared_root):
+        return
+
+    _bootstrap_trace(f"_ensure_local_model_symlinks: {shared_root} -> {local_models_root}")
+
+    for dirpath, dirnames, filenames in os.walk(shared_root):
+        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+
+        rel_dir = os.path.relpath(dirpath, shared_root)
+        dst_dir = os.path.join(local_models_root, rel_dir) if rel_dir != "." else local_models_root
+
+        try:
+            os.makedirs(dst_dir, exist_ok=True)
+        except Exception:
+            continue
+
+        for filename in filenames:
+            if filename.startswith(".") or _is_shared_model_placeholder(filename):
+                continue
+            src_file = os.path.join(dirpath, filename)
+            dst_file = os.path.join(dst_dir, filename)
+
+            if not os.path.isfile(src_file):
+                continue
+
+            if os.path.islink(dst_file):
+                if os.path.realpath(dst_file) == os.path.realpath(src_file):
+                    if _is_existing_model_file_valid(dst_file):
+                        continue
+                    try:
+                        os.remove(dst_file)
+                    except Exception:
+                        continue
+                else:
+                    try:
+                        os.remove(dst_file)
+                    except Exception:
+                        continue
+            elif os.path.isfile(dst_file):
+                if _is_existing_model_file_valid(dst_file):
+                    continue
+                try:
+                    os.remove(dst_file)
+                except Exception:
+                    continue
+
+            if not _is_existing_model_file_valid(src_file):
+                _remove_invalid_model_file(dst_file)
+                _bootstrap_trace(f"_ensure_local_model_symlinks: skip invalid source {src_file}")
+                continue
+
+            if _try_symlink_file(src_file, dst_file):
+                _bootstrap_trace(f"_ensure_local_model_symlinks: linked {dst_file} -> {src_file}")
+            else:
+                _bootstrap_trace(f"_ensure_local_model_symlinks: unable to link {dst_file} -> {src_file}")
+
+    _bootstrap_trace(f"_ensure_local_model_symlinks: completed")
+
+
+def _ensure_shared_models_visible_in_local_models(model_roots, download_root=None):
+    local_models_root = _local_models_root()
+    try:
+        os.makedirs(local_models_root, exist_ok=True)
+    except Exception as exc:
+        logging.warning(f"Unable to prepare local models symlink root {local_models_root}: {exc}")
+        _bootstrap_trace(f"_ensure_shared_models_visible_in_local_models: cannot prepare {local_models_root}: {exc}")
+        return
+
+    candidates = []
+    if download_root:
+        candidates.append(download_root)
+    candidates.extend(_preferred_shared_model_roots(model_roots))
+
+    seen = set()
+    for shared_root in candidates:
+        if not shared_root:
+            continue
+        shared_root = os.path.abspath(shared_root)
+        if shared_root in seen or shared_root == os.path.abspath(local_models_root):
+            continue
+        seen.add(shared_root)
+        if not os.path.isdir(shared_root):
+            continue
+        _ensure_local_model_symlinks(shared_root, local_models_root)
+
+
 def apply_shared_model_paths():
     """
     Registra più cartelle modelli condivise e scarica automaticamente i modelli mancanti
@@ -3743,17 +4521,19 @@ def apply_shared_model_paths():
     _ensure_llm_subdirs(model_roots)
     _bootstrap_trace("apply_shared_model_paths: ensure LLM subdirs completed")
 
-    # Scarica modelli mancanti SOLO nella prima root (quella principale)
-    # così non alteri la seconda cartella
-    _bootstrap_trace(f"apply_shared_model_paths: ensure shared models begin on {model_roots[0]}")
-    ensure_shared_models_downloaded(model_roots[0])
+    download_root = _select_writable_model_root(model_roots)
+    if download_root:
+        _bootstrap_trace(f"apply_shared_model_paths: ensure shared models begin on {download_root}")
+        ensure_shared_models_downloaded(download_root, model_roots)
+    else:
+        _bootstrap_trace("apply_shared_model_paths: skipped downloads because shared/default-models is not writable")
     _bootstrap_trace("apply_shared_model_paths: ensure shared models completed")
     _bootstrap_trace("apply_shared_model_paths: first LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: first LLM sync completed")
-    _bootstrap_trace("apply_shared_model_paths: Florence2 layout begin")
-    _ensure_florence2_layout(model_roots)
-    _bootstrap_trace("apply_shared_model_paths: Florence2 layout completed")
+    # _bootstrap_trace("apply_shared_model_paths: Florence2 layout begin")
+    # _ensure_florence2_layout(model_roots)
+    # _bootstrap_trace("apply_shared_model_paths: Florence2 layout completed")
     _bootstrap_trace("apply_shared_model_paths: second LLM sync begin")
     _sync_llm_primary_to_secondary(model_roots)
     _bootstrap_trace("apply_shared_model_paths: second LLM sync completed")
@@ -3763,6 +4543,8 @@ def apply_shared_model_paths():
     _bootstrap_trace("apply_shared_model_paths: Llama3 layout completed")
     _ensure_llama32_1b_layout(model_roots)
     _bootstrap_trace("apply_shared_model_paths: Llama3.2-1B layout completed")
+    _ensure_shared_models_visible_in_local_models(model_roots, download_root)
+    _bootstrap_trace("apply_shared_model_paths: local model symlinks completed")
 
     model_dirs = {
         "checkpoints": "checkpoints",
@@ -4389,8 +5171,9 @@ def _get_bootstrap_model_index():
 
         for url, filename in _normalize_model_entries(entries):
             for model_type in aliases:
-                known_by_type.setdefault(model_type, set()).add(filename)
-                sources[(model_type, filename)] = (folder_name, url)
+                for exposed_filename in _equivalent_model_filenames(filename):
+                    known_by_type.setdefault(model_type, set()).add(exposed_filename)
+                    sources[(model_type, exposed_filename)] = (folder_name, url, filename)
 
     _KNOWN_BOOTSTRAP_MODELS_BY_TYPE = known_by_type
     _KNOWN_BOOTSTRAP_MODEL_SOURCES = sources
@@ -4421,21 +5204,38 @@ def _ensure_known_bootstrap_model_available(model_type, filename):
     if not source:
         return None
 
-    folder_name, url = source
+    if len(source) == 2:
+        folder_name, url = source
+        source_filename = filename
+    else:
+        folder_name, url, source_filename = source
     model_roots = _resolve_model_roots()
     if not model_roots:
         return None
 
-    dest_path = os.path.join(model_roots[0], folder_name, filename)
+    canonical_controlnet_path = _canonical_shared_controlnet_path(model_roots, filename)
+    if canonical_controlnet_path:
+        _ensure_xlabs_controlnet_layout(model_roots)
+        return canonical_controlnet_path
+
+    download_root = _select_writable_model_root(model_roots)
+    if not download_root:
+        return None
+    source_path = os.path.join(download_root, folder_name, source_filename)
+    dest_path = os.path.join(download_root, folder_name, filename)
     try:
-        _download_if_missing(url, dest_path)
+        _download_if_missing(url, source_path)
+        if os.path.abspath(source_path) != os.path.abspath(dest_path):
+            _try_symlink_file(source_path, dest_path, replace_existing=True)
+        if folder_name == "controlnet":
+            _ensure_xlabs_controlnet_layout(model_roots)
     except Exception as exc:
         logging.warning(
             f"[WRAPPER] Unable to prepare bootstrap model '{filename}' for '{model_type}': {exc}"
         )
         return None
 
-    if os.path.isfile(dest_path) and os.path.getsize(dest_path) > 0:
+    if _is_existing_model_file_valid(dest_path):
         return dest_path
     return None
 
@@ -4516,6 +5316,158 @@ def _install_known_model_selector_patch():
         logging.info("[WRAPPER] Installed on-demand bootstrap patch for folder_paths.get_full_path_or_raise")
 
 
+def _get_known_flux_controlnet_filenames():
+    names = set()
+    incompatible_xflux_names = {
+        "manycore-flux.1-layout-controlnet.safetensors",
+        "diffusion_pytorch_model.safetensors",
+    }
+    for model_type in (
+        "controlnet",
+        "control_net",
+        "controlnets",
+        "xlabs_controlnet",
+        "xlabs_controlnets",
+    ):
+        names.update(_get_known_bootstrap_model_filenames(model_type))
+
+    expanded = set()
+    for name in names:
+        for equivalent in _equivalent_model_filenames(name):
+            normalized = equivalent.lower()
+            if normalized in incompatible_xflux_names:
+                continue
+            if "manycore" in normalized or "layout-controlnet" in normalized:
+                continue
+            if "flux" in normalized:
+                expanded.add(equivalent)
+
+    return sorted(expanded)
+
+
+def _merge_selector_options(input_spec, extra_options):
+    if not isinstance(input_spec, (tuple, list)) or not input_spec:
+        return input_spec
+
+    current_options = input_spec[0]
+    if not isinstance(current_options, (tuple, list)):
+        return input_spec
+
+    merged = []
+    seen = set()
+    for option in list(current_options) + list(extra_options):
+        if not isinstance(option, str) or option in seen:
+            continue
+        seen.add(option)
+        merged.append(option)
+
+    if isinstance(input_spec, tuple):
+        return (merged, *input_spec[1:])
+    return [merged, *input_spec[1:]]
+
+
+def _extend_flux_controlnet_input_types(input_types):
+    if not isinstance(input_types, dict):
+        return input_types
+
+    extra_options = _get_known_flux_controlnet_filenames()
+    if not extra_options:
+        return input_types
+
+    patched = dict(input_types)
+    for section_name in ("required", "optional"):
+        section = patched.get(section_name)
+        if not isinstance(section, dict):
+            continue
+
+        section = dict(section)
+        for input_name, input_spec in list(section.items()):
+            normalized_name = str(input_name).lower()
+            if normalized_name not in {"controlnet_path", "controlnet_name", "controlnet"}:
+                continue
+            section[input_name] = _merge_selector_options(input_spec, extra_options)
+
+        patched[section_name] = section
+
+    return patched
+
+
+def _patch_flux_controlnet_loader_selectors():
+    if os.environ.get("COMFYUI_PATCH_XFLUX_CONTROLNET_SELECTOR", "1") != "1":
+        return
+
+    try:
+        import nodes as _comfy_nodes
+    except Exception as exc:
+        logging.debug(f"[WRAPPER] LoadFluxControlNet selector patch waiting for nodes module: {exc}")
+        return
+
+    mappings = getattr(_comfy_nodes, "NODE_CLASS_MAPPINGS", None)
+    if not isinstance(mappings, dict):
+        return
+
+    patched_count = 0
+    for node_name, node_class in list(mappings.items()):
+        if node_name != "LoadFluxControlNet":
+            continue
+        if getattr(node_class, "_comfyui_flux_controlnet_selector_patch", False):
+            continue
+
+        original_input_types = getattr(node_class, "INPUT_TYPES", None)
+        if not callable(original_input_types):
+            continue
+
+        def _wrapped_input_types(cls, __orig=original_input_types):
+            try:
+                input_types = __orig()
+            except TypeError:
+                input_types = __orig(cls)
+            return _extend_flux_controlnet_input_types(input_types)
+
+        node_class.INPUT_TYPES = classmethod(_wrapped_input_types)
+        node_class._comfyui_flux_controlnet_selector_patch = True
+        patched_count += 1
+
+    if patched_count:
+        logging.info("[WRAPPER] Patched LoadFluxControlNet selectors with bootstrap Flux ControlNet filenames")
+
+
+def _iter_prompt_nodes(payload):
+    if isinstance(payload, dict):
+        if "class_type" in payload and "inputs" in payload:
+            yield payload
+            return
+
+        for value in payload.values():
+            yield from _iter_prompt_nodes(value)
+    elif isinstance(payload, list):
+        for value in payload:
+            yield from _iter_prompt_nodes(value)
+
+
+def _ensure_prompt_flux_controlnets_available(prompt):
+    if os.environ.get("COMFYUI_PREPARE_PROMPT_FLUX_CONTROLNETS", "1") != "1":
+        return
+
+    known = set(_get_known_flux_controlnet_filenames())
+    if not known:
+        return
+
+    for node in _iter_prompt_nodes(prompt):
+        if node.get("class_type") != "LoadFluxControlNet":
+            continue
+
+        inputs = node.get("inputs")
+        if not isinstance(inputs, dict):
+            continue
+
+        for input_name in ("controlnet_path", "controlnet_name", "controlnet"):
+            value = inputs.get(input_name)
+            if not isinstance(value, str) or value not in known:
+                continue
+            _ensure_known_bootstrap_model_available("controlnet", value)
+
+
 def _install_prompt_path_normalization_patch():
     """
     Alcuni prompt inviati via API/UI possono contenere path modello con backslash
@@ -4541,7 +5493,9 @@ def _install_prompt_path_normalization_patch():
         return
 
     def _wrapped_validate_prompt(prompt, *args, **kwargs):
+        _patch_flux_controlnet_loader_selectors()
         normalized_prompt = _normalize_prompt_payload_paths(prompt)
+        _ensure_prompt_flux_controlnets_available(normalized_prompt)
         return original_validate_prompt(normalized_prompt, *args, **kwargs)
 
     _wrapped_validate_prompt._comfyui_prompt_path_patch = True
@@ -4569,6 +5523,9 @@ def _preflight_custom_logic():
     _bootstrap_trace("_preflight_custom_logic: Hugging Face runtime compat patch begin")
     _patch_huggingface_hub_download_tqdm_class_compat()
     _bootstrap_trace("_preflight_custom_logic: Hugging Face runtime compat patch completed")
+    _bootstrap_trace("_preflight_custom_logic: ControlNet Aux OneFormer CPU compat patch begin")
+    _install_controlnet_aux_oneformer_cpu_compat()
+    _bootstrap_trace("_preflight_custom_logic: ControlNet Aux OneFormer CPU compat patch completed")
 
     # 1b) ripulisce eventuali cache JSON corrotte di ComfyUI-Manager
     _bootstrap_trace("_preflight_custom_logic: cleanup manager cache begin")
@@ -4652,15 +5609,19 @@ def _preflight_custom_logic():
     _ensure_llm_subdirs(model_roots)
     _bootstrap_trace("_preflight_custom_logic: ensure LLM subdirs completed")
 
-    # 4) download modelli mancanti SOLO nella root principale (come fai già)
+    # 4) download modelli mancanti in shared/default-models quando possibile.
     if model_roots:
-        _bootstrap_trace(f"_preflight_custom_logic: shared model bootstrap begin on {model_roots[0]}")
-        ensure_shared_models_downloaded(model_roots[0])
+        download_root = _select_writable_model_root(model_roots)
+        if download_root:
+            _bootstrap_trace(f"_preflight_custom_logic: shared model bootstrap begin on {download_root}")
+            ensure_shared_models_downloaded(download_root, model_roots)
+        else:
+            _bootstrap_trace("_preflight_custom_logic: skipped downloads because shared/default-models is not writable")
         _bootstrap_trace("_preflight_custom_logic: shared model downloads completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: first LLM sync completed")
-        _ensure_florence2_layout(model_roots)
-        _bootstrap_trace("_preflight_custom_logic: Florence2 layout completed")
+        # _ensure_florence2_layout(model_roots)
+        # _bootstrap_trace("_preflight_custom_logic: Florence2 layout completed")
         _sync_llm_primary_to_secondary(model_roots)
         _bootstrap_trace("_preflight_custom_logic: second LLM sync completed")
         _ensure_xlabs_controlnet_layout(model_roots)
@@ -4669,6 +5630,8 @@ def _preflight_custom_logic():
         _bootstrap_trace("_preflight_custom_logic: Llama3 layout completed")
         _ensure_llama32_1b_layout(model_roots)
         _bootstrap_trace("_preflight_custom_logic: Llama3.2-1B layout completed")
+        _ensure_shared_models_visible_in_local_models(model_roots, download_root)
+        _bootstrap_trace("_preflight_custom_logic: local model symlinks completed")
 
     # 5) genera config path nativo ComfyUI per le shared folders
     auto_cfg = os.path.join(
