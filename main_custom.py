@@ -158,6 +158,7 @@ extra_packages = [
     "comfy-env",        # richiesto da custom nodes V3 (es. ComfyUI-DepthAnythingV3)
     "comfy-3d-viewers",
     #"comfy-dynamic-widgets",
+    "came-pytorch",
     "numba",
     "diffusers>=0.25.0",
     f"transformers=={TRANSFORMERS_TARGET_VERSION}",
